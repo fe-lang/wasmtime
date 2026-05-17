@@ -379,9 +379,40 @@ fn isa_constructor(
             "The RISC-V 32-bit backend currently requires the M extension".into(),
         ));
     }
-    if isa_flags.has_a() || isa_flags.has_f() || isa_flags.has_d() || isa_flags.has_v() {
+    if isa_flags.has_a()
+        || isa_flags.has_f()
+        || isa_flags.has_d()
+        || isa_flags.has_zfa()
+        || isa_flags.has_zfhmin()
+        || isa_flags.has_zfh()
+        || isa_flags.has_v()
+        || isa_flags.has_zvfh()
+        || isa_flags.has_zca()
+        || isa_flags.has_zcd()
+        || isa_flags.has_zcb()
+        || isa_flags.has_zbkb()
+        || isa_flags.has_zba()
+        || isa_flags.has_zbb()
+        || isa_flags.has_zbc()
+        || isa_flags.has_zbs()
+        || isa_flags.has_zicond()
+        || isa_flags.has_zicsr()
+        || isa_flags.has_zifencei()
+        || isa_flags.has_zvl32b()
+        || isa_flags.has_zvl64b()
+        || isa_flags.has_zvl128b()
+        || isa_flags.has_zvl256b()
+        || isa_flags.has_zvl512b()
+        || isa_flags.has_zvl1024b()
+        || isa_flags.has_zvl2048b()
+        || isa_flags.has_zvl4096b()
+        || isa_flags.has_zvl8192b()
+        || isa_flags.has_zvl16384b()
+        || isa_flags.has_zvl32768b()
+        || isa_flags.has_zvl65536b()
+    {
         return Err(CodegenError::Unsupported(
-            "The RISC-V 32-bit backend currently supports RV32IM soft-float only".into(),
+            "The RISC-V 32-bit backend currently supports only RV32IM soft-float".into(),
         ));
     }
 
