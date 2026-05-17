@@ -99,7 +99,7 @@ mod tests {
 
         assert_eq!(
             format!("{fde:?}"),
-            "FrameDescriptionEntry { address: Constant(1234), length: 40, lsda: None, instructions: [(12, CfaOffset(16)), (12, Offset(Register(8), -16)), (12, Offset(Register(1), -8)), (16, CfaRegister(Register(8)))] }"
+            "FrameDescriptionEntry { address: Constant(1234), length: 40, lsda: None, instructions: [(12, CfaOffset(16)), (12, Offset(Register(8), -16)), (12, Offset(Register(1), -12)), (16, CfaRegister(Register(8)))] }"
         );
     }
 
@@ -144,7 +144,7 @@ mod tests {
 
         assert_eq!(
             format!("{fde:?}"),
-            "FrameDescriptionEntry { address: Constant(4321), length: 16, lsda: None, instructions: [] }"
+            "FrameDescriptionEntry { address: Constant(4321), length: 12, lsda: None, instructions: [] }"
         );
     }
 
