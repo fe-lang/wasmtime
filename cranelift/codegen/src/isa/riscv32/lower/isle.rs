@@ -275,7 +275,7 @@ impl generated_code::Context for RV32IsleContext<'_, '_, MInst, Riscv32Backend> 
 
     fn ty_reg_pair(&mut self, ty: Type) -> Option<Type> {
         match ty {
-            I128 | F128 => Some(ty),
+            I64 | I128 | F128 => Some(ty),
             _ => None,
         }
     }

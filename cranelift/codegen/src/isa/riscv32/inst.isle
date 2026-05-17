@@ -2211,16 +2211,21 @@
   (rv_andi x y))
 
 (rule 0 (gen_andi x y)
-  (rv_and x (imm $I64 y)))
+  (rv_and x (imm $I32 y)))
 
 
 (decl gen_or (Type ValueRegs ValueRegs) ValueRegs)
+(rule 2 (gen_or $I64 x y)
+  (value_regs
+    (rv_or (value_regs_get x 0) (value_regs_get y 0))
+    (rv_or (value_regs_get x 1) (value_regs_get y 1))))
+
 (rule 1 (gen_or $I128 x y)
   (value_regs
     (rv_or (value_regs_get x 0) (value_regs_get y 0))
     (rv_or (value_regs_get x 1) (value_regs_get y 1))))
 
-(rule 0 (gen_or (fits_in_64 _) x y)
+(rule 0 (gen_or (fits_in_32 _) x y)
   (rv_or (value_regs_get x 0) (value_regs_get y 0)))
 
 
@@ -2257,7 +2262,7 @@
 
 ;; In the most generic case, we shift left and then shift right.
 (rule 0 (zext val @ (value_type (fits_in_32 ty)))
-  (let ((shift Imm12 (imm_from_bits (u64_wrapping_sub 64 (ty_bits ty)))))
+  (let ((shift Imm12 (imm_from_bits (u64_wrapping_sub 32 (ty_bits ty)))))
     (rv_srli (rv_slli val shift) shift)))
 
 ;; If we are zero extending a U8 we can use a `andi` instruction.
@@ -2274,8 +2279,7 @@
 
 ;; If we have the `zbkb` extension `pack` can be used to zero extend 32 bit registers
 (rule 1 (zext val @ (value_type $I32))
-  (if-let true (has_zbkb))
-  (rv_pack val (zero_reg)))
+  val)
 
 ;; If we have the `zbb` extension we can use the dedicated `zext.h` instruction.
 (rule 2 (zext val @ (value_type $I16))
@@ -2285,7 +2289,7 @@
 ;; With `zba` we have a `zext.w` instruction
 (rule 2 (zext val @ (value_type $I32))
   (if-let true (has_zba))
-  (rv_zextw val))
+  val)
 
 ;; Ignore sign extensions for values whose representation is already the full
 ;; register width.
@@ -2298,7 +2302,7 @@
 
 ;; Same base case as `zext`, shift left-then-right.
 (rule 0 (sext val @ (value_type (fits_in_32 ty)))
-  (let ((shift Imm12 (imm_from_bits (u64_wrapping_sub 64 (ty_bits ty)))))
+  (let ((shift Imm12 (imm_from_bits (u64_wrapping_sub 32 (ty_bits ty)))))
     (rv_srai (rv_slli val shift) shift)))
 
 ;; If we have the `zbb` extension we can use the dedicated `sext.b` instruction.
@@ -2311,10 +2315,9 @@
   (if-let true (has_zbb))
   (rv_sexth val))
 
-;; When signed extending from 32 to 64 bits we can use a
-;; `addiw val 0`. Also known as a `sext.w`
+;; A 32-bit RV32 integer register already contains the full value.
 (rule 1 (sext val @ (value_type $I32))
-  (rv_sextw val))
+  val)
 
 ;; Ignore sign extensions for values whose representation is already the full
 ;; register width.
@@ -2327,7 +2330,7 @@
 ;; and `sext` above to skip the extension instruction entirely in some
 ;; circumstances.
 (decl pure partial val_already_extended (ExtendOp Value) bool)
-(rule 0 (val_already_extended _ v @ (value_type $I64)) true)
+(rule 0 (val_already_extended _ v @ (value_type $I32)) true)
 
 ;; When extending our backend always extends to the full register width, so
 ;; there's no need to extend-an-extend.
@@ -2949,18 +2952,22 @@
 ;; Additionally the base 32-bit ISA has a single instruction for sign-extending
 ;; from 32 to 32-bits which makes that a bit cheaper if used.
 ;; of registers sign-extend the results.
-(rule 0 (is_nonzero_cmp val @ (value_type (fits_in_64 _)))
+(rule 0 (is_nonzero_cmp val @ (value_type (fits_in_32 _)))
   (cmp_nez (sext val)))
 (rule 1 (is_nonzero_cmp val @ (value_type $I8))
   (cmp_nez (zext val)))
+(rule 1 (is_nonzero_cmp val @ (value_type $I64))
+  (cmp_nez (rv_or (value_regs_get val 0) (value_regs_get val 1))))
 (rule 1 (is_nonzero_cmp val @ (value_type $I128))
   (cmp_nez (rv_or (value_regs_get val 0) (value_regs_get val 1))))
 
 ;; If the input value is itself an `icmp` or `fcmp` we can avoid generating the
 ;; result of the comparison and instead move the comparison directly into the
 ;; `IntegerCompare` that's returned.
-(rule 2 (is_nonzero_cmp (maybe_uextend (icmp _ cc a b @ (value_type (fits_in_64 _)))))
+(rule 2 (is_nonzero_cmp (maybe_uextend (icmp _ cc a b @ (value_type (fits_in_32 _)))))
   (icmp_to_int_compare cc a b))
+(rule 3 (is_nonzero_cmp (maybe_uextend (icmp _ cc a b @ (value_type $I64))))
+  (cmp_nez (lower_icmp_i64 cc a b)))
 (rule 2 (is_nonzero_cmp (maybe_uextend (fcmp _ cc a @ (value_type ty) b)))
   (fcmp_to_float_compare cc ty a b))
 
@@ -2973,8 +2980,10 @@
 ;; is fed into a branch. If `IntegerCompare` is materialized this will miss out
 ;; on optimizations to compare against constants using some native instructions.
 (decl icmp_to_int_compare (IntCC Value Value) IntegerCompare)
-(rule 0 (icmp_to_int_compare cc a b @ (value_type (fits_in_64 in_ty)))
+(rule 0 (icmp_to_int_compare cc a b @ (value_type (fits_in_32 in_ty)))
   (int_compare cc (put_value_in_reg_for_icmp cc a) (put_value_in_reg_for_icmp cc b)))
+(rule 1 (icmp_to_int_compare cc a b @ (value_type $I64))
+  (cmp_nez (lower_icmp_i64 cc a b)))
 (rule 1 (icmp_to_int_compare cc a b @ (value_type $I128))
   (cmp_nez (lower_icmp_i128 cc a b)))
 
@@ -2995,9 +3004,9 @@
 ;; For equality and inequality favor sign extension since it's generally
 ;; easier to perform sign extension on RV32 via native instructions. For 8-bit
 ;; types though use zero-extension since that's a single instruction `and`.
-(rule 2 (put_value_in_reg_for_icmp (IntCC.Equal) val @ (value_type (fits_in_64 _)))
+(rule 2 (put_value_in_reg_for_icmp (IntCC.Equal) val @ (value_type (fits_in_32 _)))
   (sext val))
-(rule 2 (put_value_in_reg_for_icmp (IntCC.NotEqual) val @ (value_type (fits_in_64 _)))
+(rule 2 (put_value_in_reg_for_icmp (IntCC.NotEqual) val @ (value_type (fits_in_32 _)))
   (sext val))
 (rule 3 (put_value_in_reg_for_icmp (IntCC.Equal) val @ (value_type $I8))
   (zext val))

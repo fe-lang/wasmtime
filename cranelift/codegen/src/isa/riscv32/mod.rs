@@ -1,7 +1,7 @@
 //! risc-v 32-bit Instruction Set Architecture.
 
 use crate::dominator_tree::DominatorTree;
-use crate::ir::{Function, Type};
+use crate::ir::{Function, Opcode, Type};
 use crate::isa::riscv32::settings as riscv_settings;
 use crate::isa::{
     Builder as IsaBuilder, FunctionAlignment, IsaFlagsHashKey, OwnedTargetIsa, TargetIsa,
@@ -66,7 +66,44 @@ impl Riscv32Backend {
 
 fn validate_supported_types(func: &Function) -> CodegenResult<()> {
     fn supported(ty: Type) -> bool {
-        ty.is_int() && ty.bits() <= 32
+        ty.is_int() && ty.bits() <= 64
+    }
+
+    fn allowed_i64_opcode(opcode: Opcode) -> bool {
+        matches!(
+            opcode,
+            Opcode::Iconst
+                | Opcode::Iadd
+                | Opcode::IaddImm
+                | Opcode::Isub
+                | Opcode::IrsubImm
+                | Opcode::Band
+                | Opcode::BandImm
+                | Opcode::Bor
+                | Opcode::BorImm
+                | Opcode::Bxor
+                | Opcode::BxorImm
+                | Opcode::Bnot
+                | Opcode::Uextend
+                | Opcode::Sextend
+                | Opcode::Ireduce
+                | Opcode::Ishl
+                | Opcode::IshlImm
+                | Opcode::Ushr
+                | Opcode::UshrImm
+                | Opcode::Sshr
+                | Opcode::SshrImm
+                | Opcode::Load
+                | Opcode::Store
+                | Opcode::Select
+                | Opcode::Icmp
+                | Opcode::IcmpImm
+                | Opcode::Jump
+                | Opcode::Brif
+                | Opcode::Return
+                | Opcode::Call
+                | Opcode::CallIndirect
+        )
     }
 
     for param in func
@@ -77,7 +114,7 @@ fn validate_supported_types(func: &Function) -> CodegenResult<()> {
     {
         if !supported(param.value_type) {
             return Err(CodegenError::Unsupported(format!(
-                "riscv32im currently supports only integer scalar values up to i32; found {}",
+                "riscv32im currently supports only integer scalar values up to i64; found {}",
                 param.value_type
             )));
         }
@@ -87,16 +124,33 @@ fn validate_supported_types(func: &Function) -> CodegenResult<()> {
             let ty = func.dfg.value_type(value);
             if !supported(ty) {
                 return Err(CodegenError::Unsupported(format!(
-                    "riscv32im currently supports only integer scalar values up to i32; found {ty}"
+                    "riscv32im currently supports only integer scalar values up to i64; found {ty}"
                 )));
             }
         }
         for inst in func.layout.block_insts(block) {
+            let opcode = func.dfg.insts[inst].opcode();
+            if !allowed_i64_opcode(opcode)
+                && func
+                    .dfg
+                    .inst_args(inst)
+                    .iter()
+                    .chain(func.dfg.inst_results(inst).iter())
+                    .any(|&value| {
+                        let ty = func.dfg.value_type(value);
+                        ty.is_int() && ty.bits() == 64
+                    })
+            {
+                return Err(CodegenError::Unsupported(format!(
+                    "riscv32im does not support {opcode} for i64 values yet"
+                )));
+            }
+
             for &value in func.dfg.inst_results(inst) {
                 let ty = func.dfg.value_type(value);
                 if !supported(ty) {
                     return Err(CodegenError::Unsupported(format!(
-                        "riscv32im currently supports only integer scalar values up to i32; found {ty}"
+                        "riscv32im currently supports only integer scalar values up to i64; found {ty}"
                     )));
                 }
             }
