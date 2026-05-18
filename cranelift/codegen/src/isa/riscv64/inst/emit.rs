@@ -7,6 +7,8 @@ use crate::isa::riscv64::lower::isle::generated_code::{
 };
 use cranelift_control::ControlPlane;
 
+const EBREAK_OPCODE: &[u8] = &[0x73, 0x00, 0x10, 0x00];
+
 pub struct EmitInfo {
     #[expect(dead_code, reason = "may want to be used in the future")]
     shared_flag: settings::Flags,
@@ -425,7 +427,7 @@ impl Inst {
             }
 
             // c.unimp
-            Inst::Udf { trap_code } => {
+            Inst::Udf { trap_code } if !emit_info.isa_flags.use_ebreak_traps() => {
                 sink.add_trap(trap_code);
                 sink.put2(0x0000);
             }
@@ -2174,7 +2176,7 @@ impl Inst {
             }
             &Inst::Udf { trap_code } => {
                 sink.add_trap(trap_code);
-                sink.put_data(Inst::TRAP_OPCODE);
+                sink.put_data(trap_opcode(emit_info));
             }
             &Inst::AtomicLoad { rd, ty, p } => {
                 // emit the fence.
@@ -2752,6 +2754,14 @@ impl Inst {
                 // Nothing.
             }
         }
+    }
+}
+
+fn trap_opcode(emit_info: &EmitInfo) -> &'static [u8] {
+    if emit_info.isa_flags.use_ebreak_traps() {
+        EBREAK_OPCODE
+    } else {
+        Inst::TRAP_OPCODE
     }
 }
 

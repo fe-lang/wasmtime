@@ -1,0 +1,33 @@
+test compile precise-output
+set unwind_info=false
+target riscv64im-unknown-none-elf use_ebreak_traps
+
+function %f() {
+block0:
+  trap user1
+}
+
+; VCode:
+; block0:
+;   udf##trap_code=user1
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   ebreak ; trap: user1
+
+function %trapnz(i64) {
+block0(v0: i64):
+  trapnz v0, user1
+  return
+}
+
+; VCode:
+; block0:
+;   trap_if user1##(a0 ne zero)
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   beqz a0, 8
+;   ebreak ; trap: user1
+;   ret

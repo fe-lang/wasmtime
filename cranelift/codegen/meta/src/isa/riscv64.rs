@@ -66,6 +66,12 @@ pub(crate) fn define() -> TargetIsa {
         "Use integer registers for floating-point ABI values and mark ELF objects as soft-float",
         false,
     );
+    let _use_ebreak_traps = setting.add_bool(
+        "use_ebreak_traps",
+        "Use ebreak for trap instructions?",
+        "Use ebreak instead of all-zero illegal instruction bytes for explicit traps",
+        false,
+    );
 
     let _has_zfa = setting.add_bool(
         "has_zfa",
