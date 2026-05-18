@@ -1,0 +1,146 @@
+test compile
+target riscv64
+
+function %uadd_i8(i8, i8) -> i8, i8 {
+block0(v0: i8, v1: i8):
+    v2, v3 = uadd_overflow v0, v1
+    return v2, v3
+}
+
+function %uadd_i16(i16, i16) -> i16, i8 {
+block0(v0: i16, v1: i16):
+    v2, v3 = uadd_overflow v0, v1
+    return v2, v3
+}
+
+function %uadd_i32(i32, i32) -> i32, i8 {
+block0(v0: i32, v1: i32):
+    v2, v3 = uadd_overflow v0, v1
+    return v2, v3
+}
+
+function %uadd_i64(i64, i64) -> i64, i8 {
+block0(v0: i64, v1: i64):
+    v2, v3 = uadd_overflow v0, v1
+    return v2, v3
+}
+
+function %sadd_i8(i8, i8) -> i8, i8 {
+block0(v0: i8, v1: i8):
+    v2, v3 = sadd_overflow v0, v1
+    return v2, v3
+}
+
+function %sadd_i16(i16, i16) -> i16, i8 {
+block0(v0: i16, v1: i16):
+    v2, v3 = sadd_overflow v0, v1
+    return v2, v3
+}
+
+function %sadd_i32(i32, i32) -> i32, i8 {
+block0(v0: i32, v1: i32):
+    v2, v3 = sadd_overflow v0, v1
+    return v2, v3
+}
+
+function %sadd_i64(i64, i64) -> i64, i8 {
+block0(v0: i64, v1: i64):
+    v2, v3 = sadd_overflow v0, v1
+    return v2, v3
+}
+
+function %usub_i8(i8, i8) -> i8, i8 {
+block0(v0: i8, v1: i8):
+    v2, v3 = usub_overflow v0, v1
+    return v2, v3
+}
+
+function %usub_i16(i16, i16) -> i16, i8 {
+block0(v0: i16, v1: i16):
+    v2, v3 = usub_overflow v0, v1
+    return v2, v3
+}
+
+function %usub_i32(i32, i32) -> i32, i8 {
+block0(v0: i32, v1: i32):
+    v2, v3 = usub_overflow v0, v1
+    return v2, v3
+}
+
+function %usub_i64(i64, i64) -> i64, i8 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    return v2, v3
+}
+
+function %ssub_i8(i8, i8) -> i8, i8 {
+block0(v0: i8, v1: i8):
+    v2, v3 = ssub_overflow v0, v1
+    return v2, v3
+}
+
+function %ssub_i16(i16, i16) -> i16, i8 {
+block0(v0: i16, v1: i16):
+    v2, v3 = ssub_overflow v0, v1
+    return v2, v3
+}
+
+function %ssub_i32(i32, i32) -> i32, i8 {
+block0(v0: i32, v1: i32):
+    v2, v3 = ssub_overflow v0, v1
+    return v2, v3
+}
+
+function %ssub_i64(i64, i64) -> i64, i8 {
+block0(v0: i64, v1: i64):
+    v2, v3 = ssub_overflow v0, v1
+    return v2, v3
+}
+
+function %umul_i8(i8, i8) -> i8, i8 {
+block0(v0: i8, v1: i8):
+    v2, v3 = umul_overflow v0, v1
+    return v2, v3
+}
+
+function %umul_i16(i16, i16) -> i16, i8 {
+block0(v0: i16, v1: i16):
+    v2, v3 = umul_overflow v0, v1
+    return v2, v3
+}
+
+function %umul_i32(i32, i32) -> i32, i8 {
+block0(v0: i32, v1: i32):
+    v2, v3 = umul_overflow v0, v1
+    return v2, v3
+}
+
+function %umul_i64(i64, i64) -> i64, i8 {
+block0(v0: i64, v1: i64):
+    v2, v3 = umul_overflow v0, v1
+    return v2, v3
+}
+
+function %smul_i8(i8, i8) -> i8, i8 {
+block0(v0: i8, v1: i8):
+    v2, v3 = smul_overflow v0, v1
+    return v2, v3
+}
+
+function %smul_i16(i16, i16) -> i16, i8 {
+block0(v0: i16, v1: i16):
+    v2, v3 = smul_overflow v0, v1
+    return v2, v3
+}
+
+function %smul_i32(i32, i32) -> i32, i8 {
+block0(v0: i32, v1: i32):
+    v2, v3 = smul_overflow v0, v1
+    return v2, v3
+}
+
+function %smul_i64(i64, i64) -> i64, i8 {
+block0(v0: i64, v1: i64):
+    v2, v3 = smul_overflow v0, v1
+    return v2, v3
+}
