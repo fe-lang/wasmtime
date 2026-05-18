@@ -379,7 +379,8 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
 
         // We usually need two VRegs per instruction result, plus extras for
         // various temporaries, but two per Value is a good starting point.
-        let mut vregs = VRegAllocator::with_capacity(f.dfg.num_values() * 2);
+        let mut vregs =
+            VRegAllocator::with_capacity(f.dfg.num_values() * 2, vcode.abi().isa_flags());
 
         let mut value_regs = SecondaryMap::with_default(ValueRegs::invalid());
         let mut try_call_rets = FxHashMap::default();

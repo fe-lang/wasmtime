@@ -1060,7 +1060,7 @@ impl<I: VCodeInst> VCode<I> {
                                 let from_rreg = Reg::from(from);
                                 let to_rreg = Writable::from_reg(Reg::from(to));
                                 debug_assert_eq!(from.class(), to.class());
-                                let ty = I::canonical_type_for_rc(from.class());
+                                let ty = self.abi.canonical_type_for_rc(from.class());
                                 let mv = I::gen_move(to_rreg, from_rreg, ty);
                                 do_emit(&mv, &mut disasm, &mut buffer, &mut state);
                             }
@@ -1676,7 +1676,10 @@ impl<I: VCodeInst> fmt::Debug for VCode<I> {
 }
 
 /// This structure manages VReg allocation during the lifetime of the VCodeBuilder.
-pub struct VRegAllocator<I> {
+pub struct VRegAllocator<I: VCodeInst> {
+    /// ISA flags used for target-dependent type-to-register-class mapping.
+    isa_flags: <I::ABIMachineSpec as ABIMachineSpec>::F,
+
     /// VReg IR-level types.
     vreg_types: Vec<Type>,
 
@@ -1700,11 +1703,15 @@ pub struct VRegAllocator<I> {
 
 impl<I: VCodeInst> VRegAllocator<I> {
     /// Make a new VRegAllocator.
-    pub fn with_capacity(capacity: usize) -> Self {
+    pub fn with_capacity(
+        capacity: usize,
+        isa_flags: &<I::ABIMachineSpec as ABIMachineSpec>::F,
+    ) -> Self {
         let capacity = first_user_vreg_index() + capacity;
         let mut vreg_types = Vec::with_capacity(capacity);
         vreg_types.resize(first_user_vreg_index(), types::INVALID);
         Self {
+            isa_flags: isa_flags.clone(),
             vreg_types,
             vreg_aliases: FxHashMap::with_capacity_and_hasher(capacity, Default::default()),
             deferred_error: None,
@@ -1718,7 +1725,7 @@ impl<I: VCodeInst> VRegAllocator<I> {
             return Err(CodegenError::CodeTooLarge);
         }
         let v = self.vreg_types.len();
-        let (regclasses, tys) = I::rc_for_type(ty)?;
+        let (regclasses, tys) = I::ABIMachineSpec::rc_for_type(ty, &self.isa_flags)?;
 
         // Check that new indices are in-bounds for regalloc2's
         // VReg/Operand representation.
@@ -1774,7 +1781,8 @@ impl<I: VCodeInst> VRegAllocator<I> {
     /// registers for the given type. This is meant to be used with
     /// deferred allocation errors (see `Lower::alloc_tmp()`).
     fn bogus_for_deferred_error(&self, ty: Type) -> ValueRegs<Reg> {
-        let (regclasses, _tys) = I::rc_for_type(ty).expect("must have valid type");
+        let (regclasses, _tys) =
+            I::ABIMachineSpec::rc_for_type(ty, &self.isa_flags).expect("must have valid type");
         match regclasses {
             &[rc0] => ValueRegs::one(VReg::new(0, rc0).into()),
             &[rc0, rc1] => ValueRegs::two(VReg::new(0, rc0).into(), VReg::new(1, rc1).into()),

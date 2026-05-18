@@ -82,8 +82,16 @@ impl ObjectBuilder {
                     )));
                 }
 
-                // FIXME(#4994): Get the right float ABI variant from the TargetIsa
-                let mut eflags = object::elf::EF_RISCV_FLOAT_ABI_DOUBLE;
+                let use_soft_float_abi = isa
+                    .isa_flags()
+                    .iter()
+                    .find(|f| f.name == "use_soft_float_abi")
+                    .is_some_and(|f| f.as_bool().unwrap_or_default());
+                let mut eflags = if use_soft_float_abi {
+                    object::elf::EF_RISCV_FLOAT_ABI_SOFT
+                } else {
+                    object::elf::EF_RISCV_FLOAT_ABI_DOUBLE
+                };
 
                 // Set the RVC eflag if we have the C extension enabled.
                 let has_c = isa

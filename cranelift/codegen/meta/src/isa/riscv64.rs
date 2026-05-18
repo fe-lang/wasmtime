@@ -28,7 +28,11 @@ macro_rules! define_zvl_ext {
 pub(crate) fn define() -> TargetIsa {
     let mut setting = SettingGroupBuilder::new("riscv64");
 
-    // We target a minimum of riscv64g. That means that we have the following extensions by default:
+    // Plain `riscv64` and `riscv64gc` preserve the historical RV64G/LP64D
+    // default. Exact subarchitectures such as `riscv64im` normalize these
+    // settings in the ISA builder before the generated flags are finalized.
+    //
+    // RV64G means that we have the following extensions by default:
     //
     // * M (integer multiplication and division)
     // * A (atomic instructions)
@@ -55,6 +59,12 @@ pub(crate) fn define() -> TargetIsa {
         "has extension D?",
         "Double-precision floating point",
         true,
+    );
+    let _use_soft_float_abi = setting.add_bool(
+        "use_soft_float_abi",
+        "Use the LP64 soft-float ABI?",
+        "Use integer registers for floating-point ABI values and mark ELF objects as soft-float",
+        false,
     );
 
     let _has_zfa = setting.add_bool(

@@ -186,7 +186,11 @@ members = [
 ]
 exclude = [
   'docs/rust_wasi_markdown_parser',
+  'vendor/target-lexicon',
 ]
+
+[patch.crates-io]
+target-lexicon = { path = "vendor/target-lexicon" }
 
 [workspace.package]
 version = "46.0.0"

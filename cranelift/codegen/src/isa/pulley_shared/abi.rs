@@ -52,6 +52,7 @@ where
     fn compute_arg_locs(
         call_conv: isa::CallConv,
         flags: &settings::Flags,
+        _isa_flags: &Self::F,
         params: &[ir::AbiParam],
         args_or_rets: ArgsOrRets,
         add_ret_area_ptr: bool,
@@ -479,7 +480,11 @@ where
         }
     }
 
-    fn get_machine_env(_flags: &settings::Flags, _call_conv: isa::CallConv) -> &MachineEnv {
+    fn get_machine_env(
+        _flags: &settings::Flags,
+        _isa_flags: &Self::F,
+        _call_conv: isa::CallConv,
+    ) -> &'static MachineEnv {
         static MACHINE_ENV: MachineEnv = create_reg_environment();
         &MACHINE_ENV
     }

@@ -6,6 +6,7 @@ use cranelift_entity::EntityRef;
 use cranelift_frontend::*;
 use cranelift_module::*;
 use cranelift_object::*;
+use object::{FileFlags, Object, elf};
 
 #[test]
 fn error_on_incompatible_sig_in_declare_function() {
@@ -310,6 +311,36 @@ fn aarch64_colocated_data_symbol_reloc() {
     product.emit().expect("emit object file");
 }
 
+#[test]
+fn riscv64im_uses_soft_float_elf_flags() {
+    let flag_builder = settings::builder();
+    let isa_builder = cranelift_codegen::isa::lookup_by_name("riscv64im-unknown-none-elf").unwrap();
+    let isa = isa_builder
+        .finish(settings::Flags::new(flag_builder))
+        .unwrap();
+    let mut module =
+        ObjectModule::new(ObjectBuilder::new(isa, "test", default_libcall_names()).unwrap());
+
+    define_simple_function(&mut module);
+
+    let bytes = module.finish().emit().expect("emit object file");
+    let file = object::File::parse(bytes.as_slice()).expect("parse object file");
+
+    assert_eq!(file.architecture(), object::Architecture::Riscv64);
+    assert_eq!(file.format(), object::BinaryFormat::Elf);
+    match file.flags() {
+        FileFlags::Elf { e_flags, .. } => {
+            const EF_RISCV_FLOAT_ABI_MASK: u32 = 0x0006;
+            assert_eq!(
+                e_flags & EF_RISCV_FLOAT_ABI_MASK,
+                elf::EF_RISCV_FLOAT_ABI_SOFT
+            );
+            assert_eq!(e_flags & elf::EF_RISCV_RVC, 0);
+        }
+        flags => panic!("expected ELF flags, got {flags:?}"),
+    }
+}
+
 // ---------- `.eh_frame` emission tests ----------
 
 #[cfg(feature = "unwind")]
@@ -317,7 +348,6 @@ mod eh_frame {
     use super::*;
     use cranelift_codegen::settings::Configurable as _;
     use gimli::UnwindSection as _;
-    use object::Object as _;
     use object::ObjectSection as _;
 
     /// Build an `ObjectModule` for `triple` with the unwind-info builder flag

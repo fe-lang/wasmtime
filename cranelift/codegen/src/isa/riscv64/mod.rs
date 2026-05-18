@@ -11,13 +11,14 @@ use crate::machinst::{
     TextSectionBuilder, VCode, compile,
 };
 use crate::result::CodegenResult;
+use crate::settings::Configurable;
 use crate::settings::{self as shared_settings, Flags};
 use crate::{CodegenError, ir};
 use alloc::string::String;
 use alloc::{boxed::Box, vec::Vec};
 use core::fmt;
 use cranelift_control::ControlPlane;
-use target_lexicon::{Architecture, Triple};
+use target_lexicon::{Architecture, BinaryFormat, Endianness, Riscv64Architecture, Triple};
 mod abi;
 pub(crate) mod inst;
 mod lower;
@@ -57,7 +58,7 @@ impl Riscv64Backend {
         ctrl_plane: &mut ControlPlane,
     ) -> CodegenResult<(VCode<inst::Inst>, regalloc2::Output)> {
         let emit_info = EmitInfo::new(self.flags.clone(), self.isa_flags.clone());
-        let sigs = SigSet::new::<abi::Riscv64MachineDeps>(func, &self.flags)?;
+        let sigs = SigSet::new::<abi::Riscv64MachineDeps>(func, &self.flags, &self.isa_flags)?;
         let abi = abi::Riscv64Callee::new(func, self, &self.isa_flags, &sigs)?;
         compile::compile::<Riscv64Backend>(func, domtree, self, abi, emit_info, sigs, ctrl_plane)
     }
@@ -198,11 +199,11 @@ impl TargetIsa for Riscv64Backend {
     }
 
     fn has_native_fma(&self) -> bool {
-        true
+        !self.isa_flags.use_soft_float_abi() && self.isa_flags.has_f() && self.isa_flags.has_d()
     }
 
     fn has_round(&self) -> bool {
-        true
+        !self.isa_flags.use_soft_float_abi() && self.isa_flags.has_f() && self.isa_flags.has_d()
     }
 
     fn has_blendv_lowering(&self, _: Type) -> bool {
@@ -251,9 +252,18 @@ pub fn isa_builder(triple: Triple) -> IsaBuilder {
         Architecture::Riscv64(..) => {}
         _ => unreachable!(),
     }
+    let mut setup = riscv_settings::builder();
+    if let Architecture::Riscv64(Riscv64Architecture::Riscv64im) = triple.architecture {
+        setup.set("has_a", "false").unwrap();
+        setup.set("has_f", "false").unwrap();
+        setup.set("has_d", "false").unwrap();
+        setup.set("has_zicsr", "false").unwrap();
+        setup.set("has_zifencei", "false").unwrap();
+        setup.set("use_soft_float_abi", "true").unwrap();
+    }
     IsaBuilder {
         triple,
-        setup: riscv_settings::builder(),
+        setup,
         constructor: isa_constructor,
     }
 }
@@ -265,30 +275,136 @@ fn isa_constructor(
 ) -> CodegenResult<OwnedTargetIsa> {
     let isa_flags = riscv_settings::Flags::new(&shared_flags, builder);
 
-    // The RISC-V backend does not work without at least the G extension enabled.
-    // The G extension is simply a combination of the following extensions:
-    // - I: Base Integer Instruction Set
-    // - M: Integer Multiplication and Division
-    // - A: Atomic Instructions
-    // - F: Single-Precision Floating-Point
-    // - D: Double-Precision Floating-Point
-    // - Zicsr: Control and Status Register Instructions
-    // - Zifencei: Instruction-Fetch Fence
-    //
-    // Ensure that those combination of features is enabled.
-    if !(isa_flags.has_m()
-        && isa_flags.has_a()
-        && isa_flags.has_f()
-        && isa_flags.has_d()
-        && isa_flags.has_zicsr()
-        && isa_flags.has_zifencei())
-    {
-        return Err(CodegenError::Unsupported(
-            "The RISC-V Backend currently requires all the features in the G Extension enabled"
-                .into(),
-        ));
+    if let Architecture::Riscv64(Riscv64Architecture::Riscv64im) = triple.architecture {
+        if triple.endianness() != Ok(Endianness::Little) {
+            return Err(CodegenError::Unsupported(
+                "The RV64IM backend supports only little-endian targets".into(),
+            ));
+        }
+
+        if !matches!(
+            triple.binary_format,
+            BinaryFormat::Elf | BinaryFormat::Unknown
+        ) {
+            return Err(CodegenError::Unsupported(
+                "The RV64IM backend supports only ELF targets".into(),
+            ));
+        }
+
+        if !isa_flags.has_m() || !isa_flags.use_soft_float_abi() {
+            return Err(CodegenError::Unsupported(
+                "The RV64IM backend requires M and the LP64 soft-float ABI".into(),
+            ));
+        }
+
+        if isa_flags.has_a()
+            || isa_flags.has_f()
+            || isa_flags.has_d()
+            || isa_flags.has_zfa()
+            || isa_flags.has_zfhmin()
+            || isa_flags.has_zfh()
+            || isa_flags.has_v()
+            || isa_flags.has_zvfh()
+            || isa_flags.has_zca()
+            || isa_flags.has_zcd()
+            || isa_flags.has_zcb()
+            || isa_flags.has_zbkb()
+            || isa_flags.has_zba()
+            || isa_flags.has_zbb()
+            || isa_flags.has_zbc()
+            || isa_flags.has_zbs()
+            || isa_flags.has_zicond()
+            || isa_flags.has_zicsr()
+            || isa_flags.has_zifencei()
+            || isa_flags.has_zvl32b()
+            || isa_flags.has_zvl64b()
+            || isa_flags.has_zvl128b()
+            || isa_flags.has_zvl256b()
+            || isa_flags.has_zvl512b()
+            || isa_flags.has_zvl1024b()
+            || isa_flags.has_zvl2048b()
+            || isa_flags.has_zvl4096b()
+            || isa_flags.has_zvl8192b()
+            || isa_flags.has_zvl16384b()
+            || isa_flags.has_zvl32768b()
+            || isa_flags.has_zvl65536b()
+        {
+            return Err(CodegenError::Unsupported(
+                "The RV64IM backend supports only RV64IM with the LP64 soft-float ABI".into(),
+            ));
+        }
+    } else {
+        // Preserve the existing RV64G/LP64D behavior for plain riscv64 and
+        // riscv64gc targets.
+        if !(isa_flags.has_m()
+            && isa_flags.has_a()
+            && isa_flags.has_f()
+            && isa_flags.has_d()
+            && isa_flags.has_zicsr()
+            && isa_flags.has_zifencei())
+        {
+            return Err(CodegenError::Unsupported(
+                "The RISC-V Backend currently requires all the features in the G Extension enabled"
+                    .into(),
+            ));
+        }
     }
 
     let backend = Riscv64Backend::new_with_flags(triple, shared_flags, isa_flags);
     Ok(backend.wrapped())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::settings::{self, Configurable};
+    use core::str::FromStr;
+
+    #[test]
+    fn accepts_riscv64im_soft_float_target() {
+        for name in [
+            "riscv64im-unknown-none-elf",
+            "riscv64im-unknown-unknown-elf",
+        ] {
+            let triple = Triple::from_str(name).unwrap();
+            assert_eq!(
+                triple.architecture,
+                Architecture::Riscv64(Riscv64Architecture::Riscv64im)
+            );
+
+            let isa = crate::isa::lookup(triple)
+                .unwrap()
+                .finish(settings::Flags::new(settings::builder()))
+                .unwrap();
+
+            let flags = isa.isa_flags();
+            let flag = |name| {
+                flags
+                    .iter()
+                    .find(|flag| flag.name == name)
+                    .and_then(|flag| flag.as_bool())
+                    .unwrap()
+            };
+            assert!(flag("has_m"));
+            assert!(flag("use_soft_float_abi"));
+            assert!(!flag("has_a"));
+            assert!(!flag("has_f"));
+            assert!(!flag("has_d"));
+            assert!(!flag("has_zicsr"));
+            assert!(!flag("has_zifencei"));
+        }
+    }
+
+    #[test]
+    fn rejects_riscv64im_with_unsupported_extension() {
+        let triple = Triple::from_str("riscv64im-unknown-none-elf").unwrap();
+        let mut builder = crate::isa::lookup(triple).unwrap();
+        builder.set("has_f", "true").unwrap();
+
+        assert!(
+            builder
+                .finish(settings::Flags::new(settings::builder()))
+                .is_err()
+        );
+    }
 }

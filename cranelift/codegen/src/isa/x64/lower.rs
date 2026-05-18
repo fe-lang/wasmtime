@@ -9,6 +9,7 @@ use crate::ir::{
 use crate::isa::x64::abi::*;
 use crate::isa::x64::inst::args::*;
 use crate::isa::x64::inst::*;
+use crate::isa::x64::settings as x64_settings;
 use crate::isa::{CallConv, x64::X64Backend};
 use crate::machinst::lower::*;
 use crate::machinst::*;
@@ -162,6 +163,7 @@ fn input_to_imm(ctx: &mut Lower<Inst>, spec: InsnInput) -> Option<u64> {
 fn emit_vm_call(
     ctx: &mut Lower<Inst>,
     flags: &Flags,
+    isa_flags: &x64_settings::Flags,
     triple: &Triple,
     libcall: LibCall,
     inputs: &[ValueRegs<Reg>],
@@ -175,7 +177,7 @@ fn emit_vm_call(
 
     if !ctx.sigs().have_abi_sig_for_signature(&sig) {
         ctx.sigs_mut()
-            .make_abi_sig_from_ir_signature::<X64ABIMachineSpec>(sig.clone(), flags)?;
+            .make_abi_sig_from_ir_signature::<X64ABIMachineSpec>(sig.clone(), flags, isa_flags)?;
     }
     let sig = ctx.sigs().abi_sig_for_signature(&sig);
 
