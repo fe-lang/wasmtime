@@ -412,11 +412,27 @@ pub trait ABIMachineSpec {
     fn compute_arg_locs(
         call_conv: isa::CallConv,
         flags: &settings::Flags,
+        isa_flags: &Self::F,
         params: &[ir::AbiParam],
         args_or_rets: ArgsOrRets,
         add_ret_area_ptr: bool,
         args: ArgsAccumulator,
     ) -> CodegenResult<(u32, Option<usize>)>;
+
+    /// Determine register class(es) for a Cranelift type under the selected
+    /// target configuration.
+    fn rc_for_type<'a>(
+        ty: &'a Type,
+        _isa_flags: &Self::F,
+    ) -> CodegenResult<(&'a [RegClass], &'a [Type])> {
+        Self::I::rc_for_type(ty)
+    }
+
+    /// Return a type that fully represents values in `rc` under the selected
+    /// target configuration.
+    fn canonical_type_for_rc(rc: RegClass, _isa_flags: &Self::F) -> Type {
+        Self::I::canonical_type_for_rc(rc)
+    }
 
     /// Generate a load from the stack.
     fn gen_load_stack(mem: StackAMode, into_reg: Writable<Reg>, ty: Type) -> Self::I;
@@ -591,7 +607,11 @@ pub trait ABIMachineSpec {
     ) -> u32;
 
     /// Get the ABI-dependent MachineEnv for managing register allocation.
-    fn get_machine_env(flags: &settings::Flags, call_conv: isa::CallConv) -> &MachineEnv;
+    fn get_machine_env(
+        flags: &settings::Flags,
+        isa_flags: &Self::F,
+        call_conv: isa::CallConv,
+    ) -> &'static MachineEnv;
 
     /// Get all caller-save registers, that is, registers that we expect
     /// not to be saved across a call to a callee with the given ABI.
@@ -599,6 +619,15 @@ pub trait ABIMachineSpec {
         call_conv_of_callee: isa::CallConv,
         is_exception: bool,
     ) -> PRegSet;
+
+    /// Get caller-save registers under the selected target configuration.
+    fn get_regs_clobbered_by_call_with_isa_flags(
+        call_conv_of_callee: isa::CallConv,
+        is_exception: bool,
+        _isa_flags: &Self::F,
+    ) -> PRegSet {
+        Self::get_regs_clobbered_by_call(call_conv_of_callee, is_exception)
+    }
 
     /// Get the needed extension mode, given the mode attached to the argument
     /// in the signature and the calling convention. The input (the attribute in
@@ -814,7 +843,11 @@ pub struct SigSet {
 impl SigSet {
     /// Construct a new `SigSet`, interning all of the signatures used by the
     /// given function.
-    pub fn new<M>(func: &ir::Function, flags: &settings::Flags) -> CodegenResult<Self>
+    pub fn new<M>(
+        func: &ir::Function,
+        flags: &settings::Flags,
+        isa_flags: &M::F,
+    ) -> CodegenResult<Self>
     where
         M: ABIMachineSpec,
     {
@@ -827,9 +860,9 @@ impl SigSet {
             sigs: PrimaryMap::with_capacity(1 + func.dfg.signatures.len()),
         };
 
-        sigs.make_abi_sig_from_ir_signature::<M>(func.signature.clone(), flags)?;
+        sigs.make_abi_sig_from_ir_signature::<M>(func.signature.clone(), flags, isa_flags)?;
         for sig_ref in func.dfg.signatures.keys() {
-            sigs.make_abi_sig_from_ir_sig_ref::<M>(sig_ref, &func.dfg, flags)?;
+            sigs.make_abi_sig_from_ir_sig_ref::<M>(sig_ref, &func.dfg, flags, isa_flags)?;
         }
 
         Ok(sigs)
@@ -845,6 +878,7 @@ impl SigSet {
         &mut self,
         signature: ir::Signature,
         flags: &settings::Flags,
+        isa_flags: &M::F,
     ) -> CodegenResult<Sig>
     where
         M: ABIMachineSpec,
@@ -858,7 +892,7 @@ impl SigSet {
         // `ir::Signature`.
         debug_assert!(!self.have_abi_sig_for_signature(&signature));
 
-        let sig_data = self.from_func_sig::<M>(&signature, flags)?;
+        let sig_data = self.from_func_sig::<M>(&signature, flags, isa_flags)?;
         let sig = self.sigs.push(sig_data);
         self.ir_signature_to_abi_sig.insert(signature, sig);
         Ok(sig)
@@ -869,6 +903,7 @@ impl SigSet {
         sig_ref: ir::SigRef,
         dfg: &ir::DataFlowGraph,
         flags: &settings::Flags,
+        isa_flags: &M::F,
     ) -> CodegenResult<Sig>
     where
         M: ABIMachineSpec,
@@ -877,7 +912,7 @@ impl SigSet {
             return Ok(sig);
         }
         let signature = &dfg.signatures[sig_ref];
-        let sig_data = self.from_func_sig::<M>(signature, flags)?;
+        let sig_data = self.from_func_sig::<M>(signature, flags, isa_flags)?;
         let sig = self.sigs.push(sig_data);
         self.ir_sig_ref_to_abi_sig[sig_ref] = Some(sig);
         Ok(sig)
@@ -901,6 +936,7 @@ impl SigSet {
         &mut self,
         sig: &ir::Signature,
         flags: &settings::Flags,
+        isa_flags: &M::F,
     ) -> CodegenResult<SigData> {
         // Keep in sync with ensure_struct_return_ptr_is_returned
         if sig.uses_special_return(ArgumentPurpose::StructReturn) {
@@ -928,6 +964,7 @@ impl SigSet {
         let (sized_stack_ret_space, _) = M::compute_arg_locs(
             sig.call_conv,
             flags,
+            isa_flags,
             &returns,
             ArgsOrRets::Rets,
             /* extra ret-area ptr = */ false,
@@ -951,6 +988,7 @@ impl SigSet {
         let (sized_stack_arg_space, stack_ret_arg) = M::compute_arg_locs(
             sig.call_conv,
             flags,
+            isa_flags,
             &sig.params,
             ArgsOrRets::Args,
             need_stack_return_area,
@@ -1560,7 +1598,23 @@ impl<M: ABIMachineSpec> Callee<M> {
 
     /// Get the ABI-dependent MachineEnv for managing register allocation.
     pub fn machine_env(&self) -> &MachineEnv {
-        M::get_machine_env(&self.flags, self.call_conv)
+        M::get_machine_env(&self.flags, &self.isa_flags, self.call_conv)
+    }
+
+    /// Determine register class(es) for a Cranelift type under this callee's
+    /// target configuration.
+    pub fn rc_for_type<'a>(&self, ty: &'a Type) -> CodegenResult<(&'a [RegClass], &'a [Type])> {
+        M::rc_for_type(ty, &self.isa_flags)
+    }
+
+    /// Return a full-register type for this callee's target configuration.
+    pub fn canonical_type_for_rc(&self, rc: RegClass) -> Type {
+        M::canonical_type_for_rc(rc, &self.isa_flags)
+    }
+
+    /// The ISA-specific flags for this callee.
+    pub fn isa_flags(&self) -> &M::F {
+        &self.isa_flags
     }
 
     /// The offsets of all sized stack slots (not spill slots) for debuginfo purposes.
@@ -2145,8 +2199,11 @@ impl<M: ABIMachineSpec> Callee<M> {
         let clobbers = {
             // Get clobbers: all caller-saves. These may include return value
             // regs, which we will remove from the clobber set below.
-            let mut clobbers =
-                <M>::get_regs_clobbered_by_call(callee_conv, try_call_info.is_some());
+            let mut clobbers = <M>::get_regs_clobbered_by_call_with_isa_flags(
+                callee_conv,
+                try_call_info.is_some(),
+                &self.isa_flags,
+            );
 
             // Remove retval regs from clobbers.
             for def in &defs {
@@ -2447,8 +2504,8 @@ impl<M: ABIMachineSpec> Callee<M> {
 
     /// Generate a spill.
     pub fn gen_spill(&self, to_slot: SpillSlot, from_reg: RealReg) -> M::I {
-        let ty = M::I::canonical_type_for_rc(from_reg.class());
-        debug_assert_eq!(<M>::I::rc_for_type(&ty).unwrap().1, &[ty]);
+        let ty = self.canonical_type_for_rc(from_reg.class());
+        debug_assert_eq!(self.rc_for_type(&ty).unwrap().1, &[ty]);
 
         let sp_off = self.get_spillslot_offset(to_slot);
         trace!("gen_spill: {from_reg:?} into slot {to_slot:?} at offset {sp_off}");
@@ -2459,8 +2516,8 @@ impl<M: ABIMachineSpec> Callee<M> {
 
     /// Generate a reload (fill).
     pub fn gen_reload(&self, to_reg: Writable<RealReg>, from_slot: SpillSlot) -> M::I {
-        let ty = M::I::canonical_type_for_rc(to_reg.to_reg().class());
-        debug_assert_eq!(<M>::I::rc_for_type(&ty).unwrap().1, &[ty]);
+        let ty = self.canonical_type_for_rc(to_reg.to_reg().class());
+        debug_assert_eq!(self.rc_for_type(&ty).unwrap().1, &[ty]);
 
         let sp_off = self.get_spillslot_offset(from_slot);
         trace!("gen_reload: {to_reg:?} from slot {from_slot:?} at offset {sp_off}");
@@ -2562,7 +2619,8 @@ impl<T> CallInfo<T> {
         // any returns at all (e.g., preserve-all ABI).
         debug_assert!(
             self.defs.is_empty()
-                || M::get_regs_clobbered_by_call(self.callee_conv, self.try_call_info.is_some())
+                || self
+                    .clobbers
                     .contains(PReg::from(temp.to_reg().to_real_reg().unwrap()))
         );
 

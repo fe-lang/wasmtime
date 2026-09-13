@@ -58,7 +58,7 @@ impl AArch64Backend {
         ctrl_plane: &mut ControlPlane,
     ) -> CodegenResult<VCode<inst::Inst>> {
         let emit_info = EmitInfo::new(self.flags.clone(), self.isa_flags.clone());
-        let sigs = SigSet::new::<abi::AArch64MachineDeps>(func, &self.flags)?;
+        let sigs = SigSet::new::<abi::AArch64MachineDeps>(func, &self.flags, &self.isa_flags)?;
         let abi = abi::AArch64Callee::new(func, self, &self.isa_flags, &sigs)?;
         compile::compile::<AArch64Backend>(
             func,

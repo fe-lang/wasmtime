@@ -9,12 +9,12 @@ use crate::isa::CallConv;
 use crate::isa::riscv64::inst::*;
 use crate::machinst::*;
 
-use crate::CodegenResult;
 use crate::ir::LibCall;
 use crate::ir::Signature;
 use crate::isa::riscv64::settings::Flags as RiscvFlags;
 use crate::isa::unwind::UnwindInst;
 use crate::settings;
+use crate::{CodegenError, CodegenResult};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use regalloc2::{MachineEnv, PRegSet};
@@ -83,15 +83,52 @@ impl ABIMachineSpec for Riscv64MachineDeps {
         16
     }
 
+    fn rc_for_type<'a>(
+        ty: &'a Type,
+        isa_flags: &Self::F,
+    ) -> CodegenResult<(&'a [RegClass], &'a [Type])> {
+        if !isa_flags.use_soft_float_abi() {
+            return Inst::rc_for_type(ty);
+        }
+
+        match *ty {
+            I8 => Ok((&[RegClass::Int], &[I8])),
+            I16 => Ok((&[RegClass::Int], &[I16])),
+            I32 => Ok((&[RegClass::Int], &[I32])),
+            I64 | F16 | F32 | F64 => Ok((&[RegClass::Int], &[I64])),
+            F128 | I128 => Ok((&[RegClass::Int, RegClass::Int], &[I64, I64])),
+            _ if ty.is_vector() => Err(crate::CodegenError::Unsupported(
+                "RV64IM vector values are not supported".into(),
+            )),
+            _ => Err(CodegenError::Unsupported(format!(
+                "Unexpected SSA-value type: {ty}"
+            ))),
+        }
+    }
+
+    fn canonical_type_for_rc(rc: RegClass, isa_flags: &Self::F) -> Type {
+        if !isa_flags.use_soft_float_abi() {
+            return Inst::canonical_type_for_rc(rc);
+        }
+
+        match rc {
+            RegClass::Int => I64,
+            RegClass::Float => unreachable!("RV64IM does not allocate float registers"),
+            RegClass::Vector => unreachable!("RV64IM does not allocate vector registers"),
+        }
+    }
+
     fn compute_arg_locs(
         call_conv: isa::CallConv,
         flags: &settings::Flags,
+        isa_flags: &Self::F,
         params: &[ir::AbiParam],
         args_or_rets: ArgsOrRets,
         add_ret_area_ptr: bool,
         mut args: ArgsAccumulator,
     ) -> CodegenResult<(u32, Option<usize>)> {
-        // This implements the LP64D RISC-V ABI.
+        // This implements the RV64 psABI: LP64 soft-float for RV64IM and
+        // LP64D hard-float for the existing RV64G targets.
 
         assert_ne!(
             call_conv,
@@ -101,12 +138,15 @@ impl ABIMachineSpec for Riscv64MachineDeps {
 
         // All registers that can be used as parameters or rets.
         // both start and end are included.
-        let (x_start, x_end, f_start, f_end) = match args_or_rets {
-            ArgsOrRets::Args => (10, 17, 10, 17),
-            ArgsOrRets::Rets => (10, 11, 10, 11),
+        let (x_start, x_end, f_start, f_end) = match (args_or_rets, isa_flags.use_soft_float_abi())
+        {
+            (ArgsOrRets::Args, false) => (10, 17, Some(10), Some(17)),
+            (ArgsOrRets::Rets, false) => (10, 11, Some(10), Some(11)),
+            (ArgsOrRets::Args, true) => (10, 17, None, None),
+            (ArgsOrRets::Rets, true) => (10, 11, None, None),
         };
         let mut next_x_reg = x_start;
-        let mut next_f_reg = f_start;
+        let mut next_f_reg = f_start.unwrap_or(0);
         // Stack space.
         let mut next_stack: u32 = 0;
 
@@ -132,14 +172,14 @@ impl ABIMachineSpec for Riscv64MachineDeps {
             }
 
             // Find regclass(es) of the register(s) used to store a value of this type.
-            let (rcs, reg_tys) = Inst::rc_for_type(&param.value_type)?;
+            let (rcs, reg_tys) = Self::rc_for_type(&param.value_type, isa_flags)?;
             let mut slots = ABIArgSlotVec::new();
             for (rc, reg_ty) in rcs.iter().zip(reg_tys.iter()) {
                 let next_reg = if (next_x_reg <= x_end) && *rc == RegClass::Int {
                     let x = Some(x_reg(next_x_reg));
                     next_x_reg += 1;
                     x
-                } else if (next_f_reg <= f_end) && *rc == RegClass::Float {
+                } else if f_end.is_some_and(|f_end| next_f_reg <= f_end) && *rc == RegClass::Float {
                     let x = Some(f_reg(next_f_reg));
                     next_f_reg += 1;
                     x
@@ -614,9 +654,25 @@ impl ABIMachineSpec for Riscv64MachineDeps {
         }
     }
 
-    fn get_machine_env(_flags: &settings::Flags, _call_conv: isa::CallConv) -> &MachineEnv {
-        static MACHINE_ENV: MachineEnv = create_reg_environment();
-        &MACHINE_ENV
+    fn get_machine_env(
+        _flags: &settings::Flags,
+        isa_flags: &Self::F,
+        _call_conv: isa::CallConv,
+    ) -> &'static MachineEnv {
+        static HARD_FLOAT_MACHINE_ENV: MachineEnv = create_reg_environment();
+        static SOFT_FLOAT_MACHINE_ENV: MachineEnv = {
+            let mut env = create_reg_environment();
+            env.preferred_regs_by_class[1] = PRegSet::empty();
+            env.preferred_regs_by_class[2] = PRegSet::empty();
+            env.non_preferred_regs_by_class[1] = PRegSet::empty();
+            env.non_preferred_regs_by_class[2] = PRegSet::empty();
+            env
+        };
+        if isa_flags.use_soft_float_abi() {
+            &SOFT_FLOAT_MACHINE_ENV
+        } else {
+            &HARD_FLOAT_MACHINE_ENV
+        }
     }
 
     fn get_regs_clobbered_by_call(
@@ -633,6 +689,23 @@ impl ABIMachineSpec for Riscv64MachineDeps {
             isa::CallConv::PreserveAll if is_exception => ALL_CLOBBERS,
             isa::CallConv::PreserveAll => NO_CLOBBERS,
             _ => DEFAULT_CLOBBERS,
+        }
+    }
+
+    fn get_regs_clobbered_by_call_with_isa_flags(
+        call_conv_of_callee: isa::CallConv,
+        is_exception: bool,
+        isa_flags: &Self::F,
+    ) -> PRegSet {
+        if !isa_flags.use_soft_float_abi() {
+            return Self::get_regs_clobbered_by_call(call_conv_of_callee, is_exception);
+        }
+
+        match call_conv_of_callee {
+            isa::CallConv::Tail if is_exception => SOFT_FLOAT_ALL_CLOBBERS,
+            isa::CallConv::PreserveAll if is_exception => SOFT_FLOAT_ALL_CLOBBERS,
+            isa::CallConv::PreserveAll => NO_CLOBBERS,
+            _ => SOFT_FLOAT_DEFAULT_CLOBBERS,
         }
     }
 
@@ -785,23 +858,7 @@ fn compute_clobber_size(clobbers: &[Writable<RealReg>]) -> u32 {
     align_to(clobbered_size, 16)
 }
 
-const DEFAULT_CLOBBERS: PRegSet = PRegSet::empty()
-    .with(px_reg(1))
-    .with(px_reg(5))
-    .with(px_reg(6))
-    .with(px_reg(7))
-    .with(px_reg(10))
-    .with(px_reg(11))
-    .with(px_reg(12))
-    .with(px_reg(13))
-    .with(px_reg(14))
-    .with(px_reg(15))
-    .with(px_reg(16))
-    .with(px_reg(17))
-    .with(px_reg(28))
-    .with(px_reg(29))
-    .with(px_reg(30))
-    .with(px_reg(31))
+const DEFAULT_CLOBBERS: PRegSet = SOFT_FLOAT_DEFAULT_CLOBBERS
     // F Regs
     .with(pf_reg(0))
     .with(pf_reg(1))
@@ -858,37 +915,7 @@ const DEFAULT_CLOBBERS: PRegSet = PRegSet::empty()
     .with(pv_reg(30))
     .with(pv_reg(31));
 
-const ALL_CLOBBERS: PRegSet = PRegSet::empty()
-    // Specials: x0 is the zero register; x1 is the return address; x2 is SP.
-    .with(px_reg(3))
-    .with(px_reg(4))
-    .with(px_reg(5))
-    .with(px_reg(6))
-    .with(px_reg(7))
-    .with(px_reg(8))
-    .with(px_reg(9))
-    .with(px_reg(10))
-    .with(px_reg(11))
-    .with(px_reg(12))
-    .with(px_reg(13))
-    .with(px_reg(14))
-    .with(px_reg(15))
-    .with(px_reg(16))
-    .with(px_reg(17))
-    .with(px_reg(18))
-    .with(px_reg(19))
-    .with(px_reg(20))
-    .with(px_reg(21))
-    .with(px_reg(22))
-    .with(px_reg(23))
-    .with(px_reg(24))
-    .with(px_reg(25))
-    .with(px_reg(26))
-    .with(px_reg(27))
-    .with(px_reg(28))
-    .with(px_reg(29))
-    .with(px_reg(30))
-    .with(px_reg(31))
+const ALL_CLOBBERS: PRegSet = SOFT_FLOAT_ALL_CLOBBERS
     // F Regs
     .with(pf_reg(0))
     .with(pf_reg(1))
@@ -955,6 +982,55 @@ const ALL_CLOBBERS: PRegSet = PRegSet::empty()
     .with(pv_reg(29))
     .with(pv_reg(30))
     .with(pv_reg(31));
+
+const SOFT_FLOAT_DEFAULT_CLOBBERS: PRegSet = PRegSet::empty()
+    .with(px_reg(1))
+    .with(px_reg(5))
+    .with(px_reg(6))
+    .with(px_reg(7))
+    .with(px_reg(10))
+    .with(px_reg(11))
+    .with(px_reg(12))
+    .with(px_reg(13))
+    .with(px_reg(14))
+    .with(px_reg(15))
+    .with(px_reg(16))
+    .with(px_reg(17))
+    .with(px_reg(28))
+    .with(px_reg(29))
+    .with(px_reg(30))
+    .with(px_reg(31));
+
+const SOFT_FLOAT_ALL_CLOBBERS: PRegSet = PRegSet::empty()
+    .with(px_reg(3))
+    .with(px_reg(4))
+    .with(px_reg(5))
+    .with(px_reg(6))
+    .with(px_reg(7))
+    .with(px_reg(8))
+    .with(px_reg(9))
+    .with(px_reg(10))
+    .with(px_reg(11))
+    .with(px_reg(12))
+    .with(px_reg(13))
+    .with(px_reg(14))
+    .with(px_reg(15))
+    .with(px_reg(16))
+    .with(px_reg(17))
+    .with(px_reg(18))
+    .with(px_reg(19))
+    .with(px_reg(20))
+    .with(px_reg(21))
+    .with(px_reg(22))
+    .with(px_reg(23))
+    .with(px_reg(24))
+    .with(px_reg(25))
+    .with(px_reg(26))
+    .with(px_reg(27))
+    .with(px_reg(28))
+    .with(px_reg(29))
+    .with(px_reg(30))
+    .with(px_reg(31));
 
 const NO_CLOBBERS: PRegSet = PRegSet::empty();
 

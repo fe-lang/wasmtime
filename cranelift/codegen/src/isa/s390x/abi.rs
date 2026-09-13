@@ -302,6 +302,7 @@ impl ABIMachineSpec for S390xMachineDeps {
     fn compute_arg_locs(
         call_conv: isa::CallConv,
         flags: &settings::Flags,
+        _isa_flags: &Self::F,
         params: &[ir::AbiParam],
         args_or_rets: ArgsOrRets,
         add_ret_area_ptr: bool,
@@ -903,7 +904,11 @@ impl ABIMachineSpec for S390xMachineDeps {
         }
     }
 
-    fn get_machine_env(_flags: &settings::Flags, call_conv: isa::CallConv) -> &MachineEnv {
+    fn get_machine_env(
+        _flags: &settings::Flags,
+        _isa_flags: &Self::F,
+        call_conv: isa::CallConv,
+    ) -> &'static MachineEnv {
         match call_conv {
             isa::CallConv::Tail => {
                 static TAIL_MACHINE_ENV: MachineEnv = tail_create_machine_env();

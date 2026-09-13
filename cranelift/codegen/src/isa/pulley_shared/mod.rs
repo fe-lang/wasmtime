@@ -130,7 +130,7 @@ where
             self.flags.clone(),
             self.isa_flags.clone(),
         );
-        let sigs = SigSet::new::<abi::PulleyMachineDeps<P>>(func, &self.flags)?;
+        let sigs = SigSet::new::<abi::PulleyMachineDeps<P>>(func, &self.flags, &self.isa_flags)?;
         let abi = abi::PulleyCallee::new(func, self, &self.isa_flags, &sigs)?;
         machinst::compile::<Self>(
             func,

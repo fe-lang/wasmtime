@@ -153,6 +153,7 @@ impl ABIMachineSpec for AArch64MachineDeps {
     fn compute_arg_locs(
         call_conv: isa::CallConv,
         flags: &settings::Flags,
+        _isa_flags: &Self::F,
         params: &[ir::AbiParam],
         args_or_rets: ArgsOrRets,
         add_ret_area_ptr: bool,
@@ -1179,7 +1180,11 @@ impl ABIMachineSpec for AArch64MachineDeps {
         }
     }
 
-    fn get_machine_env(flags: &settings::Flags, _call_conv: isa::CallConv) -> &MachineEnv {
+    fn get_machine_env(
+        flags: &settings::Flags,
+        _isa_flags: &Self::F,
+        _call_conv: isa::CallConv,
+    ) -> &'static MachineEnv {
         if flags.enable_pinned_reg() {
             static MACHINE_ENV: MachineEnv = create_reg_env(true);
             &MACHINE_ENV
