@@ -64,6 +64,13 @@ pub(crate) fn define() -> TargetIsa {
         false,
     );
 
+    setting.add_bool(
+        "use_ebreak_traps",
+        "Use ebreak for trap instructions?",
+        "Use a four-byte ebreak instead of all-zero illegal instruction bytes for explicit traps",
+        false,
+    );
+
     let _has_zfa = setting.add_bool(
         "has_zfa",
         "has extension Zfa?",

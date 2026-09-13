@@ -425,7 +425,7 @@ impl Inst {
             }
 
             // c.unimp
-            Inst::Udf { trap_code } => {
+            Inst::Udf { trap_code } if !emit_info.isa_flags.use_ebreak_traps() => {
                 sink.add_trap(trap_code);
                 sink.put2(0x0000);
             }
@@ -2174,7 +2174,11 @@ impl Inst {
             }
             &Inst::Udf { trap_code } => {
                 sink.add_trap(trap_code);
-                sink.put_data(Inst::TRAP_OPCODE);
+                if emit_info.isa_flags.use_ebreak_traps() {
+                    sink.put4(0x0010_0073);
+                } else {
+                    sink.put_data(Inst::TRAP_OPCODE);
+                }
             }
             &Inst::AtomicLoad { rd, ty, p } => {
                 // emit the fence.

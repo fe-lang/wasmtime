@@ -1,0 +1,16 @@
+test compile precise-output
+set unwind_info=false
+target riscv64 has_c use_ebreak_traps
+
+function %f() {
+block0:
+    trap user1
+}
+
+; VCode:
+; block0:
+;   udf##trap_code=user1
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   ebreak ; trap: user1
