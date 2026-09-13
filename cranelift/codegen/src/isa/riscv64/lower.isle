@@ -104,14 +104,7 @@
 
 ;; I128 cases
 (rule 7 (lower (iadd $I128 x y))
-  (let ((low XReg (rv_add (value_regs_get x 0) (value_regs_get y 0)))
-        ;; compute carry.
-        (carry XReg (rv_sltu low (value_regs_get y 0)))
-        ;;
-        (high_tmp XReg (rv_add (value_regs_get x 1) (value_regs_get y 1)))
-        ;; add carry.
-        (high XReg (rv_add high_tmp carry)))
-    (value_regs low high)))
+  (add_i128 x y))
 
 ;; SIMD Vectors
 (rule 8 (lower (iadd (ty_supported_vec ty) x y))
@@ -328,12 +321,14 @@
         (overflow XReg (rv_sltu sum x)))
     (output_pair sum overflow)))
 
-;; i32 case (on RV64 use addw to detect 32-bit overflow correctly)
-(rule 1 (lower (uadd_overflow $I32 x y))
+;; For values smaller than a register, perform the computation with
+;; zero-extended operands and check whether any bits above the result width
+;; were produced.
+(rule 1 (lower (uadd_overflow (fits_in_32 ty) x y))
   (let ((x64 XReg (zext x))
         (y64 XReg (zext y))
         (sum XReg (rv_add x64 y64))
-        (overflow XReg (rv_srli sum (imm12_const 32))))
+        (overflow XReg (rv_srli sum (imm12_const (ty_bits ty)))))
     (output_pair sum overflow)))
 
 ;; For i128, we need to handle the high and low parts separately
@@ -351,6 +346,119 @@
         (overflow XReg (rv_or (rv_sltu sum_hi_with_carry x_hi)
                               (rv_and carry (rv_seqz (rv_xor sum_hi_with_carry x_hi))))))
     (output_pair (value_regs sum_lo sum_hi_with_carry) overflow)))
+
+(decl sext_to_ty (Type XReg) XReg)
+(rule 1 (sext_to_ty $I32 val)
+  (rv_sextw val))
+(rule 0 (sext_to_ty (fits_in_32 ty) val)
+  (let ((shift Imm12 (imm_from_bits (u64_wrapping_sub 64 (ty_bits ty)))))
+    (rv_srai (rv_slli val shift) shift)))
+
+;;;; Rules for sadd_overflow ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(rule 0 (lower (sadd_overflow $I64 x y))
+  (let ((sum XReg (rv_add x y))
+        (sign_changed XReg (rv_xor sum x))
+        (rhs_sign_changed XReg (rv_xor sum y))
+        (overflow_bits XReg (rv_and sign_changed rhs_sign_changed))
+        (overflow XReg (rv_srli overflow_bits (imm12_const 63))))
+    (output_pair sum overflow)))
+
+(rule 1 (lower (sadd_overflow (fits_in_32 ty) x y))
+  (let ((x64 XReg (sext x))
+        (y64 XReg (sext y))
+        (sum XReg (rv_add x64 y64))
+        (result XReg (sext_to_ty ty sum))
+        (overflow XReg (rv_snez (rv_xor sum result))))
+    (output_pair result overflow)))
+
+;; Carry from the low limb is already included in the high result. Signed
+;; overflow is then determined by the signs of the full operands and result.
+(rule 2 (lower (sadd_overflow $I128 x y))
+  (let ((sum ValueRegs (add_i128 x y))
+        (hi XReg (value_regs_get sum 1))
+        (sign_changed XReg (rv_xor hi (value_regs_get x 1)))
+        (rhs_sign_changed XReg (rv_xor hi (value_regs_get y 1)))
+        (overflow XReg (rv_srli (rv_and sign_changed rhs_sign_changed) (imm12_const 63))))
+    (output_pair sum overflow)))
+
+;;;; Rules for usub_overflow ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(rule 0 (lower (usub_overflow $I64 x y))
+  (let ((diff XReg (rv_sub x y))
+        (overflow XReg (rv_sltu x y)))
+    (output_pair diff overflow)))
+
+(rule 1 (lower (usub_overflow (fits_in_32 ty) x y))
+  (let ((x64 XReg (zext x))
+        (y64 XReg (zext y))
+        (diff XReg (rv_sub x64 y64))
+        (overflow XReg (rv_sltu x64 y64)))
+    (output_pair diff overflow)))
+
+(rule 2 (lower (usub_overflow $I128 x y))
+  (let ((diff ValueRegs (sub_i128 x y))
+        (overflow XReg (lower_icmp_i128 (IntCC.UnsignedLessThan) x y)))
+    (output_pair diff overflow)))
+
+;;;; Rules for ssub_overflow ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(rule 0 (lower (ssub_overflow $I64 x y))
+  (let ((diff XReg (rv_sub x y))
+        (signs_differ XReg (rv_xor x y))
+        (lhs_sign_changed XReg (rv_xor x diff))
+        (overflow_bits XReg (rv_and signs_differ lhs_sign_changed))
+        (overflow XReg (rv_srli overflow_bits (imm12_const 63))))
+    (output_pair diff overflow)))
+
+(rule 1 (lower (ssub_overflow (fits_in_32 ty) x y))
+  (let ((x64 XReg (sext x))
+        (y64 XReg (sext y))
+        (diff XReg (rv_sub x64 y64))
+        (result XReg (sext_to_ty ty diff))
+        (overflow XReg (rv_snez (rv_xor diff result))))
+    (output_pair result overflow)))
+
+(rule 2 (lower (ssub_overflow $I128 x y))
+  (let ((diff ValueRegs (sub_i128 x y))
+        (x_hi XReg (value_regs_get x 1))
+        (signs_differ XReg (rv_xor x_hi (value_regs_get y 1)))
+        (lhs_sign_changed XReg (rv_xor x_hi (value_regs_get diff 1)))
+        (overflow XReg (rv_srli (rv_and signs_differ lhs_sign_changed) (imm12_const 63))))
+    (output_pair diff overflow)))
+
+;;;; Rules for umul_overflow ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(rule 0 (lower (umul_overflow $I64 x y))
+  (let ((result XReg (rv_mul x y))
+        (high XReg (rv_mulhu x y))
+        (overflow XReg (rv_snez high)))
+    (output_pair result overflow)))
+
+(rule 1 (lower (umul_overflow (fits_in_32 ty) x y))
+  (let ((x64 XReg (zext x))
+        (y64 XReg (zext y))
+        (result XReg (rv_mul x64 y64))
+        (high XReg (rv_srli result (imm12_const (ty_bits ty))))
+        (overflow XReg (rv_snez high)))
+    (output_pair result overflow)))
+
+;;;; Rules for smul_overflow ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(rule 0 (lower (smul_overflow $I64 x y))
+  (let ((result XReg (rv_mul x y))
+        (high XReg (rv_mulh x y))
+        (expected_high XReg (rv_srai result (imm12_const 63)))
+        (overflow XReg (rv_snez (rv_xor high expected_high))))
+    (output_pair result overflow)))
+
+(rule 1 (lower (smul_overflow (fits_in_32 ty) x y))
+  (let ((x64 XReg (sext x))
+        (y64 XReg (sext y))
+        (product XReg (rv_mul x64 y64))
+        (result XReg (sext_to_ty ty product))
+        (overflow XReg (rv_snez (rv_xor product result))))
+    (output_pair result overflow)))
 
 ;;;; Rules for `isub` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Base case, simply subtracting things in registers.
