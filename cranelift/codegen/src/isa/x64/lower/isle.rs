@@ -1421,6 +1421,7 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         let outputs = emit_vm_call(
             self.lower_ctx,
             &self.backend.flags,
+            &self.backend.x64_flags,
             &self.backend.triple,
             *libcall,
             &[ValueRegs::one(a)],
@@ -1436,6 +1437,7 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         let outputs = emit_vm_call(
             self.lower_ctx,
             &self.backend.flags,
+            &self.backend.x64_flags,
             &self.backend.triple,
             *libcall,
             &[ValueRegs::one(a), ValueRegs::one(b)],
@@ -1451,6 +1453,7 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         let outputs = emit_vm_call(
             self.lower_ctx,
             &self.backend.flags,
+            &self.backend.x64_flags,
             &self.backend.triple,
             *libcall,
             &[ValueRegs::one(a), ValueRegs::one(b), ValueRegs::one(c)],

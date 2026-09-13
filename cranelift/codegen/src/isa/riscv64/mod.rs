@@ -19,7 +19,7 @@ use alloc::string::String;
 use alloc::{boxed::Box, vec::Vec};
 use core::fmt;
 use cranelift_control::ControlPlane;
-use target_lexicon::{Architecture, Triple};
+use target_lexicon::{Architecture, BinaryFormat, Endianness, Triple};
 mod abi;
 pub(crate) mod inst;
 mod lower;
@@ -60,7 +60,7 @@ impl Riscv64Backend {
         ctrl_plane: &mut ControlPlane,
     ) -> CodegenResult<VCode<inst::Inst>> {
         let emit_info = EmitInfo::new(self.flags.clone(), self.isa_flags.clone());
-        let sigs = SigSet::new::<abi::Riscv64MachineDeps>(func, &self.flags)?;
+        let sigs = SigSet::new::<abi::Riscv64MachineDeps>(func, &self.flags, &self.isa_flags)?;
         let abi = abi::Riscv64Callee::new(func, self, &self.isa_flags, &sigs)?;
         compile::compile::<Riscv64Backend>(
             func,
@@ -211,11 +211,11 @@ impl TargetIsa for Riscv64Backend {
     }
 
     fn has_native_fma(&self) -> bool {
-        true
+        !self.isa_flags.use_soft_float_abi()
     }
 
     fn has_round(&self) -> bool {
-        true
+        !self.isa_flags.use_soft_float_abi()
     }
 
     fn has_blendv_lowering(&self, _: Type) -> bool {
@@ -278,18 +278,26 @@ fn isa_constructor(
 ) -> CodegenResult<OwnedTargetIsa> {
     let isa_flags = riscv_settings::Flags::new(&shared_flags, builder);
 
-    // The RISC-V backend does not work without at least the G extension enabled.
-    // The G extension is simply a combination of the following extensions:
-    // - I: Base Integer Instruction Set
-    // - M: Integer Multiplication and Division
-    // - A: Atomic Instructions
-    // - F: Single-Precision Floating-Point
-    // - D: Double-Precision Floating-Point
-    // - Zicsr: Control and Status Register Instructions
-    // - Zifencei: Instruction-Fetch Fence
-    //
-    // Ensure that those combination of features is enabled.
-    if !(isa_flags.has_m()
+    if isa_flags.use_soft_float_abi() {
+        if triple.endianness() != Ok(Endianness::Little)
+            || triple.binary_format != BinaryFormat::Elf
+        {
+            return Err(CodegenError::Unsupported(
+                "RV64IM/LP64 requires a little-endian ELF target".into(),
+            ));
+        }
+        if !isa_flags.has_m()
+            || isa_flags.iter().any(|flag| {
+                flag.name.starts_with("has_")
+                    && flag.name != "has_m"
+                    && flag.as_bool() == Some(true)
+            })
+        {
+            return Err(CodegenError::Unsupported(
+                "RV64IM/LP64 requires M and no additional ISA extensions".into(),
+            ));
+        }
+    } else if !(isa_flags.has_m()
         && isa_flags.has_a()
         && isa_flags.has_f()
         && isa_flags.has_d()
@@ -304,4 +312,71 @@ fn isa_constructor(
 
     let backend = Riscv64Backend::new_with_flags(triple, shared_flags, isa_flags);
     Ok(backend.wrapped())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::settings::{self, Configurable};
+
+    fn rv64im_builder() -> IsaBuilder {
+        let mut builder = isa_builder("riscv64-unknown-none-elf".parse().unwrap());
+        builder.set("use_soft_float_abi", "true").unwrap();
+        for flag in ["has_a", "has_f", "has_d", "has_zicsr", "has_zifencei"] {
+            builder.set(flag, "false").unwrap();
+        }
+        builder
+    }
+
+    #[test]
+    fn accepts_rv64im_with_explicit_soft_float_settings() {
+        let isa = rv64im_builder()
+            .finish(settings::Flags::new(settings::builder()))
+            .unwrap();
+        assert_eq!(isa.pointer_type(), ir::types::I64);
+        assert!(!isa.has_native_fma());
+        assert!(!isa.has_round());
+    }
+
+    #[test]
+    fn rejects_soft_float_with_unsupported_extensions() {
+        for flag in [
+            "has_a",
+            "has_f",
+            "has_d",
+            "has_zicsr",
+            "has_zifencei",
+            "has_zca",
+            "has_zbb",
+            "has_v",
+            "has_zvl128b",
+        ] {
+            let mut builder = rv64im_builder();
+            builder.set(flag, "true").unwrap();
+            assert!(
+                builder
+                    .finish(settings::Flags::new(settings::builder()))
+                    .is_err(),
+                "{flag}"
+            );
+        }
+        let mut builder = rv64im_builder();
+        builder.set("has_m", "false").unwrap();
+        assert!(
+            builder
+                .finish(settings::Flags::new(settings::builder()))
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn hard_float_still_requires_g() {
+        let mut builder = isa_builder("riscv64-unknown-linux-gnu".parse().unwrap());
+        builder.set("has_f", "false").unwrap();
+        assert!(
+            builder
+                .finish(settings::Flags::new(settings::builder()))
+                .is_err()
+        );
+    }
 }

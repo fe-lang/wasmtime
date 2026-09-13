@@ -553,7 +553,7 @@ impl generated_code::Context for RV64IsleContext<'_, '_, MInst, Riscv64Backend> 
     }
 
     fn valid_atomic_transaction(&mut self, ty: Type) -> Option<Type> {
-        if ty.is_int() && ty.bits() <= 64 {
+        if self.backend.isa_flags.has_a() && ty.is_int() && ty.bits() <= 64 {
             Some(ty)
         } else {
             None

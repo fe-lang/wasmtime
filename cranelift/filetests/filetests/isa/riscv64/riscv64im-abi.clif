@@ -1,0 +1,100 @@
+test compile precise-output
+set enable_multi_ret_implicit_sret
+set unwind_info=false
+target riscv64-unknown-none-elf use_soft_float_abi has_a=false has_f=false has_d=false has_zicsr=false has_zifencei=false
+
+function %id_f64(f64) -> f64 {
+block0(v0: f64):
+    return v0
+}
+
+; VCode:
+; block0:
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   ret
+
+function %id_f32(f32) -> f32 {
+block0(v0: f32):
+    return v0
+}
+
+; VCode:
+; block0:
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   ret
+
+function %call_f64(f64, f64) -> f64 {
+    fn0 = %callee(f64, f64) -> f64
+
+block0(v0: f64, v1: f64):
+    v2 = call fn0(v0, v1)
+    return v2
+}
+
+; VCode:
+;   addi sp,sp,-16
+;   sd ra,8(sp)
+;   sd fp,0(sp)
+;   mv fp,sp
+; block0:
+;   load_ext_name_far a2,%callee+0
+;   callind a2
+;   ld ra,8(sp)
+;   ld fp,0(sp)
+;   addi sp,sp,16
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   addi sp, sp, -0x10
+;   sd ra, 8(sp)
+;   sd s0, 0(sp)
+;   mv s0, sp
+; block1: ; offset 0x10
+;   auipc a2, 0
+;   ld a2, 0xc(a2)
+;   j 0xc
+;   .byte 0x00, 0x00, 0x00, 0x00 ; reloc_external Abs8 %callee 0
+;   .byte 0x00, 0x00, 0x00, 0x00
+;   jalr a2
+;   ld ra, 8(sp)
+;   ld s0, 0(sp)
+;   addi sp, sp, 0x10
+;   ret
+
+function %stack_f64(i64, f64, f32, i64, i64, i64, i64, i64, f64) -> f64 {
+block0(v0: i64, v1: f64, v2: f32, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: f64):
+    return v8
+}
+
+; VCode:
+;   addi sp,sp,-16
+;   sd ra,8(sp)
+;   sd fp,0(sp)
+;   mv fp,sp
+; block0:
+;   ld a0,-16(incoming_arg)
+;   ld ra,8(sp)
+;   ld fp,0(sp)
+;   addi sp,sp,16
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   addi sp, sp, -0x10
+;   sd ra, 8(sp)
+;   sd s0, 0(sp)
+;   mv s0, sp
+; block1: ; offset 0x10
+;   ld a0, 0x10(sp)
+;   ld ra, 8(sp)
+;   ld s0, 0(sp)
+;   addi sp, sp, 0x10
+;   ret
+
