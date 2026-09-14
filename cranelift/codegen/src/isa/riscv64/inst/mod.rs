@@ -187,6 +187,34 @@ impl Inst {
         })
     }
 
+    /// Materialize all 64 bits with at most eight RV64I instructions and no
+    /// scratch register or literal data. Each recursive step removes twelve
+    /// low bits, accounting for ADDI's signed immediate. Wrapping subtraction
+    /// also handles a carry across bit 63 (for example, i64::MAX).
+    fn load_constant_no_pool(rd: Writable<Reg>, value: u64) -> SmallInstVec<Inst> {
+        if let Some(insts) = Self::load_const_imm(rd, value) {
+            return insts;
+        }
+        let low = ((value << 52) as i64) >> 52;
+        let high = (value.wrapping_sub(low as u64) as i64) >> 12;
+        let mut insts = Self::load_constant_no_pool(rd, high as u64);
+        insts.push(Inst::AluRRImm12 {
+            alu_op: AluOPRRI::Slli,
+            rd,
+            rs: rd.to_reg(),
+            imm12: Imm12::from_i16(12),
+        });
+        if low != 0 {
+            insts.push(Inst::AluRRImm12 {
+                alu_op: AluOPRRI::Addi,
+                rd,
+                rs: rd.to_reg(),
+                imm12: Imm12::from_i16(low as i16),
+            });
+        }
+        insts
+    }
+
     pub(crate) fn construct_auipc_and_jalr(
         link: Option<Writable<Reg>>,
         tmp: Writable<Reg>,
@@ -1930,6 +1958,56 @@ impl LabelUse {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn integer_constant_sequences_preserve_all_bits() {
+        let mut values = vec![0, u64::MAX, i64::MAX as u64, 0x1234_5678_9abc_def0];
+        for bit in 0..64 {
+            let value = 1u64 << bit;
+            values.extend([value.wrapping_sub(1), value, value.wrapping_add(1)]);
+        }
+        let mut random = 0x9876_5432_10fe_dcba_u64;
+        for _ in 0..1024 {
+            random = random.wrapping_mul(6364136223846793005).wrapping_add(1);
+            values.push(random);
+        }
+        let rd = writable_a0();
+        for expected in values {
+            let insts = Inst::load_constant_no_pool(rd, expected);
+            assert!(insts.len() <= 8);
+            let mut value = 0u64;
+            for inst in insts {
+                value = match inst {
+                    Inst::Lui { rd: dst, imm } => {
+                        assert_eq!(dst, rd);
+                        ((imm.as_i32() << 12) as i64) as u64
+                    }
+                    Inst::AluRRImm12 {
+                        alu_op,
+                        rd: dst,
+                        rs,
+                        imm12,
+                    } => {
+                        assert_eq!(dst, rd);
+                        let input = if rs == zero_reg() {
+                            0
+                        } else {
+                            assert_eq!(rs, rd.to_reg());
+                            value
+                        };
+                        match alu_op {
+                            AluOPRRI::Addi => input.wrapping_add(imm12.as_i16() as u64),
+                            AluOPRRI::Slli => input << imm12.as_i16(),
+                            _ => panic!("unexpected constant instruction: {alu_op:?}"),
+                        }
+                    }
+                    _ => panic!("unexpected constant instruction: {inst:?}"),
+                };
+            }
+            assert_eq!(value, expected, "constant {expected:#018x}");
+        }
+    }
+
     #[test]
     fn label_use_max_range() {
         assert!(LabelUse::B12.max_neg_range() == LabelUse::B12.max_pos_range() + 2);

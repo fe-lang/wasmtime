@@ -1,6 +1,37 @@
 use crate::isa::riscv64::inst::*;
 use crate::isa::riscv64::lower::isle::generated_code::FpuOPWidth;
+use crate::settings::Configurable;
 use alloc::borrow::Cow;
+
+#[test]
+fn late_integer_constants_do_not_embed_data_when_pools_are_disabled() {
+    let (flags, _) = make_test_flags();
+    let mut builder = super::super::riscv_settings::builder();
+    builder.enable("avoid_integer_constant_pools").unwrap();
+    let isa_flags = super::super::riscv_settings::Flags::new(&flags, &builder);
+    let emit_info = EmitInfo::new(flags, isa_flags);
+    for ty in [I8, I16, I32, I64] {
+        for imm in [0, u64::MAX, i64::MAX as u64, 0x1234_5678_9abc_def0] {
+            let mut buffer = MachBuffer::new();
+            Inst::LoadInlineConst {
+                rd: writable_a0(),
+                ty,
+                imm,
+            }
+            .emit(&mut buffer, &emit_info, &mut Default::default());
+            let buffer = buffer.finish(&Default::default(), &mut Default::default());
+            assert!(buffer.data().len() <= 32);
+            let (words, rest) = buffer.data().as_chunks::<4>();
+            assert!(rest.is_empty());
+            // Only LUI and ADDI/SLLI, never loads, branches, or literal bytes.
+            assert!(
+                words
+                    .iter()
+                    .all(|word| matches!(word[0] & 0x7f, 0x13 | 0x37))
+            );
+        }
+    }
+}
 
 fn fa7() -> Reg {
     f_reg(17)

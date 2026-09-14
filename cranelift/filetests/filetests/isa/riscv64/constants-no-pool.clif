@@ -1,0 +1,158 @@
+test compile precise-output
+set unwind_info=false
+target riscv64-unknown-none-elf use_soft_float_abi has_a=false has_f=false has_d=false has_zicsr=false has_zifencei=false avoid_integer_constant_pools
+
+function %zero() -> i64 {
+block0:
+    v0 = iconst.i64 0
+    return v0
+}
+
+; VCode:
+; block0:
+;   li a0,0
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   mv a0, zero
+;   ret
+
+function %signed_max() -> i64 {
+block0:
+    v0 = iconst.i64 0x7fff_ffff_ffff_ffff
+    return v0
+}
+
+; VCode:
+; block0:
+;   auipc a0,0; ld a0,12(a0); j 12; .8byte 0x7fffffffffffffff
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   lui a0, 0xf8000
+;   slli a0, a0, 0xc
+;   slli a0, a0, 0xc
+;   slli a0, a0, 0xc
+;   addi a0, a0, -1
+;   ret
+
+function %signed_min() -> i64 {
+block0:
+    v0 = iconst.i64 0x8000_0000_0000_0000
+    return v0
+}
+
+; VCode:
+; block0:
+;   lui a0,1
+;   slli a0,a0,51
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   lui a0, 1
+;   slli a0, a0, 0x33
+;   ret
+
+function %dense() -> i64 {
+block0:
+    v0 = iconst.i64 0x1234_5678_9abc_def0
+    return v0
+}
+
+; VCode:
+; block0:
+;   auipc a0,0; ld a0,12(a0); j 12; .8byte 0x123456789abcdef0
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   lui a0, 0x1234
+;   addi a0, a0, 0x568
+;   slli a0, a0, 0xc
+;   addi a0, a0, -0x765
+;   slli a0, a0, 0xc
+;   addi a0, a0, -0x432
+;   slli a0, a0, 0xc
+;   addi a0, a0, -0x110
+;   ret
+
+function %high_bits() -> i64 {
+block0:
+    v0 = iconst.i64 0xffff_0000_ffff_ffff
+    return v0
+}
+
+; VCode:
+; block0:
+;   auipc a0,0; ld a0,12(a0); j 12; .8byte 0xffff0000ffffffff
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   lui a0, 0xff000
+;   addi a0, a0, 0x100
+;   slli a0, a0, 0xc
+;   slli a0, a0, 0xc
+;   addi a0, a0, -1
+;   ret
+
+function %carry() -> i64 {
+block0:
+    v0 = iconst.i64 0x8000_0000_0000_0800
+    return v0
+}
+
+; VCode:
+; block0:
+;   auipc a0,0; ld a0,12(a0); j 12; .8byte 0x8000000000000800
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   lui a0, 0xf8000
+;   slli a0, a0, 0xc
+;   slli a0, a0, 0xc
+;   addi a0, a0, 1
+;   slli a0, a0, 0xc
+;   addi a0, a0, -0x800
+;   ret
+
+function %positive_i32() -> i32 {
+block0:
+    v0 = iconst.i32 0x7fff_ffff
+    return v0
+}
+
+; VCode:
+; block0:
+;   auipc a0,0; ld a0,12(a0); j 12; .8byte 0x7fffffff
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   lui a0, 0x80
+;   slli a0, a0, 0xc
+;   addi a0, a0, -1
+;   ret
+
+function %negative_i16() -> i16 {
+block0:
+    v0 = iconst.i16 0x8001
+    return v0
+}
+
+; VCode:
+; block0:
+;   lui a0,-8
+;   addi a0,a0,1
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   lui a0, 0xffff8
+;   addi a0, a0, 1
+;   ret
+

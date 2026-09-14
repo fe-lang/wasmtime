@@ -1010,6 +1010,9 @@
 (decl pure has_m () bool)
 (extern constructor has_m has_m)
 
+(decl pure avoid_integer_constant_pools () bool)
+(extern constructor avoid_integer_constant_pools avoid_integer_constant_pools)
+
 (decl pure has_v () bool)
 (extern constructor has_v has_v)
 
@@ -1957,8 +1960,17 @@
   (if-let (i64_generate_imm _ _) c_shifted)                    ;; can the smaller constant be made?
   (rv_slli (imm ty (i64_cast_unsigned c_shifted)) shift))
 
-;; Otherwise we fall back to loading the immediate from the constant pool.
+;; Some execution environments decode all executable bytes as instructions.
+;; Use the same pseudo-instruction as late constant materialization so both
+;; paths honor the no-integer-pools setting during emission.
 (rule -1 (imm (ty_int ty) c)
+  (if-let true (avoid_integer_constant_pools))
+  (let ((dst WritableReg (temp_writable_reg $I64))
+        (_ Unit (emit (MInst.LoadInlineConst dst $I64 c))))
+    (writable_reg_to_reg dst)))
+
+;; Otherwise we fall back to loading the immediate from the constant pool.
+(rule -2 (imm (ty_int ty) c)
   (gen_load
     (gen_const_amode (emit_u64_le_const c))
     (LoadOP.Ld)

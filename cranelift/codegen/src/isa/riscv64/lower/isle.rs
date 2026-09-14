@@ -485,6 +485,10 @@ impl generated_code::Context for RV64IsleContext<'_, '_, MInst, Riscv64Backend> 
         self.backend.isa_flags.has_m()
     }
 
+    fn avoid_integer_constant_pools(&mut self) -> bool {
+        self.backend.isa_flags.avoid_integer_constant_pools()
+    }
+
     fn has_zfa(&mut self) -> bool {
         self.backend.isa_flags.has_zfa()
     }

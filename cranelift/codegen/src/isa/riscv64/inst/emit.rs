@@ -890,6 +890,16 @@ impl Inst {
             &Inst::Fli { rd, width, imm } => {
                 sink.put4(encode_fli(width, imm, rd));
             }
+            &Inst::LoadInlineConst { rd, ty, imm }
+                if ty.is_int() && emit_info.isa_flags.avoid_integer_constant_pools() =>
+            {
+                // Match the sign-extending integer load used by the pool path.
+                let shift = 64 - ty.bits();
+                let value = ((imm << shift) as i64 >> shift) as u64;
+                for inst in Inst::load_constant_no_pool(rd, value) {
+                    inst.emit(sink, emit_info, state);
+                }
+            }
             &Inst::LoadInlineConst { rd, ty, imm } => {
                 let data = &imm.to_le_bytes()[..ty.bytes() as usize];
 
