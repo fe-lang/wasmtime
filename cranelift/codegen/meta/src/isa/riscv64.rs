@@ -71,6 +71,13 @@ pub(crate) fn define() -> TargetIsa {
         false,
     );
 
+    setting.add_bool(
+        "avoid_integer_constant_pools",
+        "Materialize integer constants without executable-section data?",
+        "Synthesize scalar integer immediates with instructions, including constants introduced during emission. Does not affect vector constants or far symbol references.",
+        false,
+    );
+
     let _has_zfa = setting.add_bool(
         "has_zfa",
         "has extension Zfa?",
