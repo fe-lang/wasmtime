@@ -3617,6 +3617,14 @@
               (cmove ty (CC.B) idx_reg size_reg))))
       (emit_side_effect (jmp_table_seq ty clamped_idx default_target jt_targets))))
 
+;; An index zero-extended from a type whose every value has a table entry,
+;; such as a byte into a 256-entry table, needs no bounds check.
+(rule 1 (lower_branch (br_table idx @ (value_type ty) _) (jump_table_targets default_target jt_targets))
+      (if-let (uextend _ narrow @ (value_type narrow_ty)) idx)
+      (if-let false (u64_gt (ty_umax narrow_ty) (u32_into_u64 (jump_table_size jt_targets))))
+      (if-let false (u64_eq (ty_umax narrow_ty) (u32_into_u64 (jump_table_size jt_targets))))
+      (emit_side_effect (jmp_table_seq ty (extend_to_gpr narrow $I64 (ExtendKind.Zero)) default_target jt_targets)))
+
 ;; Rules for `select_spectre_guard` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (rule (lower (select_spectre_guard _ cond x y))
