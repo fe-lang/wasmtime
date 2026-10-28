@@ -1883,12 +1883,6 @@ fn emit_return_call_common_sequence<T>(
     state: &mut EmitState,
     call_info: &ReturnCallInfo<T>,
 ) {
-    assert!(
-        info.flags.preserve_frame_pointers(),
-        "frame pointers aren't fundamentally required for tail calls, \
-                 but the current implementation relies on them being present"
-    );
-
     let tmp = call_info.tmp.to_writable_reg();
 
     for inst in
@@ -1907,6 +1901,8 @@ fn emit_return_call_common_sequence<T>(
     }
 
     let incoming_args_diff = state.frame_layout().tail_args_size - call_info.new_stack_arg_size;
+    // A frameless function has no stack arguments to move.
+    debug_assert!(state.frame_layout().setup_area_size > 0 || incoming_args_diff == 0);
     if incoming_args_diff > 0 {
         // Move the saved return address up by `incoming_args_diff`.
         let addr = Amode::imm_reg(0, regs::rsp());

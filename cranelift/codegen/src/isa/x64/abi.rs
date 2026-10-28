@@ -546,6 +546,9 @@ impl ABIMachineSpec for X64ABIMachineSpec {
         let r_rbp = Gpr::RBP;
         let w_rbp = Writable::from_reg(r_rbp);
         let mut insts = SmallVec::new();
+        if frame_layout.setup_area_size == 0 {
+            return insts;
+        }
         // `push %rbp`
         // RSP before the call will be 0 % 16.  So here, it is 8 % 16.
         insts.push(Inst::External {
@@ -573,11 +576,14 @@ impl ABIMachineSpec for X64ABIMachineSpec {
         _call_conv: isa::CallConv,
         _flags: &settings::Flags,
         _isa_flags: &x64_settings::Flags,
-        _frame_layout: &FrameLayout,
+        frame_layout: &FrameLayout,
     ) -> SmallInstVec<Self::I> {
         let rbp = Gpr::RBP;
 
         let mut insts = SmallVec::new();
+        if frame_layout.setup_area_size == 0 {
+            return insts;
+        }
         // RSP does not change between the prologue and the epilogue, so the
         // clobber restore already moved it back to RBP. Popping through it
         // rather than through `mov %rbp, %rsp` keeps the stack pointer known
@@ -902,6 +908,8 @@ impl ABIMachineSpec for X64ABIMachineSpec {
             (isa::CallConv::SystemV, _) => SYSV_CLOBBERS,
             (isa::CallConv::WindowsFastcall, false) => WINDOWS_CLOBBERS,
             (isa::CallConv::PreserveAll, _) => NO_CLOBBERS,
+            // Tail-convention functions save no registers.
+            (isa::CallConv::Tail, false) => ALL_CLOBBERS,
             (_, false) => SYSV_CLOBBERS,
             (call_conv, true) => panic!("unimplemented clobbers for exn abi of {call_conv:?}"),
         }
@@ -933,7 +941,13 @@ impl ABIMachineSpec for X64ABIMachineSpec {
             // The `winch` calling convention doesn't have any callee-save
             // registers.
             CallConv::Winch => vec![],
-            CallConv::Fast | CallConv::SystemV | CallConv::Tail => regs
+            // A tail call leaves the frame for good, so a callee saving
+            // registers for its caller would restore them on every call in a
+            // chain of tail calls, as an interpreter's dispatch makes.
+            // Tail-convention functions save none, and their callers keep
+            // what they need across the call.
+            CallConv::Tail => vec![],
+            CallConv::Fast | CallConv::SystemV => regs
                 .iter()
                 .cloned()
                 .filter(|r| is_callee_save_systemv(r.to_reg(), flags.enable_pinned_reg()))
@@ -955,8 +969,20 @@ impl ABIMachineSpec for X64ABIMachineSpec {
         // Compute clobber size.
         let clobber_size = compute_clobber_size(&regs);
 
+        // A tail-convention function that makes no ordinary calls and keeps
+        // nothing on the stack needs no frame: its tail calls jump with the
+        // return address where they found it.
+        let frameless = call_conv == CallConv::Tail
+            && !flags.preserve_frame_pointers()
+            && function_calls != FunctionCalls::Regular
+            && regs.is_empty()
+            && incoming_args_size == 0
+            && tail_args_size == 0
+            && fixed_frame_storage_size == 0
+            && outgoing_args_size == 0;
+
         // Compute setup area size.
-        let setup_area_size = 16; // RBP, return address
+        let setup_area_size = if frameless { 0 } else { 16 }; // RBP, return address
 
         // Return FrameLayout structure.
         FrameLayout {
