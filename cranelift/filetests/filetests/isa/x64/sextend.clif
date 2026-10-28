@@ -12,7 +12,6 @@ block0(v0: i8):
 ;   movq %rsp, %rbp
 ; block0:
 ;   movsbq %dil, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -22,7 +21,6 @@ block0(v0: i8):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   movsbq %dil, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

@@ -14,7 +14,6 @@ block0(v0: i8, v1: i8):
 ;   movq %rsp, %rbp
 ; block0:
 ;   andnl %edi, %esi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -24,7 +23,6 @@ block0(v0: i8, v1: i8):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   andnl %edi, %esi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -40,7 +38,6 @@ block0(v0: i8, v1: i8):
 ;   movq %rsp, %rbp
 ; block0:
 ;   andnl %esi, %edi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -50,7 +47,6 @@ block0(v0: i8, v1: i8):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   andnl %esi, %edi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

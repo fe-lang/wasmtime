@@ -18,7 +18,6 @@ block0(v0: i64):
 ;   movq %rcx, %rsi
 ;   call    *%rcx
 ;   call    *%rcx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -32,7 +31,6 @@ block0(v0: i64):
 ;   movq %rcx, %rsi
 ;   callq *%rcx
 ;   callq *%rcx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -101,7 +99,6 @@ block0(v0: i64):
 ;   movdqu 0x130(%rsp), %xmm14
 ;   movdqu 0x140(%rsp), %xmm15
 ;   addq $0x150, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -164,7 +161,6 @@ block0(v0: i64):
 ;   movdqu 0x130(%rsp), %xmm14
 ;   movdqu 0x140(%rsp), %xmm15
 ;   addq $0x150, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -180,7 +176,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   call    TestCase(%f)
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -190,7 +185,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   callq 9 ; reloc_external CallPCRel4 %f -4
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

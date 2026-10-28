@@ -31,7 +31,6 @@ block0(v0: f32, v1: i64, v2: i32, v3: i32):
 ;   cmovpl %edx, %esi
 ;   movq %rsi, %rax
 ;   cmovnel %edx, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -44,7 +43,6 @@ block0(v0: f32, v1: i64, v2: i32, v3: i32):
 ;   cmovpl %edx, %esi
 ;   movq %rsi, %rax
 ;   cmovnel %edx, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -65,7 +63,6 @@ block0(v0: f32, v1: i64, v2: i32, v3: i32):
 ;   cmovpl %edx, %esi
 ;   movq %rsi, %rax
 ;   cmovnel %edx, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -79,7 +76,6 @@ block0(v0: f32, v1: i64, v2: i32, v3: i32):
 ;   cmovpl %edx, %esi
 ;   movq %rsi, %rax
 ;   cmovnel %edx, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -105,7 +101,6 @@ block0(v0: f32, v1: i64, v2: i32, v3: i32):
 ;   ucomiss %xmm1, %xmm0
 ;   cmovpl %esi, %edx
 ;   cmovnel %esi, %edx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -122,7 +117,6 @@ block0(v0: f32, v1: i64, v2: i32, v3: i32):
 ;   ucomiss %xmm1, %xmm0
 ;   cmovpl %esi, %edx
 ;   cmovnel %esi, %edx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -148,7 +142,6 @@ block0(v0: f32, v1: i64, v2: i32, v3: i32):
 ;   ucomiss %xmm0, %xmm1
 ;   cmovpl %esi, %edx
 ;   cmovnel %esi, %edx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -165,7 +158,6 @@ block0(v0: f32, v1: i64, v2: i32, v3: i32):
 ;   ucomiss %xmm0, %xmm1
 ;   cmovpl %esi, %edx
 ;   cmovnel %esi, %edx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -192,7 +184,6 @@ block1(v8: i32):
 ;   movq %rdx, %rax
 ;   jmp     label3
 ; block3:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -211,7 +202,6 @@ block1(v8: i32):
 ; block3: ; offset 0x1f
 ;   movq %rdx, %rax
 ; block4: ; offset 0x22
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -238,7 +228,6 @@ block1(v8: i32):
 ;   movq %rdx, %rax
 ;   jmp     label3
 ; block3:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -257,7 +246,6 @@ block1(v8: i32):
 ; block3: ; offset 0x1f
 ;   movq %rdx, %rax
 ; block4: ; offset 0x22
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -294,7 +282,6 @@ block2(v7: i32):
 ;   movq %rsi, %rdx
 ;   jmp     label6
 ; block6:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -319,7 +306,6 @@ block2(v7: i32):
 ; block5: ; offset 0x31
 ;   movq %rsi, %rdx
 ; block6: ; offset 0x34
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -356,7 +342,6 @@ block2(v7: i32):
 ;   movq %rsi, %rdx
 ;   jmp     label6
 ; block6:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -381,7 +366,6 @@ block2(v7: i32):
 ; block5: ; offset 0x31
 ;   movq %rsi, %rdx
 ; block6: ; offset 0x34
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -412,7 +396,6 @@ block1(v7: i32):
 ;   movq %rsi, %rdx
 ;   jmp     label3
 ; block3:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -432,7 +415,6 @@ block1(v7: i32):
 ; block2: ; offset 0x23
 ;   movq %rsi, %rdx
 ; block3: ; offset 0x26
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -463,7 +445,6 @@ block1(v7: i32):
 ;   movq %rsi, %rdx
 ;   jmp     label3
 ; block3:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -483,7 +464,6 @@ block1(v7: i32):
 ; block2: ; offset 0x23
 ;   movq %rsi, %rdx
 ; block3: ; offset 0x26
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

@@ -16,7 +16,6 @@ block0(v0: i32):
 ;   movq %rsp, %rbp
 ; block0:
 ;   %rax = coff_tls_get_addr User(userextname0)
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -29,7 +28,6 @@ block0(v0: i32):
 ;   movq %gs:0x58, %rcx
 ;   movq (%rcx, %rax, 8), %rax
 ;   leaq (%rax), %rax ; reloc_external SecRel u1:0 0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

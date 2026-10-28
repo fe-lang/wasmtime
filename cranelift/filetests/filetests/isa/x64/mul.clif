@@ -14,7 +14,6 @@ block0(v0: i8, v1: i8):
 ; block0:
 ;   movq %rdi, %rax
 ;   mulb %sil ;; implicit: %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -25,7 +24,6 @@ block0(v0: i8, v1: i8):
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
 ;   mulb %sil
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -41,7 +39,6 @@ block0(v0: i16, v1: i16):
 ; block0:
 ;   movq %rdi, %rax
 ;   imulw %si, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -52,7 +49,6 @@ block0(v0: i16, v1: i16):
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
 ;   imulw %si, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -68,7 +64,6 @@ block0(v0: i32, v1: i32):
 ; block0:
 ;   movq %rdi, %rax
 ;   imull %esi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -79,7 +74,6 @@ block0(v0: i32, v1: i32):
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
 ;   imull %esi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -95,7 +89,6 @@ block0(v0: i64, v1: i64):
 ; block0:
 ;   movq %rdi, %rax
 ;   imulq %rsi, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -106,7 +99,6 @@ block0(v0: i64, v1: i64):
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
 ;   imulq %rsi, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -124,7 +116,6 @@ block0(v0: i8, v1: i8, v2: i8):
 ;   movq %rdi, %rax
 ;   mulb %sil ;; implicit: %ax
 ;   mulb %dl ;; implicit: %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -136,7 +127,6 @@ block0(v0: i8, v1: i8, v2: i8):
 ;   movq %rdi, %rax
 ;   mulb %sil
 ;   mulb %dl
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -154,7 +144,6 @@ block0(v0: i32, v1: i32, v2: i32):
 ;   imull %esi, %edi
 ;   movq %rdi, %rax
 ;   imull %edx, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -166,7 +155,6 @@ block0(v0: i32, v1: i32, v2: i32):
 ;   imull %esi, %edi
 ;   movq %rdi, %rax
 ;   imull %edx, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -183,7 +171,6 @@ block0(v0: i32, v1: i64):
 ; block0:
 ;   movq %rdi, %rax
 ;   imull (%rsi), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -194,7 +181,6 @@ block0(v0: i32, v1: i64):
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
 ;   imull (%rsi), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -211,7 +197,6 @@ block0(v0: i64, v1: i64):
 ; block0:
 ;   movq %rdi, %rax
 ;   imulq (%rsi), %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -222,7 +207,6 @@ block0(v0: i64, v1: i64):
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
 ;   imulq (%rsi), %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -239,7 +223,6 @@ block0(v0: i8):
 ; block0:
 ;   movq %rdi, %rax
 ;   mulb (%rip) ;; implicit: %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -249,16 +232,10 @@ block0(v0: i8):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
-;   mulb 0xa(%rip)
-;   movq %rbp, %rsp
+;   mulb 2(%rip)
 ;   popq %rbp
 ;   retq
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %ah, (%rcx)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
+;   .byte 0x61, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 
 function %imul_i16_const(i16) -> i16{
 block0(v0: i16):
@@ -272,7 +249,6 @@ block0(v0: i16):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imulw $0x61, %di, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -282,7 +258,6 @@ block0(v0: i16):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imulw $0x61, %di, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -298,7 +273,6 @@ block0(v0: i16):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imulw $0xff9f, %di, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -308,7 +282,6 @@ block0(v0: i16):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imulw $-0x61, %di, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -324,7 +297,6 @@ block0(v0: i16):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imulw $0x8000, %di, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -334,7 +306,6 @@ block0(v0: i16):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imulw $0x8000, %di, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -350,7 +321,6 @@ block0(v0: i16):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imulw $0x0, %di, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -360,7 +330,6 @@ block0(v0: i16):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imulw $0, %di, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -376,7 +345,6 @@ block0(v0: i32):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imull $0x61, %edi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -386,7 +354,6 @@ block0(v0: i32):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imull $0x61, %edi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -402,7 +369,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imulq $0x61, %rdi, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -412,7 +378,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imulq $0x61, %rdi, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -428,7 +393,6 @@ block0(v0: i16):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imulw $0x3fd, %di, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -438,7 +402,6 @@ block0(v0: i16):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imulw $0x3fd, %di, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -454,7 +417,6 @@ block0(v0: i32):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imull $0x3fd, %edi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -464,7 +426,6 @@ block0(v0: i32):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imull $0x3fd, %edi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -480,7 +441,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imulq $0x3fd, %rdi, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -490,7 +450,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imulq $0x3fd, %rdi, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -508,7 +467,6 @@ block0(v0: i64):
 ; block0:
 ;   movzwq (%rdi), %rsi
 ;   imulw $0x3fd, %si, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -519,7 +477,6 @@ block0(v0: i64):
 ; block1: ; offset 0x4
 ;   movzwq (%rdi), %rsi ; trap: heap_oob
 ;   imulw $0x3fd, %si, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -536,7 +493,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imull $0x3fd, (%rdi), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -546,7 +502,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imull $0x3fd, (%rdi), %eax ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -563,7 +518,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imulq $0x3fd, 0x64(%rdi), %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -573,7 +527,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imulq $0x3fd, 0x64(%rdi), %rax ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -591,7 +544,6 @@ block0(v0: i8, v1: i8):
 ; block0:
 ;   movq %rdi, %rax
 ;   imulb %sil ;; implicit: %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -602,7 +554,6 @@ block0(v0: i8, v1: i8):
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
 ;   imulb %sil
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -620,7 +571,6 @@ block0(v0: i8, v1: i8):
 ; block0:
 ;   movq %rdi, %rax
 ;   mulb %sil ;; implicit: %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -631,7 +581,6 @@ block0(v0: i8, v1: i8):
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
 ;   mulb %sil
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -648,7 +597,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block0:
 ;   imull $0x7, (%rip), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -658,13 +606,14 @@ block0:
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imull $7, 5(%rip), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-;   andb (%rdx), %ah
-;   andb (%rdx), %ah
 ;   addb %al, (%rax)
+;   addb %ah, (%rdx)
+;   andb (%rdx), %ah
+;   andb (%rax), %al
 ;   addb %al, (%rax)
+;   .byte 0x00
 
 function %imul_and_constant_pool_big_immediate() -> i32 {
 block0:
@@ -679,7 +628,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block0:
 ;   imull $0x11111111, (%rip), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -688,15 +636,11 @@ block0:
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
-;   imull $0x11111111, 0xa(%rip), %eax
-;   movq %rbp, %rsp
+;   imull $0x11111111, 2(%rip), %eax
 ;   popq %rbp
 ;   retq
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %ah, (%rdx)
 ;   andb (%rdx), %ah
-;   andb (%rax), %al
+;   andb (%rdx), %ah
 ;   addb %al, (%rax)
-;   .byte 0x00
+;   addb %al, (%rax)
 

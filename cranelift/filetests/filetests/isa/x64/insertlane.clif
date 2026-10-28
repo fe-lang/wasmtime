@@ -12,7 +12,6 @@ block0(v0: f64x2, v1: f64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   movsd %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -22,7 +21,6 @@ block0(v0: f64x2, v1: f64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   movsd %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -37,7 +35,6 @@ block0(v0: f64x2, v1: f64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   movlhps %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -47,7 +44,6 @@ block0(v0: f64x2, v1: f64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   movlhps %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -64,7 +60,6 @@ block0(v0: f64x2, v1: i64):
 ; block0:
 ;   movsd (%rdi), %xmm4
 ;   movsd %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -75,7 +70,6 @@ block0(v0: f64x2, v1: i64):
 ; block1: ; offset 0x4
 ;   movsd (%rdi), %xmm4 ; trap: heap_oob
 ;   movsd %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -91,7 +85,6 @@ block0(v0: i8x16, v1: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   pinsrb $0x1, (%rdi), %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -101,7 +94,6 @@ block0(v0: i8x16, v1: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   pinsrb $1, (%rdi), %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -117,7 +109,6 @@ block0(v0: i16x8, v1: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   pinsrw $0x1, (%rdi), %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -127,7 +118,6 @@ block0(v0: i16x8, v1: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   pinsrw $1, (%rdi), %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -143,7 +133,6 @@ block0(v0: i32x4, v1: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   pinsrd $0x1, (%rdi), %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -153,7 +142,6 @@ block0(v0: i32x4, v1: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   pinsrd $1, (%rdi), %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -169,7 +157,6 @@ block0(v0: i64x2, v1: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   pinsrq $0x1, (%rdi), %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -179,7 +166,6 @@ block0(v0: i64x2, v1: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   pinsrq $1, (%rdi), %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

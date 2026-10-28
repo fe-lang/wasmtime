@@ -13,7 +13,6 @@ block0():
 ; block0:
 ;   uninit  %xmm0
 ;   xorps %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -23,7 +22,6 @@ block0():
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   xorps %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -38,7 +36,6 @@ block0():
 ;   movq %rsp, %rbp
 ; block0:
 ;   movdqu (%rip), %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -47,8 +44,7 @@ block0():
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
-;   movdqu 0x14(%rip), %xmm0
-;   movq %rbp, %rsp
+;   movdqu 4(%rip), %xmm0
 ;   popq %rbp
 ;   retq
 ;   addb %al, (%rax)
@@ -59,12 +55,5 @@ block0():
 ;   addb %al, (%rax)
 ;   addb %al, (%rax)
 ;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %bh, %bh
-;   .byte 0x3f
+;   .byte 0xff, 0x3f
 

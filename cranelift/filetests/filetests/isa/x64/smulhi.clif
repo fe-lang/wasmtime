@@ -14,7 +14,6 @@ block0(v0: i8, v1: i8):
 ;   movq %rdi, %rax
 ;   imulb %sil ;; implicit: %ax
 ;   sarw $0x8, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -26,7 +25,6 @@ block0(v0: i8, v1: i8):
 ;   movq %rdi, %rax
 ;   imulb %sil
 ;   sarw $8, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -43,7 +41,6 @@ block0(v0: i16, v1: i16):
 ;   movq %rdi, %rax
 ;   imulw %si ;; implicit: %ax, %dx
 ;   movq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -55,7 +52,6 @@ block0(v0: i16, v1: i16):
 ;   movq %rdi, %rax
 ;   imulw %si
 ;   movq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -72,7 +68,6 @@ block0(v0: i32, v1: i32):
 ;   movq %rdi, %rax
 ;   imull %esi ;; implicit: %eax, %edx
 ;   movq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -84,7 +79,6 @@ block0(v0: i32, v1: i32):
 ;   movq %rdi, %rax
 ;   imull %esi
 ;   movq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -101,7 +95,6 @@ block0(v0: i64, v1: i64):
 ;   movq %rdi, %rax
 ;   imulq %rsi ;; implicit: %rax, %rdx
 ;   movq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -113,7 +106,6 @@ block0(v0: i64, v1: i64):
 ;   movq %rdi, %rax
 ;   imulq %rsi
 ;   movq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

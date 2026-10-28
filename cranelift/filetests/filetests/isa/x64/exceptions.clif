@@ -45,7 +45,6 @@ function %f0(i32) -> i32, f32, f64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
@@ -59,7 +58,6 @@ function %f0(i32) -> i32, f32, f64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -88,10 +86,9 @@ function %f0(i32) -> i32, f32, f64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x6d
+; block3: ; offset 0x6a
 ;   movdqu (%rsp), %xmm1
 ;   addl $1, %eax
 ;   xorps %xmm0, %xmm0
@@ -101,7 +98,6 @@ function %f0(i32) -> i32, f32, f64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -181,7 +177,6 @@ function %f1(i32) -> i32, f32, f64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block8:
@@ -195,7 +190,6 @@ function %f1(i32) -> i32, f32, f64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -222,7 +216,7 @@ function %f1(i32) -> i32, f32, f64 {
 ;   je 0x56
 ; block3: ; offset 0x4e
 ;   movq %rax, %rcx
-;   jmp 0xb9
+;   jmp 0xb6
 ; block4: ; offset 0x56
 ;   movdqu %xmm1, (%rsp)
 ;   jmp 0x8d
@@ -235,7 +229,7 @@ function %f1(i32) -> i32, f32, f64 {
 ;   jmp 0x8d
 ; block6: ; offset 0x85
 ;   movq %rax, %rcx
-;   jmp 0xb9
+;   jmp 0xb6
 ; block7: ; offset 0x8d
 ;   movl $1, %eax
 ;   movdqu (%rsp), %xmm1
@@ -245,10 +239,9 @@ function %f1(i32) -> i32, f32, f64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block8: ; offset 0xb9
+; block8: ; offset 0xb6
 ;   leal 1(%rcx), %eax
 ;   xorps %xmm0, %xmm0
 ;   movq %rcx, %xmm1
@@ -258,7 +251,6 @@ function %f1(i32) -> i32, f32, f64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -307,7 +299,6 @@ function %f2(i32) -> i32, f32, f64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
@@ -321,7 +312,6 @@ function %f2(i32) -> i32, f32, f64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -350,10 +340,9 @@ function %f2(i32) -> i32, f32, f64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x6d
+; block3: ; offset 0x6a
 ;   movdqu (%rsp), %xmm1
 ;   addl $1, %eax
 ;   xorps %xmm0, %xmm0
@@ -363,7 +352,6 @@ function %f2(i32) -> i32, f32, f64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -462,7 +450,6 @@ function %f4(i64, i32) -> i32, f32, f64 {
 ;   movq 0x38(%rsp), %r14
 ;   movq 0x40(%rsp), %r15
 ;   addq $0x50, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block4:
@@ -479,7 +466,6 @@ function %f4(i64, i32) -> i32, f32, f64 {
 ;   movq 0x38(%rsp), %r14
 ;   movq 0x40(%rsp), %r15
 ;   addq $0x50, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -506,11 +492,11 @@ function %f4(i64, i32) -> i32, f32, f64 {
 ; block2: ; offset 0x53
 ;   movq %rax, %rdi
 ;   movdqu 0x10(%rsp), %xmm1
-;   jmp 0xa7
+;   jmp 0xa4
 ; block3: ; offset 0x61
 ;   movq %rax, %rdi
 ;   movdqu 0x10(%rsp), %xmm1
-;   jmp 0xa7
+;   jmp 0xa4
 ; block4: ; offset 0x6f
 ;   movl $1, %eax
 ;   movdqu 0x10(%rsp), %xmm1
@@ -520,13 +506,12 @@ function %f4(i64, i32) -> i32, f32, f64 {
 ;   movq 0x38(%rsp), %r14
 ;   movq 0x40(%rsp), %r15
 ;   addq $0x50, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block5: ; offset 0x9c
+; block5: ; offset 0x99
 ;   movdqu 0x10(%rsp), %xmm1
 ;   movq 8(%rsp), %rdi
-; block6: ; offset 0xa7
+; block6: ; offset 0xa4
 ;   leal 1(%rdi), %eax
 ;   xorps %xmm0, %xmm0
 ;   movq 0x20(%rsp), %rbx
@@ -535,7 +520,6 @@ function %f4(i64, i32) -> i32, f32, f64 {
 ;   movq 0x38(%rsp), %r14
 ;   movq 0x40(%rsp), %r15
 ;   addq $0x50, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -581,7 +565,6 @@ function %f5() -> i64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block3:
@@ -592,7 +575,6 @@ function %f5() -> i64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -607,7 +589,7 @@ function %f5() -> i64 {
 ;   movq %r14, 0x28(%rsp)
 ;   movq %r15, 0x30(%rsp)
 ; block1: ; offset 0x21
-;   leaq 0x36(%rip), %rax
+;   leaq 0x33(%rip), %rax
 ;   movq %rax, (%rsp)
 ; block2: ; offset 0x2c
 ;   movabsq $0, %rsi ; reloc_external Abs8 %g 0
@@ -620,10 +602,9 @@ function %f5() -> i64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block4: ; offset 0x5e
+; block4: ; offset 0x5b
 ;   movq (%rsp), %rax
 ;   movq 0x10(%rsp), %rbx
 ;   movq 0x18(%rsp), %r12
@@ -631,7 +612,6 @@ function %f5() -> i64 {
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

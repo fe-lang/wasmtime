@@ -14,7 +14,6 @@ block0(v0: i32x4):
 ;   uninit  %xmm3
 ;   pcmpeqd %xmm3, %xmm3
 ;   pxor %xmm3, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -25,7 +24,6 @@ block0(v0: i32x4):
 ; block1: ; offset 0x4
 ;   pcmpeqd %xmm3, %xmm3
 ;   pxor %xmm3, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -41,7 +39,6 @@ block0(v0: i32x4):
 ; block0:
 ;   ptest %xmm0, %xmm0
 ;   setne %al
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -52,7 +49,6 @@ block0(v0: i32x4):
 ; block1: ; offset 0x4
 ;   ptest %xmm0, %xmm0
 ;   setne %al
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -71,7 +67,6 @@ block0(v0: i64x2):
 ;   pcmpeqq %xmm3, %xmm0
 ;   ptest %xmm0, %xmm0
 ;   sete %al
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -84,7 +79,6 @@ block0(v0: i64x2):
 ;   pcmpeqq %xmm3, %xmm0
 ;   ptest %xmm0, %xmm0
 ;   sete %al
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

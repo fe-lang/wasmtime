@@ -23,12 +23,10 @@ block2:
 ;   jp,nz   label1; j label2
 ; block1:
 ;   movl $0x2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
 ;   movl $0x1, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -39,15 +37,13 @@ block2:
 ; block1: ; offset 0x4
 ;   vucomiss %xmm1, %xmm0
 ;   jp 0x14
-;   je 0x1e
+;   je 0x1b
 ; block2: ; offset 0x14
 ;   movl $2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x1e
+; block3: ; offset 0x1b
 ;   movl $1, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -73,12 +69,10 @@ block2:
 ;   jp,nz   label1; j label2
 ; block1:
 ;   movl $0x2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
 ;   movl $0x1, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -89,15 +83,13 @@ block2:
 ; block1: ; offset 0x4
 ;   vucomisd %xmm1, %xmm0
 ;   jp 0x14
-;   je 0x1e
+;   je 0x1b
 ; block2: ; offset 0x14
 ;   movl $2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x1e
+; block3: ; offset 0x1b
 ;   movl $1, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

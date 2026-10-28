@@ -30,7 +30,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq 0x18(%rsp), %r14
 ;   movq 0x20(%rsp), %r15
 ;   addq $0x30, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -64,7 +63,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq 0x18(%rsp), %r14
 ;   movq 0x20(%rsp), %r15
 ;   addq $0x30, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -222,7 +220,6 @@ block0(v0: i64, v1: i64):
 ;   movq 0x98(%rsp), %r14
 ;   movq 0xa0(%rsp), %r15
 ;   addq $0xb0, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -317,7 +314,6 @@ block0(v0: i64, v1: i64):
 ;   movq 0x98(%rsp), %r14
 ;   movq 0xa0(%rsp), %r15
 ;   addq $0xb0, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -458,7 +454,6 @@ block0(v0: i64, v1: i64):
 ;   movq 0x118(%rsp), %r14
 ;   movq 0x120(%rsp), %r15
 ;   addq $0x130, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -565,7 +560,6 @@ block0(v0: i64, v1: i64):
 ;   movq 0x118(%rsp), %r14
 ;   movq 0x120(%rsp), %r15
 ;   addq $0x130, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

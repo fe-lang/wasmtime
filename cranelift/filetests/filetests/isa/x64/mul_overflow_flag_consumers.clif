@@ -20,7 +20,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   jno #trap=user1
 ;   movq %rdi, %rdx
 ;   leaq (%rax, %rdx), %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -32,10 +31,9 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq %rdi, %rax
 ;   movq %rdx, %rdi
 ;   mulq %rsi
-;   jno 0x1e
+;   jno 0x1b
 ;   movq %rdi, %rdx
 ;   addq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;   ud2 ; trap: user1
@@ -58,7 +56,6 @@ block0(v0: i32, v1: i32, v2: i32):
 ;   jno #trap=user1
 ;   movq %rdi, %rdx
 ;   leal (%rax, %rdx), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -70,10 +67,9 @@ block0(v0: i32, v1: i32, v2: i32):
 ;   movq %rdi, %rax
 ;   movq %rdx, %rdi
 ;   mull %esi
-;   jno 0x1c
+;   jno 0x19
 ;   movq %rdi, %rdx
 ;   addl %edx, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;   ud2 ; trap: user1
@@ -96,7 +92,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   jo #trap=user1
 ;   movq %rdi, %rdx
 ;   leaq (%rax, %rdx), %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -108,10 +103,9 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq %rdi, %rax
 ;   movq %rdx, %rdi
 ;   imulq %rsi
-;   jo 0x1e
+;   jo 0x1b
 ;   movq %rdi, %rdx
 ;   addq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;   ud2 ; trap: user1
@@ -134,7 +128,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq %rax, %r8
 ;   movq %rdx, %rax
 ;   cmovoq %r8, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -150,7 +143,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq %rax, %r8
 ;   movq %rdx, %rax
 ;   cmovoq %r8, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -172,7 +164,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq %rax, %r8
 ;   movq %rdx, %rax
 ;   cmovoq %r8, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -188,7 +179,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq %rax, %r8
 ;   movq %rdx, %rax
 ;   cmovoq %r8, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -215,12 +205,10 @@ block2:
 ;   jo      label2; j label1
 ; block1:
 ;   movq %r8, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
 ;   leal (%rax, %rax), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -232,15 +220,13 @@ block2:
 ;   movq %rdi, %rax
 ;   movq %rdx, %r8
 ;   mull %esi
-;   jo 0x1a
+;   jo 0x17
 ; block2: ; offset 0x12
 ;   movq %r8, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x1a
+; block3: ; offset 0x17
 ;   addl %eax, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -256,7 +242,6 @@ block0(v0: i16, v1: i16):
 ; block0:
 ;   movq %rdi, %rax
 ;   imulw %si ;; implicit: %ax, %dx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -267,10 +252,8 @@ block0(v0: i16, v1: i16):
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
 ;   imulw %si
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-
 
 function %smul_flags_select_load_product_stored(i64, i32, i64, i64) -> i64 {
 block0(v0: i64, v1: i32, v2: i64, v3: i64):
@@ -295,7 +278,6 @@ block0(v0: i64, v1: i32, v2: i64, v3: i64):
 ;   movq %r8, %rdx
 ;   movq %rcx, %rax
 ;   cmovoq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -314,7 +296,6 @@ block0(v0: i64, v1: i32, v2: i64, v3: i64):
 ;   movq %r8, %rdx
 ;   movq %rcx, %rax
 ;   cmovoq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -343,7 +324,6 @@ block0(v0: i64, v1: i32, v2: i64):
 ;   movq %rsi, %rax
 ;   movq %rcx, %rdx
 ;   cmovoq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -364,7 +344,6 @@ block0(v0: i64, v1: i32, v2: i64):
 ;   movq %rsi, %rax
 ;   movq %rcx, %rdx
 ;   cmovoq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -386,7 +365,6 @@ block0(v0: i64, v1: i32, v2: i64, v3: i64):
 ;   movq %r8, %rdx
 ;   movq %rcx, %rax
 ;   cmovoq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -401,7 +379,6 @@ block0(v0: i64, v1: i32, v2: i64, v3: i64):
 ;   movq %r8, %rdx
 ;   movq %rcx, %rax
 ;   cmovoq %rdx, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

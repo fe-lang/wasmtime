@@ -18,7 +18,6 @@ function u0:1302(i64) -> i64 system_v {
 ; block0:
 ;   lock addq %rdi, (%rdi)
 ;   movq %rdi, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -29,7 +28,6 @@ function u0:1302(i64) -> i64 system_v {
 ; block1: ; offset 0x4
 ;   lock addq %rdi, (%rdi) ; trap: heap_oob
 ;   movq %rdi, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

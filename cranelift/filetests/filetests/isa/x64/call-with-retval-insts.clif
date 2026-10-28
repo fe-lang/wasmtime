@@ -85,7 +85,6 @@ block0(v0: i32):
 ;   movq 0x118(%rsp), %r14
 ;   movq 0x120(%rsp), %r15
 ;   addq $0x130, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -173,7 +172,6 @@ block0(v0: i32):
 ;   movq 0x118(%rsp), %r14
 ;   movq 0x120(%rsp), %r15
 ;   addq $0x130, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

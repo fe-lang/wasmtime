@@ -21,7 +21,6 @@ block0(v0: i64, v1: i64):
 ;   cmpq %r8, %rdi
 ;   movq %rsi, %rdx
 ;   cmoveq %rdi, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -37,7 +36,6 @@ block0(v0: i64, v1: i64):
 ;   cmpq %r8, %rdi
 ;   movq %rsi, %rdx
 ;   cmoveq %rdi, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -64,7 +62,6 @@ block0(v0: f64, v1: i64):
 ;   movdqa %xmm0, %xmm1
 ;   movsd %xmm0, %xmm0; jnp $next; movsd %xmm1, %xmm0; $next:
 ;   movsd %xmm0, %xmm0; jz $next; movsd %xmm1, %xmm0; $next:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -85,7 +82,6 @@ block0(v0: f64, v1: i64):
 ;   movaps %xmm1, %xmm0
 ;   je 0x35
 ;   movaps %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

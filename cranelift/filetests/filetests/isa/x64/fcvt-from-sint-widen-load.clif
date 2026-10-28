@@ -15,7 +15,6 @@ block0(v0: i64):
 ; block0:
 ;   movdqu (%rdi), %xmm3
 ;   cvtdq2pd %xmm3, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -26,7 +25,6 @@ block0(v0: i64):
 ; block1: ; offset 0x4
 ;   movdqu (%rdi), %xmm3 ; trap: heap_oob
 ;   cvtdq2pd %xmm3, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

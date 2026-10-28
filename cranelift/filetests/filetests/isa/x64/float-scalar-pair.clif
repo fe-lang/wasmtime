@@ -13,7 +13,6 @@ block0(v0: f32, v1: f32):
 ;   movdqa %xmm0, %xmm2
 ;   movdqa %xmm1, %xmm0
 ;   movdqa %xmm2, %xmm1
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -25,7 +24,6 @@ block0(v0: f32, v1: f32):
 ;   movdqa %xmm0, %xmm2
 ;   movdqa %xmm1, %xmm0
 ;   movdqa %xmm2, %xmm1
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

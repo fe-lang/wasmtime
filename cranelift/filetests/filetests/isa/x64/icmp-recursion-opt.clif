@@ -18014,7 +18014,6 @@ block0(v0: i32):
 ;   testl %edi, %edi
 ;   setne %sil
 ;   movzbl %sil, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -18026,7 +18025,6 @@ block0(v0: i32):
 ;   testl %edi, %edi
 ;   setne %sil
 ;   movzbl %sil, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

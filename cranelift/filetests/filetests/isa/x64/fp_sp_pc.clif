@@ -13,7 +13,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block0:
 ;   movq    %rbp, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -23,7 +22,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   movq %rbp, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -38,7 +36,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block0:
 ;   movq    %rsp, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -48,7 +45,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   movq %rsp, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -64,7 +60,6 @@ block0:
 ; block0:
 ;   movq    %rbp, %rax
 ;   movq 8(%rax), %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -75,7 +70,6 @@ block0:
 ; block1: ; offset 0x4
 ;   movq %rbp, %rax
 ;   movq 8(%rax), %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

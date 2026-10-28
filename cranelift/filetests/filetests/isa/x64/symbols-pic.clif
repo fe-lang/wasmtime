@@ -15,7 +15,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block0:
 ;   load_ext_name %func0+0, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -25,7 +24,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   movq (%rip), %rax ; reloc_external GOTPCRel4 %func0 -4
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -42,7 +40,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block0:
 ;   load_ext_name %func0+0, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -52,7 +49,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   movq (%rip), %rax ; reloc_external GOTPCRel4 %func0 -4
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -69,7 +65,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block0:
 ;   load_ext_name %global0+0, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -79,7 +74,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   movq (%rip), %rax ; reloc_external GOTPCRel4 %global0 -4
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -96,7 +90,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block0:
 ;   load_ext_name %global0+123, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -107,7 +100,6 @@ block0:
 ; block1: ; offset 0x4
 ;   movq (%rip), %rax ; reloc_external GOTPCRel4 %global0 -4
 ;   addq $0x7b, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -124,7 +116,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block0:
 ;   load_ext_name %global0+-123, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -135,7 +126,6 @@ block0:
 ; block1: ; offset 0x4
 ;   movq (%rip), %rax ; reloc_external GOTPCRel4 %global0 -4
 ;   addq $-0x7b, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -152,7 +142,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block0:
 ;   load_ext_name %global0+0, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -162,7 +151,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   movq (%rip), %rax ; reloc_external GOTPCRel4 %global0 -4
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -179,7 +167,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block0:
 ;   load_ext_name %global0+123, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -190,7 +177,6 @@ block0:
 ; block1: ; offset 0x4
 ;   movq (%rip), %rax ; reloc_external GOTPCRel4 %global0 -4
 ;   addq $0x7b, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -207,7 +193,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block0:
 ;   load_ext_name %global0+-123, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -218,7 +203,6 @@ block0:
 ; block1: ; offset 0x4
 ;   movq (%rip), %rax ; reloc_external GOTPCRel4 %global0 -4
 ;   addq $-0x7b, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

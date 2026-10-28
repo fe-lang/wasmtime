@@ -18,7 +18,6 @@ block0(v0: i8):
 ;   pinsrb $0x0, %edi, %xmm5
 ;   ptest %xmm5, %xmm5
 ;   setne %al
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -31,6 +30,6 @@ block0(v0: i8):
 ;   pinsrb $0, %edi, %xmm5
 ;   ptest %xmm5, %xmm5
 ;   setne %al
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
+

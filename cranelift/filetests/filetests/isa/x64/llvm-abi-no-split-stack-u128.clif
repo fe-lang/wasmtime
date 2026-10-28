@@ -13,7 +13,6 @@ block0(v0: i64, v1: i128, v2: i128, v3: i128):
 ; block0:
 ;   movq <offset:0>+-0x10(%rbp), %rax
 ;   movq <offset:0>+-8(%rbp), %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -24,7 +23,6 @@ block0(v0: i64, v1: i128, v2: i128, v3: i128):
 ; block1: ; offset 0x4
 ;   movq 0x10(%rbp), %rax
 ;   movq 0x18(%rbp), %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

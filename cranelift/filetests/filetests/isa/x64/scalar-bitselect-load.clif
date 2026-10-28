@@ -24,7 +24,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   xorps %xmm2, %xmm3
 ;   andps %xmm1, %xmm3
 ;   orps %xmm3, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -42,7 +41,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   xorps %xmm2, %xmm3
 ;   andps %xmm1, %xmm3
 ;   orps %xmm3, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -69,7 +67,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   xorpd %xmm2, %xmm3
 ;   andpd %xmm1, %xmm3
 ;   orpd %xmm3, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -87,7 +84,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   xorpd %xmm2, %xmm3
 ;   andpd %xmm1, %xmm3
 ;   orpd %xmm3, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

@@ -13,7 +13,6 @@ block0():
 ; block0:
 ;   uninit  %xmm0
 ;   xorps %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -23,7 +22,6 @@ block0():
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   xorps %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -41,7 +39,6 @@ block0():
 ;   uninit  %xmm0
 ;   pxor %xmm0, %xmm0
 ;   pinsrw $0x0, %eax, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -53,7 +50,6 @@ block0():
 ;   movl $0x3c00, %eax
 ;   pxor %xmm0, %xmm0
 ;   pinsrw $0, %eax, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

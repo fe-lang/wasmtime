@@ -15,7 +15,6 @@ block0(v0: i8):
 ;   uninit  %xmm4
 ;   vpxor %xmm4, %xmm4, %xmm6
 ;   vpshufb %xmm6, %xmm2, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -27,7 +26,6 @@ block0(v0: i8):
 ;   vmovd %edi, %xmm2
 ;   vpxor %xmm4, %xmm4, %xmm6
 ;   vpshufb %xmm6, %xmm2, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -44,7 +42,6 @@ block0(v0: i16):
 ;   vmovd %edi, %xmm2
 ;   vpshuflw $0x0, %xmm2, %xmm4
 ;   vpshufd $0x0, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -56,7 +53,6 @@ block0(v0: i16):
 ;   vmovd %edi, %xmm2
 ;   vpshuflw $0, %xmm2, %xmm4
 ;   vpshufd $0, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -72,7 +68,6 @@ block0(v0: i32):
 ; block0:
 ;   vmovd %edi, %xmm2
 ;   vpshufd $0x0, %xmm2, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -83,7 +78,6 @@ block0(v0: i32):
 ; block1: ; offset 0x4
 ;   vmovd %edi, %xmm2
 ;   vpshufd $0, %xmm2, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -99,7 +93,6 @@ block0(v0: i64):
 ; block0:
 ;   vmovq %rdi, %xmm2
 ;   vpshufd $0x44, %xmm2, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -110,7 +103,6 @@ block0(v0: i64):
 ; block1: ; offset 0x4
 ;   vmovq %rdi, %xmm2
 ;   vpshufd $0x44, %xmm2, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -125,7 +117,6 @@ block0(v0: f32):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vshufps $0x0, %xmm0, %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -135,7 +126,6 @@ block0(v0: f32):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vshufps $0, %xmm0, %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -150,7 +140,6 @@ block0(v0: f64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vpshufd $0x44, %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -160,7 +149,6 @@ block0(v0: f64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vpshufd $0x44, %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -180,7 +168,6 @@ block0(v0: i64):
 ;   uninit  %xmm6
 ;   vpxor %xmm6, %xmm6, %xmm0
 ;   vpshufb %xmm0, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -192,7 +179,6 @@ block0(v0: i64):
 ;   vpinsrb $0, (%rdi), %xmm2, %xmm4 ; trap: heap_oob
 ;   vpxor %xmm6, %xmm6, %xmm0
 ;   vpshufb %xmm0, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -211,7 +197,6 @@ block0(v0: i64):
 ;   vpinsrw $0x0, (%rdi), %xmm2, %xmm4
 ;   vpshuflw $0x0, %xmm4, %xmm6
 ;   vpshufd $0x0, %xmm6, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -223,7 +208,6 @@ block0(v0: i64):
 ;   vpinsrw $0, (%rdi), %xmm2, %xmm4 ; trap: heap_oob
 ;   vpshuflw $0, %xmm4, %xmm6
 ;   vpshufd $0, %xmm6, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -239,7 +223,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vbroadcastss (%rdi), %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -249,7 +232,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vbroadcastss (%rdi), %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -265,7 +247,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vmovddup (%rdi), %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -275,7 +256,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vmovddup (%rdi), %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -291,7 +271,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vbroadcastss (%rdi), %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -301,7 +280,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vbroadcastss (%rdi), %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -317,7 +295,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vmovddup (%rdi), %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -327,7 +304,6 @@ block0(v0: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vmovddup (%rdi), %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

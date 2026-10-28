@@ -32,7 +32,6 @@ block0:
 ;   sbbq %rdx, %r8
 ;   cmovbq %rdi, %rax
 ;   cmovbq %r9, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -52,7 +51,6 @@ block0:
 ;   sbbq %rdx, %r8
 ;   cmovbq %rdi, %rax
 ;   cmovbq %r9, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -73,7 +71,6 @@ block0(v0: i128, v1: i128):
 ;   cmovbq %rdi, %rax
 ;   movq %rcx, %rdx
 ;   cmovbq %rsi, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -89,7 +86,6 @@ block0(v0: i128, v1: i128):
 ;   cmovbq %rdi, %rax
 ;   movq %rcx, %rdx
 ;   cmovbq %rsi, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -110,7 +106,6 @@ block0(v0: i128, v1: i128):
 ;   cmovbq %rdi, %rax
 ;   movq %rcx, %rdx
 ;   cmovbq %rsi, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -126,7 +121,6 @@ block0(v0: i128, v1: i128):
 ;   cmovbq %rdi, %rax
 ;   movq %rcx, %rdx
 ;   cmovbq %rsi, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -147,7 +141,6 @@ block0(v0: i128, v1: i128):
 ;   cmovlq %rdi, %rax
 ;   movq %rcx, %rdx
 ;   cmovlq %rsi, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -163,7 +156,6 @@ block0(v0: i128, v1: i128):
 ;   cmovlq %rdi, %rax
 ;   movq %rcx, %rdx
 ;   cmovlq %rsi, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -184,7 +176,6 @@ block0(v0: i128, v1: i128):
 ;   cmovlq %rdi, %rax
 ;   movq %rcx, %rdx
 ;   cmovlq %rsi, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -200,7 +191,6 @@ block0(v0: i128, v1: i128):
 ;   cmovlq %rdi, %rax
 ;   movq %rcx, %rdx
 ;   cmovlq %rsi, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

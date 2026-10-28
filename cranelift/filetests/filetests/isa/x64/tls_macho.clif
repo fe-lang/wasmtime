@@ -15,7 +15,6 @@ block0(v0: i32):
 ;   movq %rsp, %rbp
 ; block0:
 ;   %rax = macho_tls_get_addr User(userextname0)
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -26,7 +25,6 @@ block0(v0: i32):
 ; block1: ; offset 0x4
 ;   movq (%rip), %rdi ; reloc_external MachOX86_64Tlv u1:0 -4
 ;   callq *(%rdi)
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

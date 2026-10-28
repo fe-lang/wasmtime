@@ -14,7 +14,6 @@ block0(v0: i64, v1: f32):
 ; block0:
 ;   movss (%rdi), %xmm4
 ;   andps %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -25,10 +24,8 @@ block0(v0: i64, v1: f32):
 ; block1: ; offset 0x4
 ;   movss (%rdi), %xmm4 ; trap: heap_oob
 ;   andps %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-
 
 function %f64_band(i64, f64) -> f64 {
 block0(v0: i64, v1: f64):
@@ -43,7 +40,6 @@ block0(v0: i64, v1: f64):
 ; block0:
 ;   movsd (%rdi), %xmm4
 ;   andpd %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -54,10 +50,8 @@ block0(v0: i64, v1: f64):
 ; block1: ; offset 0x4
 ;   movsd (%rdi), %xmm4 ; trap: heap_oob
 ;   andpd %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-
 
 function %f32_bor(i64, f32) -> f32 {
 block0(v0: i64, v1: f32):
@@ -72,7 +66,6 @@ block0(v0: i64, v1: f32):
 ; block0:
 ;   movss (%rdi), %xmm4
 ;   orps %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -83,7 +76,6 @@ block0(v0: i64, v1: f32):
 ; block1: ; offset 0x4
 ;   movss (%rdi), %xmm4 ; trap: heap_oob
 ;   orps %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -100,7 +92,6 @@ block0(v0: i64, v1: f64):
 ; block0:
 ;   movsd (%rdi), %xmm4
 ;   orpd %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -111,7 +102,6 @@ block0(v0: i64, v1: f64):
 ; block1: ; offset 0x4
 ;   movsd (%rdi), %xmm4 ; trap: heap_oob
 ;   orpd %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -128,7 +118,6 @@ block0(v0: i64, v1: f32):
 ; block0:
 ;   movss (%rdi), %xmm4
 ;   xorps %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -139,7 +128,6 @@ block0(v0: i64, v1: f32):
 ; block1: ; offset 0x4
 ;   movss (%rdi), %xmm4 ; trap: heap_oob
 ;   xorps %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -156,7 +144,6 @@ block0(v0: i64, v1: f64):
 ; block0:
 ;   movsd (%rdi), %xmm4
 ;   xorpd %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -167,7 +154,6 @@ block0(v0: i64, v1: f64):
 ; block1: ; offset 0x4
 ;   movsd (%rdi), %xmm4 ; trap: heap_oob
 ;   xorpd %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

@@ -30,7 +30,6 @@ block0(v0: i64, v1: i64):
 ;   movq %r9, (%rsi)
 ;   orq (%rip), %rdi
 ;   movq %rdi, (%rsi)
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -50,11 +49,12 @@ block0(v0: i64, v1: i64):
 ;   movq %r9, (%rsi) ; trap: heap_oob
 ;   orq 0xb(%rip), %rdi
 ;   movq %rdi, (%rsi) ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;   addb %al, (%rax)
-;   addb %cl, %ah
+;   addb %al, (%rax)
+;   addb %al, (%rax)
+;   int3
 ;   int3
 ;   fstp %st(5)
 ;   outb %al, %dx

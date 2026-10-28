@@ -24,12 +24,10 @@ block2:
 ;   jb      label2; j label1
 ; block1:
 ;   movl $0x2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
 ;   movl $0x1, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -39,15 +37,13 @@ block2:
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   addq %rsi, %rdi
-;   jb 0x17
+;   jb 0x14
 ; block2: ; offset 0xd
 ;   movl $2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x17
+; block3: ; offset 0x14
 ;   movl $1, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -73,12 +69,10 @@ block2:
 ;   jb      label2; j label1
 ; block1:
 ;   movl $0x2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
 ;   movl $0x1, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -88,15 +82,13 @@ block2:
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   addl %esi, %edi
-;   jb 0x16
+;   jb 0x13
 ; block2: ; offset 0xc
 ;   movl $2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x16
+; block3: ; offset 0x13
 ;   movl $1, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -123,12 +115,10 @@ block2:
 ;   jb      label2; j label1
 ; block1:
 ;   movl $0x2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
 ;   leal (%r8, %rdi), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -139,15 +129,13 @@ block2:
 ; block1: ; offset 0x4
 ;   movq %rdi, %r8
 ;   addl %esi, %r8d
-;   jb 0x1a
+;   jb 0x17
 ; block2: ; offset 0x10
 ;   movl $2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x1a
+; block3: ; offset 0x17
 ;   leal (%r8, %rdi), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -176,11 +164,9 @@ block2:
 ;   jb      label2; j label1
 ; block1:
 ;   movl $0x2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -193,14 +179,12 @@ block2:
 ;   addq %rsi, %rax
 ;   movq %rax, (%rsi) ; trap: heap_oob
 ;   addq %rsi, %rdi
-;   jb 0x20
+;   jb 0x1d
 ; block2: ; offset 0x16
 ;   movl $2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x20
-;   movq %rbp, %rsp
+; block3: ; offset 0x1d
 ;   popq %rbp
 ;   retq
 
@@ -231,14 +215,12 @@ block2:
 ;   jb      label2; j label1
 ; block1:
 ;   movl $0x2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
 ;   movzbq %r11b, %rax
 ;   leaq (%rax, %rdx), %rax
 ;   leaq (%r9, %rax), %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -251,17 +233,15 @@ block2:
 ;   addq %rsi, %r9
 ;   setb %r11b
 ;   addq %rsi, %rdi
-;   jb 0x21
+;   jb 0x1e
 ; block2: ; offset 0x17
 ;   movl $2, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x21
+; block3: ; offset 0x1e
 ;   movzbq %r11b, %rax
 ;   addq %rdx, %rax
 ;   addq %r9, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -293,12 +273,10 @@ block3:
 ;   addl %esi, %r8d
 ;   jb      label3; j label2
 ; block2:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block3:
 ;   leal (%rax, %rdi), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -312,14 +290,12 @@ block3:
 ; block2: ; offset 0x9
 ;   movq %rdi, %r8
 ;   addl %esi, %r8d
-;   jb 0x1a
+;   jb 0x17
 ; block3: ; offset 0x15
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block4: ; offset 0x1a
+; block4: ; offset 0x17
 ;   addl %edi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -349,11 +325,9 @@ block2:
 ;   jb      label2; j label1
 ; block1:
 ;   movl $0x2a, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -367,17 +341,14 @@ block2:
 ;   addq %rsi, %r8
 ;   setb %al
 ;   addq %rsi, %rdi
-;   jb 0x23
+;   jb 0x20
 ; block2: ; offset 0x19
 ;   movl $0x2a, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x23
-;   movq %rbp, %rsp
+; block3: ; offset 0x20
 ;   popq %rbp
 ;   retq
-
 
 function %no_load_sinking_sum_used_between(i64, i32) -> i32 {
 block0(v0: i64, v1: i32):
@@ -403,12 +374,10 @@ block2:
 ;   movq %rsi, %rax
 ;   jb      label2; j label1
 ; block1:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
 ;   leal (%r8, %rax), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -421,14 +390,12 @@ block2:
 ;   movq %rsi, %r8
 ;   addl %edi, %r8d
 ;   movq %rsi, %rax
-;   jb 0x1a
+;   jb 0x17
 ; block2: ; offset 0x15
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x1a
+; block3: ; offset 0x17
 ;   addl %r8d, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

@@ -13,7 +13,6 @@ block0(v0: f32, v1: f32, v2: f32):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfmsub213ss %xmm2, %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -23,7 +22,6 @@ block0(v0: f32, v1: f32, v2: f32):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfmsub213ss %xmm2, %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -40,7 +38,6 @@ block0(v0: f64, v1: f64, v2: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfmsub213sd (%rdi), %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -50,7 +47,6 @@ block0(v0: f64, v1: f64, v2: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfmsub213sd (%rdi), %xmm1, %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -66,7 +62,6 @@ block0(v0: f32x4, v1: f32x4, v2: f32x4):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfmsub213ps %xmm2, %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -76,7 +71,6 @@ block0(v0: f32x4, v1: f32x4, v2: f32x4):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfmsub213ps %xmm2, %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -92,7 +86,6 @@ block0(v0: f64x2, v1: f64x2, v2: f64x2):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfmsub213pd %xmm2, %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -102,7 +95,6 @@ block0(v0: f64x2, v1: f64x2, v2: f64x2):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfmsub213pd %xmm2, %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -119,7 +111,6 @@ block0(v0: f32, v1: i64, v2: f32):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfmsub132ss (%rdi), %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -129,7 +120,6 @@ block0(v0: f32, v1: i64, v2: f32):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfmsub132ss (%rdi), %xmm1, %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -146,7 +136,6 @@ block0(v0: i64, v1: f64, v2: f64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfmsub132sd (%rdi), %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -156,7 +145,6 @@ block0(v0: i64, v1: f64, v2: f64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfmsub132sd (%rdi), %xmm1, %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -173,7 +161,6 @@ block0(v0: f32x4, v1: i64, v2: f32x4):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfmsub132ps (%rdi), %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -183,7 +170,6 @@ block0(v0: f32x4, v1: i64, v2: f32x4):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfmsub132ps (%rdi), %xmm1, %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -200,7 +186,6 @@ block0(v0: i64, v1: f64x2, v2: f64x2):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfmsub132pd (%rdi), %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -210,7 +195,6 @@ block0(v0: i64, v1: f64x2, v2: f64x2):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfmsub132pd (%rdi), %xmm1, %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -227,7 +211,6 @@ block0(v0: f32, v1: f32, v2: f32):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfnmsub213ss %xmm2, %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -237,7 +220,6 @@ block0(v0: f32, v1: f32, v2: f32):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfnmsub213ss %xmm2, %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -254,7 +236,6 @@ block0(v0: f64, v1: f64, v2: f64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfnmsub213sd %xmm2, %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -264,7 +245,6 @@ block0(v0: f64, v1: f64, v2: f64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfnmsub213sd %xmm2, %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -282,7 +262,6 @@ block0(v0: f32x4, v1: f32x4, v2: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfnmsub213ps (%rdi), %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -292,7 +271,6 @@ block0(v0: f32x4, v1: f32x4, v2: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfnmsub213ps (%rdi), %xmm1, %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -310,7 +288,6 @@ block0(v0: f64x2, v1: f64x2, v2: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfnmsub213pd (%rdi), %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -320,7 +297,6 @@ block0(v0: f64x2, v1: f64x2, v2: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfnmsub213pd (%rdi), %xmm1, %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -338,7 +314,6 @@ block0(v0: f32, v1: i64, v2: f32):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfnmsub132ss (%rdi), %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -348,7 +323,6 @@ block0(v0: f32, v1: i64, v2: f32):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfnmsub132ss (%rdi), %xmm1, %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -366,7 +340,6 @@ block0(v0: i64, v1: f64, v2: f64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfnmsub132sd (%rdi), %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -376,7 +349,6 @@ block0(v0: i64, v1: f64, v2: f64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfnmsub132sd (%rdi), %xmm1, %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -394,7 +366,6 @@ block0(v0: i64, v1: f32x4, v2: f32x4):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfnmsub132ps (%rdi), %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -404,7 +375,6 @@ block0(v0: i64, v1: f32x4, v2: f32x4):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfnmsub132ps (%rdi), %xmm1, %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -422,7 +392,6 @@ block0(v0: f64x2, v1: i64, v2: f64x2):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vfnmsub132pd (%rdi), %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -432,7 +401,6 @@ block0(v0: f64x2, v1: i64, v2: f64x2):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vfnmsub132pd (%rdi), %xmm1, %xmm0 ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -461,7 +429,6 @@ block0(v0: f64, v1: f64, v2: f64):
 ;   vmovsd %xmm2, <offset:1>+(%rsp)
 ;   vfnmsub213sd (%rsi), %xmm1, %xmm0
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -475,7 +442,6 @@ block0(v0: f64, v1: f64, v2: f64):
 ;   vmovsd %xmm2, (%rsp)
 ;   vfnmsub213sd (%rsi), %xmm1, %xmm0 ; trap: heap_oob
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -499,7 +465,6 @@ block0(v0: f64, v1: f64, v2: f64):
 ;   vmovsd %xmm2, <offset:1>+(%rsp)
 ;   vfmsub213sd (%rsi), %xmm1, %xmm0
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -513,7 +478,6 @@ block0(v0: f64, v1: f64, v2: f64):
 ;   vmovsd %xmm2, (%rsp)
 ;   vfmsub213sd (%rsi), %xmm1, %xmm0 ; trap: heap_oob
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -537,7 +501,6 @@ block0(v0: f32, v1: f32, v2: f32):
 ;   vmovss %xmm1, <offset:1>+(%rsp)
 ;   vfmsub132ss (%rsi), %xmm2, %xmm0
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -551,7 +514,6 @@ block0(v0: f32, v1: f32, v2: f32):
 ;   vmovss %xmm1, (%rsp)
 ;   vfmsub132ss (%rsi), %xmm2, %xmm0 ; trap: heap_oob
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -577,7 +539,6 @@ block0(v0: f32, v1: f32, v2: f32):
 ;   vmovss %xmm1, <offset:1>+(%rsp)
 ;   vfnmsub132ss (%rsi), %xmm2, %xmm0
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -591,7 +552,6 @@ block0(v0: f32, v1: f32, v2: f32):
 ;   vmovss %xmm1, (%rsp)
 ;   vfnmsub132ss (%rsi), %xmm2, %xmm0 ; trap: heap_oob
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -623,7 +583,6 @@ block0(v0: f32, v1: f32, v2: f32):
 ;   vmovss %xmm1, <offset:1>+(%rsp)
 ;   vfmsub132ss (%r8), %xmm2, %xmm0
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -640,7 +599,6 @@ block0(v0: f32, v1: f32, v2: f32):
 ;   vmovss %xmm1, (%rsp)
 ;   vfmsub132ss (%r8), %xmm2, %xmm0 ; trap: heap_oob
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -665,7 +623,6 @@ block0(v0: f32x4, v1: f32x4, v2: f32x4):
 ;   movdqa %xmm1, %xmm0
 ;   vfmsub132ps (%rsi), %xmm2, %xmm0
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -680,7 +637,6 @@ block0(v0: f32x4, v1: f32x4, v2: f32x4):
 ;   movdqa %xmm1, %xmm0
 ;   vfmsub132ps (%rsi), %xmm2, %xmm0 ; trap: heap_oob
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

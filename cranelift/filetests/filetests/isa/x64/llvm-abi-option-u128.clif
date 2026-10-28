@@ -18,7 +18,6 @@ block0(v0: i64):
 ;   movabsq $0x1000000000000000, %rdx
 ;   movabsq $0x2000000000000000, %rcx
 ;   movl $0x1, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -30,7 +29,6 @@ block0(v0: i64):
 ;   movabsq $0x1000000000000000, %rdx
 ;   movabsq $0x2000000000000000, %rcx
 ;   movl $1, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

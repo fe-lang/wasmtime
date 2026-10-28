@@ -13,7 +13,6 @@ block0:
 ; block0:
 ;   uninit  %xmm0
 ;   vpxor %xmm0, %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -23,7 +22,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vpxor %xmm0, %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -41,7 +39,6 @@ block0(v0: i64):
 ;   uninit  %xmm3
 ;   vpxor %xmm3, %xmm3, %xmm5
 ;   vpinsrq $0x0, %rdi, %xmm5, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -52,7 +49,6 @@ block0(v0: i64):
 ; block1: ; offset 0x4
 ;   vpxor %xmm3, %xmm3, %xmm5
 ;   vpinsrq $0, %rdi, %xmm5, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -69,7 +65,6 @@ block0(v0: i64, v1: i64):
 ; block0:
 ;   vmovq %rdi, %xmm3
 ;   vpinsrq $0x1, %rsi, %xmm3, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -80,7 +75,6 @@ block0(v0: i64, v1: i64):
 ; block1: ; offset 0x4
 ;   vmovq %rdi, %xmm3
 ;   vpinsrq $1, %rsi, %xmm3, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
