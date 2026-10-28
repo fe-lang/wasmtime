@@ -16,7 +16,6 @@ block0(v0: i32):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imulw $0x1111, %di, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -26,7 +25,6 @@ block0(v0: i32):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imulw $0x1111, %di, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

@@ -16,7 +16,6 @@ block0(v1: i32, v2: i64):
 ;   cmpl %edi, %esi
 ;   movq %rdi, %rax
 ;   cmovael %esi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -29,7 +28,6 @@ block0(v1: i32, v2: i64):
 ;   cmpl %edi, %esi
 ;   movq %rdi, %rax
 ;   cmovael %esi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

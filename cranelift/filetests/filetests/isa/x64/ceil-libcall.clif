@@ -13,7 +13,6 @@ block0(v0: f32):
 ; block0:
 ;   load_ext_name %CeilF32+0, %rsi
 ;   call    *%rsi
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -24,7 +23,6 @@ block0(v0: f32):
 ; block1: ; offset 0x4
 ;   movabsq $0, %rsi ; reloc_external Abs8 %CeilF32 0
 ;   callq *%rsi
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -40,7 +38,6 @@ block0(v0: f64):
 ; block0:
 ;   load_ext_name %CeilF64+0, %rsi
 ;   call    *%rsi
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -51,7 +48,6 @@ block0(v0: f64):
 ; block1: ; offset 0x4
 ;   movabsq $0, %rsi ; reloc_external Abs8 %CeilF64 0
 ;   callq *%rsi
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

@@ -32,7 +32,6 @@ block0(v0: i32, v1: i32):
 ;   movq 0x40(%rsp), %r12
 ;   movq 0x48(%rsp), %r13
 ;   addq $0x50, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -52,7 +51,6 @@ block0(v0: i32, v1: i32):
 ;   movq 0x40(%rsp), %r12
 ;   movq 0x48(%rsp), %r13
 ;   addq $0x50, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -83,7 +81,6 @@ block0(v0: i32, v1: i32):
 ;   movq 0x40(%rsp), %r12
 ;   movq 0x48(%rsp), %r13
 ;   addq $0x50, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -102,7 +99,6 @@ block0(v0: i32, v1: i32):
 ;   movq 0x40(%rsp), %r12
 ;   movq 0x48(%rsp), %r13
 ;   addq $0x50, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

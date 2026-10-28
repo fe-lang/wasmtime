@@ -20,7 +20,6 @@ block0(v0: i32, v1: i128, v2: i128):
 ;   movq %rdx, %r10
 ;   movq %r8, %rdx
 ;   cmoveq %r10, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -35,7 +34,6 @@ block0(v0: i32, v1: i128, v2: i128):
 ;   movq %rdx, %r10
 ;   movq %r8, %rdx
 ;   cmoveq %r10, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -57,7 +55,6 @@ block0(v0: f32, v1: i128, v2: i128):
 ;   cmovneq %rdx, %rax
 ;   movq %rsi, %rdx
 ;   cmovneq %rcx, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -73,7 +70,6 @@ block0(v0: f32, v1: i128, v2: i128):
 ;   cmovneq %rdx, %rax
 ;   movq %rsi, %rdx
 ;   cmovneq %rcx, %rdx
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

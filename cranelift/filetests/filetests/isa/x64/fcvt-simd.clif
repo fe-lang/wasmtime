@@ -12,7 +12,6 @@ block0(v0: i32x4):
 ;   movq %rsp, %rbp
 ; block0:
 ;   vcvtudq2ps %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -22,7 +21,6 @@ block0(v0: i32x4):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   vcvtudq2ps %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

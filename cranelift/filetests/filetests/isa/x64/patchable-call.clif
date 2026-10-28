@@ -18,7 +18,6 @@ block0(v0: i64):
 ;   movq %rcx, %rsi
 ;   call    TestCase(%f)
 ;   call    TestCase(%f)
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -32,10 +31,8 @@ block0(v0: i64):
 ;   movq %rcx, %rsi
 ;   callq 0x12 ; reloc_external CallPCRel4 %f -4 ; patchable call: NOP out last 5 bytes
 ;   callq 0x17 ; reloc_external CallPCRel4 %f -4 ; patchable call: NOP out last 5 bytes
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-
 
 function %patchable_call_stack_args(i64) system_v {
     fn0 = colocated patchable %f(i64, i64, i64, i64, i64, i64, i64, i64, i64, i64) preserve_all
@@ -66,7 +63,6 @@ block0(v0: i64):
 ;   movq %r9, 0x18(%rsp)
 ;   call    TestCase(%f)
 ;   addq $0x20, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -92,10 +88,8 @@ block0(v0: i64):
 ;   movq %r9, 0x18(%rsp)
 ;   callq 0x47 ; reloc_external CallPCRel4 %f -4 ; patchable call: NOP out last 5 bytes
 ;   addq $0x20, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-
 
 function %patchable_try_call(i64) -> i64 system_v {
     sig0 = (i64, i64, i64, i64) preserve_all
@@ -133,7 +127,6 @@ block2(v1: i64):
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block2:
@@ -143,7 +136,6 @@ block2(v1: i64):
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -171,17 +163,15 @@ block2(v1: i64):
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x5c
+; block3: ; offset 0x59
 ;   movq 0x10(%rsp), %rbx
 ;   movq 0x18(%rsp), %r12
 ;   movq 0x20(%rsp), %r13
 ;   movq 0x28(%rsp), %r14
 ;   movq 0x30(%rsp), %r15
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

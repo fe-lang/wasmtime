@@ -15,7 +15,6 @@ block0(v0: i32, v1: f64, v2: i64):
 ;   movsd (%rsi), %xmm5
 ;   testl %edi, %edi
 ;   movsd %xmm0, %xmm0; jz $next; movsd %xmm5, %xmm0; $next:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -28,7 +27,6 @@ block0(v0: i32, v1: f64, v2: i64):
 ;   testl %edi, %edi
 ;   je 0x13
 ;   movaps %xmm5, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

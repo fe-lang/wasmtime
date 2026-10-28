@@ -17,7 +17,6 @@ block0(v0: i8x16):
 ;   movdqu (%rip), %xmm0
 ;   movdqa %xmm4, %xmm5
 ;   pmaddubsw %xmm5, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -30,11 +29,11 @@ block0(v0: i8x16):
 ;   movdqu 0x10(%rip), %xmm0
 ;   movdqa %xmm4, %xmm5
 ;   pmaddubsw %xmm5, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;   addb %al, (%rax)
-;   addl %eax, (%rcx)
+;   addb %al, (%rax)
+;   addb %al, (%rcx)
 ;   addl %eax, (%rcx)
 ;   addl %eax, (%rcx)
 ;   addl %eax, (%rcx)
@@ -56,7 +55,6 @@ block0(v0: i16x8):
 ;   movq %rsp, %rbp
 ; block0:
 ;   pmaddwd (%rip), %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -65,25 +63,18 @@ block0(v0: i16x8):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
-;   pmaddwd 0x14(%rip), %xmm0
-;   movq %rbp, %rsp
+;   pmaddwd 4(%rip), %xmm0
 ;   popq %rbp
 ;   retq
 ;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rcx)
-;   addb %al, (%rcx)
-;   addb %al, (%rcx)
-;   addb %al, (%rcx)
-;   addb %al, (%rcx)
-;   addb %al, (%rcx)
-;   addb %al, (%rcx)
-;   addb %al, (%rcx)
+;   addl %eax, (%rax)
+;   addl %eax, (%rax)
+;   addl %eax, (%rax)
+;   addl %eax, (%rax)
+;   addl %eax, (%rax)
+;   addl %eax, (%rax)
+;   addl %eax, (%rax)
+;   addl %eax, (%rax)
 
 function %fn3(i8x16) -> i16x8 {
 block0(v0: i8x16):
@@ -98,7 +89,6 @@ block0(v0: i8x16):
 ;   movq %rsp, %rbp
 ; block0:
 ;   pmaddubsw (%rip), %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -107,18 +97,10 @@ block0(v0: i8x16):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
-;   pmaddubsw 0x13(%rip), %xmm0
-;   movq %rbp, %rsp
+;   pmaddubsw 3(%rip), %xmm0
 ;   popq %rbp
 ;   retq
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addl %eax, (%rcx)
+;   addb %al, (%rcx)
 ;   addl %eax, (%rcx)
 ;   addl %eax, (%rcx)
 ;   addl %eax, (%rcx)
@@ -142,7 +124,6 @@ block0(v0: i16x8):
 ;   pxor (%rip), %xmm0
 ;   pmaddwd (%rip), %xmm0
 ;   paddd (%rip), %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -151,24 +132,15 @@ block0(v0: i16x8):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
-;   pxor 0x24(%rip), %xmm0
-;   pmaddwd 0x2c(%rip), %xmm0
-;   paddd 0x34(%rip), %xmm0
-;   movq %rbp, %rsp
+;   pxor 0x14(%rip), %xmm0
+;   pmaddwd 0x1c(%rip), %xmm0
+;   paddd 0x24(%rip), %xmm0
 ;   popq %rbp
 ;   retq
 ;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb $0x80, (%rax)
 ;   addb %al, -0x7fff8000(%rax)
 ;   addb %al, -0x7fff8000(%rax)
-;   addl %eax, (%rax)
+;   addb %al, 0x18000(%rax)
 ;   addl %eax, (%rax)
 ;   addl %eax, (%rax)
 ;   addl %eax, (%rax)

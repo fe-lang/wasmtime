@@ -20,7 +20,6 @@ block0(v0: f32, v1: f32):
 ;   ucomiss %xmm1, %xmm0
 ;   cmovpl (%rip), %eax
 ;   cmovnel (%rip), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -33,9 +32,10 @@ block0(v0: f32, v1: f32):
 ;   ucomiss %xmm1, %xmm0
 ;   cmovpl 0xd(%rip), %eax
 ;   cmovnel 6(%rip), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
+;   addb %al, (%rax)
+;   addb %al, (%rax)
 ;   addb %al, (%rax)
 ;   addb %al, (%rax)
 ;   addb %al, (%rax)

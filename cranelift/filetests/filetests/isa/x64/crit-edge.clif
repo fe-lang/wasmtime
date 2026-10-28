@@ -44,11 +44,9 @@ function %f(i32) -> i32 {
 ; block6:
 ;   jmp     label7
 ; block7:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ; block8:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -62,7 +60,7 @@ function %f(i32) -> i32 {
 ;   jne 0x1f
 ; block2: ; offset 0xf
 ;   testl %eax, %eax
-;   jne 0x34
+;   jne 0x31
 ; block3: ; offset 0x17
 ;   movq %rdi, %rax
 ;   jmp 0x2f
@@ -71,13 +69,11 @@ function %f(i32) -> i32 {
 ;   je 0x2f
 ; block5: ; offset 0x27
 ;   movq %rdi, %rax
-;   jmp 0x34
+;   jmp 0x31
 ; block6: ; offset 0x2f
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-; block7: ; offset 0x34
-;   movq %rbp, %rsp
+; block7: ; offset 0x31
 ;   popq %rbp
 ;   retq
 

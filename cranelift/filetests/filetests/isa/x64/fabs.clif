@@ -14,7 +14,6 @@ block0(v0: f32):
 ;   movl $0x7fffffff, %edx
 ;   movd %edx, %xmm4
 ;   andps %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -26,7 +25,6 @@ block0(v0: f32):
 ;   movl $0x7fffffff, %edx
 ;   movd %edx, %xmm4
 ;   andps %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -43,7 +41,6 @@ block0(v0: f64):
 ;   movabsq $0x7fffffffffffffff, %rdx
 ;   movq %rdx, %xmm4
 ;   andpd %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -55,7 +52,6 @@ block0(v0: f64):
 ;   movabsq $0x7fffffffffffffff, %rdx
 ;   movq %rdx, %xmm4
 ;   andpd %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -73,7 +69,6 @@ block0(v0: f32x4):
 ;   pcmpeqd %xmm4, %xmm4
 ;   psrld $0x1, %xmm4
 ;   andps %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -85,7 +80,6 @@ block0(v0: f32x4):
 ;   pcmpeqd %xmm4, %xmm4
 ;   psrld $1, %xmm4
 ;   andps %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -103,7 +97,6 @@ block0(v0: f64x2):
 ;   pcmpeqd %xmm4, %xmm4
 ;   psrlq $0x1, %xmm4
 ;   andpd %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -115,7 +108,6 @@ block0(v0: f64x2):
 ;   pcmpeqd %xmm4, %xmm4
 ;   psrlq $1, %xmm4
 ;   andpd %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

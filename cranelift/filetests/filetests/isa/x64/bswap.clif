@@ -13,7 +13,6 @@ block0(v0: i64):
 ; block0:
 ;   movq %rdi, %rax
 ;   bswapq %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -24,7 +23,6 @@ block0(v0: i64):
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
 ;   bswapq %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -40,7 +38,6 @@ block0(v0: i32):
 ; block0:
 ;   movq %rdi, %rax
 ;   bswapl %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -51,7 +48,6 @@ block0(v0: i32):
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
 ;   bswapl %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -67,7 +63,6 @@ block0(v0: i16):
 ; block0:
 ;   movq %rdi, %rax
 ;   rolw $0x8, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -78,7 +73,6 @@ block0(v0: i16):
 ; block1: ; offset 0x4
 ;   movq %rdi, %rax
 ;   rolw $8, %ax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

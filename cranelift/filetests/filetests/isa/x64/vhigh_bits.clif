@@ -12,7 +12,6 @@ block0(v0: i8x16):
 ;   movq %rsp, %rbp
 ; block0:
 ;   pmovmskb %xmm0, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -22,7 +21,6 @@ block0(v0: i8x16):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   pmovmskb %xmm0, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -37,7 +35,6 @@ block0(v0: i8x16):
 ;   movq %rsp, %rbp
 ; block0:
 ;   pmovmskb %xmm0, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -47,7 +44,6 @@ block0(v0: i8x16):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   pmovmskb %xmm0, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -64,7 +60,6 @@ block0(v0: i16x8):
 ;   packsswb %xmm0, %xmm0
 ;   pmovmskb %xmm0, %eax
 ;   shrq $0x8, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -76,7 +71,6 @@ block0(v0: i16x8):
 ;   packsswb %xmm0, %xmm0
 ;   pmovmskb %xmm0, %eax
 ;   shrq $8, %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -91,7 +85,6 @@ block0(v0: i32x4):
 ;   movq %rsp, %rbp
 ; block0:
 ;   movmskps %xmm0, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -101,7 +94,6 @@ block0(v0: i32x4):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   movmskps %xmm0, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -116,7 +108,6 @@ block0(v0: i64x2):
 ;   movq %rsp, %rbp
 ; block0:
 ;   movmskpd %xmm0, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -126,7 +117,6 @@ block0(v0: i64x2):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   movmskpd %xmm0, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

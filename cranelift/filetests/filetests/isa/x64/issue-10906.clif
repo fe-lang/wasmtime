@@ -19,7 +19,6 @@ block0:
 ; block0:
 ;   uninit  %xmm0
 ;   pcmpeqd %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -29,7 +28,6 @@ block0:
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   pcmpeqd %xmm0, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -52,7 +50,6 @@ block0:
 ;   uninit  %xmm0
 ;   pxor %xmm0, %xmm0
 ;   pinsrw $0x0, %esi, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -66,7 +63,6 @@ block0:
 ;   movl $0x2a, %esi
 ;   pxor %xmm0, %xmm0
 ;   pinsrw $0, %esi, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

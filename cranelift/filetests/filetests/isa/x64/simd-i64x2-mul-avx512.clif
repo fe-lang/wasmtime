@@ -16,7 +16,6 @@ block0(v0: i64x2, v1: i64x2):
 ; block0:
 ;   vpmullq %xmm1, %xmm0, %xmm0
 ;   vpmullq %xmm1, %xmm0, %xmm1
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -27,7 +26,6 @@ block0(v0: i64x2, v1: i64x2):
 ; block1: ; offset 0x4
 ;   vpmullq %xmm1, %xmm0, %xmm0
 ;   vpmullq %xmm1, %xmm0, %xmm1
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

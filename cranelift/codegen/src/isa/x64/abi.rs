@@ -576,13 +576,12 @@ impl ABIMachineSpec for X64ABIMachineSpec {
         _frame_layout: &FrameLayout,
     ) -> SmallInstVec<Self::I> {
         let rbp = Gpr::RBP;
-        let rsp = Gpr::RSP;
 
         let mut insts = SmallVec::new();
-        // `mov %rbp, %rsp`
-        insts.push(Inst::External {
-            inst: asm::inst::movq_mr::new(Writable::from_reg(rsp), rbp).into(),
-        });
+        // RSP does not change between the prologue and the epilogue, so the
+        // clobber restore already moved it back to RBP. Popping through it
+        // rather than through `mov %rbp, %rsp` keeps the stack pointer known
+        // to the processor's stack engine.
         // `pop %rbp`
         insts.push(Inst::External {
             inst: asm::inst::popq_o::new(Writable::from_reg(rbp)).into(),

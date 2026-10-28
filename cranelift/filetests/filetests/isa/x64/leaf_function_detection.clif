@@ -25,7 +25,6 @@ block0(v0: i32):
 ;   movq %rsp, %rbp
 ; block0:
 ;   imull $0xa, %edi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -35,7 +34,6 @@ block0(v0: i32):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   imull $0xa, %edi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -74,7 +72,6 @@ block3(v6: i32):
 ;   imull $0x2, %edi, %eax
 ;   jmp     label3
 ; block3:
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -92,7 +89,6 @@ block3(v6: i32):
 ; block3: ; offset 0x15
 ;   imull $2, %edi, %eax
 ; block4: ; offset 0x18
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -111,7 +107,6 @@ block0(v0: i32):
 ;   movq %rsp, %rbp
 ; block0:
 ;   call    TestCase(%simple_leaf)
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -121,7 +116,6 @@ block0(v0: i32):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   callq 9 ; reloc_external CallPCRel4 %simple_leaf -4
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -139,7 +133,6 @@ block0(v0: i32, v1: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   call    *%rsi
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -149,7 +142,6 @@ block0(v0: i32, v1: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   callq *%rsi
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -170,7 +162,6 @@ block0(v0: i32, v1: i64):
 ;   movl %edi, (%rsi)
 ;   movl $0x1, %eax
 ;   addl (%rsi), %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -182,7 +173,6 @@ block0(v0: i32, v1: i64):
 ;   movl %edi, (%rsi) ; trap: heap_oob
 ;   movl $1, %eax
 ;   addl (%rsi), %eax ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -208,7 +198,6 @@ block0(v0: i32):
 ;   xorq %rdx, %rdx
 ;   divl %r8d ;; implicit: %eax, %edx, trap=254
 ;   andl $0x3, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -222,7 +211,6 @@ block0(v0: i32):
 ;   xorq %rdx, %rdx
 ;   divl %r8d ; trap: int_divz
 ;   andl $3, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

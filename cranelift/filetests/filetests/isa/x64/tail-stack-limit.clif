@@ -28,7 +28,6 @@ block0(v0: i64, v1: i8, v2: i8, v3: i8, v4: i8, v5: i8, v6: i8, v7: i8, v8: i128
 ;   movq <offset:0>+-0x10(%rbp), %rax
 ;   movq <offset:0>+-8(%rbp), %rcx
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq $0x20
 ;
@@ -39,13 +38,12 @@ block0(v0: i64, v1: i8, v2: i8, v3: i8, v4: i8, v5: i8, v6: i8, v7: i8, v8: i128
 ;   movq %rdi, %r10
 ;   addq $0x10, %r10
 ;   cmpq %rsp, %r10
-;   ja 0x2b
+;   ja 0x28
 ;   subq $0x10, %rsp
 ; block1: ; offset 0x18
 ;   movq 0x20(%rbp), %rax
 ;   movq 0x28(%rbp), %rcx
 ;   addq $0x10, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq $0x20
 ;   ud2 ; trap: stk_ovf

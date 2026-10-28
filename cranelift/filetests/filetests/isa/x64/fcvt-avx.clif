@@ -14,7 +14,6 @@ block0(v0: i32):
 ;   uninit  %xmm2
 ;   vxorps %xmm2, %xmm2, %xmm4
 ;   vcvtsi2ssl %edi, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -25,7 +24,6 @@ block0(v0: i32):
 ; block1: ; offset 0x4
 ;   vxorps %xmm2, %xmm2, %xmm4
 ;   vcvtsi2ssl %edi, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -42,7 +40,6 @@ block0(v0: i64):
 ;   uninit  %xmm2
 ;   vxorps %xmm2, %xmm2, %xmm4
 ;   vcvtsi2ssq %rdi, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -53,7 +50,6 @@ block0(v0: i64):
 ; block1: ; offset 0x4
 ;   vxorps %xmm2, %xmm2, %xmm4
 ;   vcvtsi2ssq %rdi, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -70,7 +66,6 @@ block0(v0: i32):
 ;   uninit  %xmm2
 ;   vxorpd %xmm2, %xmm2, %xmm4
 ;   vcvtsi2sdl %edi, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -81,7 +76,6 @@ block0(v0: i32):
 ; block1: ; offset 0x4
 ;   vxorpd %xmm2, %xmm2, %xmm4
 ;   vcvtsi2sdl %edi, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -98,7 +92,6 @@ block0(v0: i64):
 ;   uninit  %xmm2
 ;   vxorpd %xmm2, %xmm2, %xmm4
 ;   vcvtsi2sdq %rdi, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -109,7 +102,6 @@ block0(v0: i64):
 ; block1: ; offset 0x4
 ;   vxorpd %xmm2, %xmm2, %xmm4
 ;   vcvtsi2sdq %rdi, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -129,7 +121,6 @@ block0(v0: i64x2):
 ;   vpor (%rip), %xmm6, %xmm0
 ;   vsubpd (%rip), %xmm0, %xmm0
 ;   vaddpd %xmm0, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -138,22 +129,15 @@ block0(v0: i64x2):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
-;   vpand 0x34(%rip), %xmm0, %xmm2
-;   vpor 0x3c(%rip), %xmm2, %xmm4
+;   vpand 0x24(%rip), %xmm0, %xmm2
+;   vpor 0x2c(%rip), %xmm2, %xmm4
 ;   vpsrlq $0x20, %xmm0, %xmm6
-;   vpor 0x3f(%rip), %xmm6, %xmm0
-;   vsubpd 0x47(%rip), %xmm0, %xmm0
+;   vpor 0x2f(%rip), %xmm6, %xmm0
+;   vsubpd 0x37(%rip), %xmm0, %xmm0
 ;   vaddpd %xmm0, %xmm4, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
-;   addb %al, (%rax)
+;   addb %bh, %bh
 
 function %i64x2_to_f64x2(i64x2) -> f64x2 {
 block0(v0: i64x2):
@@ -173,7 +157,6 @@ block0(v0: i64x2):
 ;   vmovq %xmm0, %rax
 ;   vcvtsi2sdq %rax, %xmm4, %xmm0
 ;   vunpcklpd %xmm0, %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -189,7 +172,6 @@ block0(v0: i64x2):
 ;   vmovq %xmm0, %rax
 ;   vcvtsi2sdq %rax, %xmm4, %xmm0
 ;   vunpcklpd %xmm0, %xmm1, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

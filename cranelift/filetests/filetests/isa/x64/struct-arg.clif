@@ -13,7 +13,6 @@ block0(v0: i64):
 ; block0:
 ;   leaq <offset:0>+-0x40(%rbp), %rax
 ;   movzbq (%rax), %rax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -24,7 +23,6 @@ block0(v0: i64):
 ; block1: ; offset 0x4
 ;   leaq 0x10(%rbp), %rax
 ;   movzbq (%rax), %rax ; trap: heap_oob
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -44,7 +42,6 @@ block0(v0: i64, v1: i64):
 ;   movzbq (%rdi), %rax
 ;   movzbq (%rcx), %rsi
 ;   addl %esi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -57,7 +54,6 @@ block0(v0: i64, v1: i64):
 ;   movzbq (%rdi), %rax ; trap: heap_oob
 ;   movzbq (%rcx), %rsi ; trap: heap_oob
 ;   addl %esi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -81,7 +77,6 @@ block0(v0: i64):
 ;   call    *%r8
 ;   call    User(userextname0)
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -98,7 +93,6 @@ block0(v0: i64):
 ;   callq *%r8
 ;   callq 0x26 ; reloc_external CallPCRel4 u0:0 -4
 ;   addq $0x40, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -125,7 +119,6 @@ block0(v0: i64, v1: i64):
 ;   call    User(userextname0)
 ;   movq 0x40(%rsp), %r12
 ;   addq $0x50, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -145,7 +138,6 @@ block0(v0: i64, v1: i64):
 ;   callq 0x2e ; reloc_external CallPCRel4 u0:0 -4
 ;   movq 0x40(%rsp), %r12
 ;   addq $0x50, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -166,7 +158,6 @@ block0(v0: i64, v1: i64):
 ;   movzbq (%rax), %rax
 ;   movzbq (%rdx), %rsi
 ;   addl %esi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -180,7 +171,6 @@ block0(v0: i64, v1: i64):
 ;   movzbq (%rax), %rax ; trap: heap_oob
 ;   movzbq (%rdx), %rsi ; trap: heap_oob
 ;   addl %esi, %eax
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 
@@ -215,7 +205,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq 0xc0(%rsp), %r12
 ;   movq 0xc8(%rsp), %r15
 ;   addq $0xd0, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -243,7 +232,6 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq 0xc0(%rsp), %r12
 ;   movq 0xc8(%rsp), %r15
 ;   addq $0xd0, %rsp
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 

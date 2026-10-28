@@ -15,7 +15,6 @@ block0(v0: i16x8, v1: i16x8):
 ;   movdqa %xmm0, %xmm5
 ;   pcmpeqw (%rip), %xmm5
 ;   pxor %xmm5, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;
@@ -28,10 +27,12 @@ block0(v0: i16x8, v1: i16x8):
 ;   movdqa %xmm0, %xmm5
 ;   pcmpeqw 0xb(%rip), %xmm5
 ;   pxor %xmm5, %xmm0
-;   movq %rbp, %rsp
 ;   popq %rbp
 ;   retq
 ;   addb %al, (%rax)
+;   addb %al, (%rax)
+;   addb %al, (%rax)
+;   addb $0x80, (%rax)
 ;   addb %al, -0x7fff8000(%rax)
 ;   addb %al, -0x7fff8000(%rax)
 
