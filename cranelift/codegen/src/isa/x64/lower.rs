@@ -46,48 +46,6 @@ fn is_int_or_ref_ty(ty: Type) -> bool {
     }
 }
 
-/// Returns whether the given specified `input` is a result produced by an instruction with Opcode
-/// `op`.
-// TODO investigate failures with checking against the result index.
-fn matches_input(ctx: &mut Lower<Inst>, input: InsnInput, op: Opcode) -> Option<IRInst> {
-    let inputs = ctx.get_input_as_source_or_const(input.insn, input.input);
-    inputs.inst.as_inst().and_then(|(src_inst, _)| {
-        let data = ctx.data(src_inst);
-        if data.opcode() == op {
-            return Some(src_inst);
-        }
-        None
-    })
-}
-
-/// Put the given input into possibly multiple registers, and mark it as used (side-effect).
-fn put_input_in_regs(ctx: &mut Lower<Inst>, spec: InsnInput) -> ValueRegs<Reg> {
-    let ty = ctx.input_ty(spec.insn, spec.input);
-    let input = ctx.get_input_as_source_or_const(spec.insn, spec.input);
-
-    if let Some(c) = input.constant {
-        // Generate constants fresh at each use to minimize long-range register pressure.
-        let size = if ty_bits(ty) < 64 {
-            OperandSize::Size32
-        } else {
-            OperandSize::Size64
-        };
-        assert!(is_int_or_ref_ty(ty)); // Only used for addresses.
-        let cst_copy = ctx.alloc_tmp(ty);
-        ctx.emit(Inst::imm(size, c, cst_copy.only_reg().unwrap()));
-        non_writable_value_regs(cst_copy)
-    } else {
-        ctx.put_input_in_regs(spec.insn, spec.input)
-    }
-}
-
-/// Put the given input into a register, and mark it as used (side-effect).
-fn put_input_in_reg(ctx: &mut Lower<Inst>, spec: InsnInput) -> Reg {
-    put_input_in_regs(ctx, spec)
-        .only_reg()
-        .expect("Multi-register value not expected")
-}
-
 enum MergeableLoadSize {
     /// The load size performed by a sinkable load merging operation is
     /// precisely the size necessary for the type in question.
@@ -154,11 +112,6 @@ fn is_mergeable_load(
     }
 }
 
-fn input_to_imm(ctx: &mut Lower<Inst>, spec: InsnInput) -> Option<u64> {
-    ctx.get_input_as_source_or_const(spec.insn, spec.input)
-        .constant
-}
-
 fn emit_vm_call(
     ctx: &mut Lower<Inst>,
     flags: &Flags,
@@ -203,116 +156,6 @@ fn emit_vm_call(
         ctx.emit(Inst::call_unknown(Box::new(call_info)));
     }
     Ok(outputs)
-}
-
-/// Returns whether the given input is a shift by a constant value less or equal than 3.
-/// The goal is to embed it within an address mode.
-fn matches_small_constant_shift(ctx: &mut Lower<Inst>, spec: InsnInput) -> Option<(InsnInput, u8)> {
-    matches_input(ctx, spec, Opcode::Ishl).and_then(|shift| {
-        match input_to_imm(
-            ctx,
-            InsnInput {
-                insn: shift,
-                input: 1,
-            },
-        ) {
-            Some(shift_amt) if shift_amt <= 3 => Some((
-                InsnInput {
-                    insn: shift,
-                    input: 0,
-                },
-                shift_amt as u8,
-            )),
-            _ => None,
-        }
-    })
-}
-
-/// Lowers an instruction to one of the x86 addressing modes.
-///
-/// Note: the 32-bit offset in Cranelift has to be sign-extended, which maps x86's behavior.
-fn lower_to_amode(ctx: &mut Lower<Inst>, spec: InsnInput, offset: i32) -> Amode {
-    let flags = ctx
-        .memflags(spec.insn)
-        .expect("Instruction with amode should have memflags");
-
-    // We now either have an add that we must materialize, or some other input; as well as the
-    // final offset.
-    if let Some(add) = matches_input(ctx, spec, Opcode::Iadd) {
-        let output_ty = ctx.output_ty(add, 0);
-        debug_assert_eq!(
-            output_ty,
-            types::I64,
-            "Address width of 64 expected, got {output_ty}"
-        );
-        let add_inputs = &[
-            InsnInput {
-                insn: add,
-                input: 0,
-            },
-            InsnInput {
-                insn: add,
-                input: 1,
-            },
-        ];
-
-        // TODO heap_addr legalization generates a uext64 *after* the shift, so these optimizations
-        // aren't happening in the wasm case. We could do better, given some range analysis.
-        let (base, index, shift) = if let Some((shift_input, shift_amt)) =
-            matches_small_constant_shift(ctx, add_inputs[0])
-        {
-            (
-                put_input_in_reg(ctx, add_inputs[1]),
-                put_input_in_reg(ctx, shift_input),
-                shift_amt,
-            )
-        } else if let Some((shift_input, shift_amt)) =
-            matches_small_constant_shift(ctx, add_inputs[1])
-        {
-            (
-                put_input_in_reg(ctx, add_inputs[0]),
-                put_input_in_reg(ctx, shift_input),
-                shift_amt,
-            )
-        } else {
-            for input in 0..=1 {
-                // Try to pierce through uextend.
-                let (inst, inst_input) = if let Some(uextend) =
-                    matches_input(ctx, InsnInput { insn: add, input }, Opcode::Uextend)
-                {
-                    (uextend, 0)
-                } else {
-                    (add, input)
-                };
-
-                // If it's a constant, add it directly!
-                if let Some(cst) = ctx.get_input_as_source_or_const(inst, inst_input).constant {
-                    let final_offset = (offset as i64).wrapping_add(cst as i64);
-                    if let Ok(final_offset) = i32::try_from(final_offset) {
-                        let base = put_input_in_reg(ctx, add_inputs[1 - input]);
-                        return Amode::imm_reg(final_offset, base).with_flags(flags.into());
-                    }
-                }
-            }
-
-            (
-                put_input_in_reg(ctx, add_inputs[0]),
-                put_input_in_reg(ctx, add_inputs[1]),
-                0,
-            )
-        };
-
-        return Amode::imm_reg_reg_shift(
-            offset,
-            Gpr::unwrap_new(base),
-            Gpr::unwrap_new(index),
-            shift,
-        )
-        .with_flags(flags.into());
-    }
-
-    let input = put_input_in_reg(ctx, spec);
-    Amode::imm_reg(offset, input).with_flags(flags.into())
 }
 
 //=============================================================================

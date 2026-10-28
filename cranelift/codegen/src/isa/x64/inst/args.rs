@@ -563,6 +563,9 @@ pub enum SyntheticAmode {
     SlotOffset {
         /// The offset into the slot area.
         simm32: i32,
+        /// Whether the access is aligned to its size, as `MemFlags::aligned`
+        /// states for a `Real` address.
+        aligned: bool,
     },
 
     /// A virtual offset to a constant that will be emitted in the constant section of the buffer.
@@ -575,8 +578,12 @@ impl SyntheticAmode {
         Self::Real(amode)
     }
 
+    /// An access to a slot Cranelift laid out itself, which is aligned.
     pub(crate) fn slot_offset(simm32: i32) -> Self {
-        SyntheticAmode::SlotOffset { simm32 }
+        SyntheticAmode::SlotOffset {
+            simm32,
+            aligned: true,
+        }
     }
 
     /// Add the registers mentioned by `self` to `collector`.
@@ -619,7 +626,7 @@ impl SyntheticAmode {
                     regs::rbp(),
                 )
             }
-            SyntheticAmode::SlotOffset { simm32 } => {
+            SyntheticAmode::SlotOffset { simm32, .. } => {
                 let off = *simm32 as i64 + i64::from(frame.outgoing_args_size);
                 Amode::imm_reg(off.try_into().expect("invalid sp offset"), regs::rsp())
             }
@@ -632,9 +639,8 @@ impl SyntheticAmode {
     pub(crate) fn aligned(&self) -> bool {
         match self {
             SyntheticAmode::Real(addr) => addr.aligned(),
-            &SyntheticAmode::IncomingArg { .. }
-            | SyntheticAmode::SlotOffset { .. }
-            | SyntheticAmode::ConstantOffset { .. } => true,
+            &SyntheticAmode::SlotOffset { aligned, .. } => aligned,
+            SyntheticAmode::IncomingArg { .. } | SyntheticAmode::ConstantOffset { .. } => true,
         }
     }
 
@@ -643,7 +649,7 @@ impl SyntheticAmode {
         let mut ret = self.clone();
         match &mut ret {
             SyntheticAmode::Real(amode) => *amode = amode.offset(offset)?,
-            SyntheticAmode::SlotOffset { simm32 } => *simm32 = simm32.checked_add(offset)?,
+            SyntheticAmode::SlotOffset { simm32, .. } => *simm32 = simm32.checked_add(offset)?,
             // `amode_offset` is used only in i128.load/store which
             // takes a synthetic amode from `to_amode`; `to_amode` can
             // only produce Real or SlotOffset amodes, never
@@ -674,7 +680,7 @@ impl PrettyPrint for SyntheticAmode {
             &SyntheticAmode::IncomingArg { offset } => {
                 format!("rbp(stack args max - {offset})")
             }
-            SyntheticAmode::SlotOffset { simm32 } => {
+            SyntheticAmode::SlotOffset { simm32, .. } => {
                 format!("rsp({} + virtual offset)", *simm32)
             }
             SyntheticAmode::ConstantOffset(c) => format!("const({})", c.as_u32()),

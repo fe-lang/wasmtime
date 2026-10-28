@@ -347,7 +347,7 @@ impl From<SyntheticAmode> for asm::Amode<Gpr> {
                 },
                 trap: None,
             },
-            SyntheticAmode::SlotOffset { simm32 } => asm::Amode::ImmReg {
+            SyntheticAmode::SlotOffset { simm32, .. } => asm::Amode::ImmReg {
                 base: Gpr::RSP,
                 simm32: asm::AmodeOffsetPlusKnownOffset {
                     simm32: simm32.into(),

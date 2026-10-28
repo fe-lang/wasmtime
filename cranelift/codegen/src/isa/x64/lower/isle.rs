@@ -7,7 +7,7 @@ use generated_code::{AssemblerOutputs, Context, MInst, RegisterClass};
 
 // Types that the generated ISLE code uses via `use super::*`.
 use super::external::{CraneliftRegisters, PairedGpr, PairedXmm, isle_assembler_methods};
-use super::{MergeableLoadSize, is_int_or_ref_ty, is_mergeable_load, lower_to_amode};
+use super::{MergeableLoadSize, is_int_or_ref_ty, is_mergeable_load};
 use crate::ir::condcodes::{FloatCC, IntCC};
 use crate::ir::immediates::*;
 use crate::ir::types::*;
@@ -706,8 +706,14 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
 
     fn sink_load(&mut self, load: &SinkableLoad) -> SyntheticAmode {
         self.lower_ctx.sink_inst(load.inst);
-        let addr = lower_to_amode(self.lower_ctx, load.addr_input, load.offset);
-        SyntheticAmode::Real(addr)
+        let InstructionData::Load { flags, .. } = *self.lower_ctx.data(load.inst) else {
+            unreachable!("sinkable loads are `load` instructions");
+        };
+        let flags = self.lower_ctx.dfg().mem_flags[flags];
+        let addr = self
+            .lower_ctx
+            .input_as_value(load.addr_input.insn, load.addr_input.input);
+        generated_code::constructor_to_amode(self, flags, addr, Offset32::new(load.offset))
     }
 
     #[inline]
@@ -737,8 +743,11 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
     }
 
     #[inline]
-    fn synthetic_amode_slot(&mut self, offset: i32) -> SyntheticAmode {
-        SyntheticAmode::SlotOffset { simm32: offset }
+    fn synthetic_amode_slot(&mut self, offset: i32, flags: MemFlagsData) -> SyntheticAmode {
+        SyntheticAmode::SlotOffset {
+            simm32: offset,
+            aligned: flags.aligned(),
+        }
     }
 
     #[inline]

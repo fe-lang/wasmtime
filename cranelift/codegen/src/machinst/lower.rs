@@ -63,7 +63,7 @@ impl InstColor {
 /// from as a direct register.
 ///
 /// - An instruction, if it would be allowed to occur at the current location
-///   instead (see [Lower::get_input_as_source_or_const()] for more details).
+///   instead (see [Lower::get_value_as_source_or_const()] for more details).
 ///
 /// - A constant, if the value is known to be a constant.
 #[derive(Clone, Copy, Debug)]
@@ -1494,15 +1494,6 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
         val
     }
 
-    /// Resolves a particular input of an instruction to the `Value` that it is
-    /// represented with.
-    ///
-    /// For more information see [`Lower::get_value_as_source_or_const`].
-    pub fn get_input_as_source_or_const(&self, ir_inst: Inst, idx: usize) -> NonRegInput {
-        let val = self.input_as_value(ir_inst, idx);
-        self.get_value_as_source_or_const(val)
-    }
-
     /// Resolves a `Value` definition to the source instruction it came from
     /// plus whether it's a unique-use of that instruction.
     ///
@@ -1621,12 +1612,6 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
     ))]
     pub fn increment_lowered_uses(&mut self, val: Value) {
         self.value_lowered_uses[val] += 1
-    }
-
-    /// Put the `idx`th input into register(s) and return the assigned register.
-    pub fn put_input_in_regs(&mut self, ir_inst: Inst, idx: usize) -> ValueRegs<Reg> {
-        let val = self.f.dfg.inst_args(ir_inst)[idx];
-        self.put_value_in_regs(val)
     }
 
     /// Put the given value into register(s) and return the assigned register.
