@@ -1538,6 +1538,10 @@ impl<I: VCodeInst> RegallocFunction for VCode<I> {
         self.entry
     }
 
+    fn is_cold_block(&self, block: BlockIndex) -> bool {
+        self.block_order.is_cold(block)
+    }
+
     fn block_insns(&self, block: BlockIndex) -> InstRange {
         let range = self.block_ranges.get(block.index());
         InstRange::new(InsnIndex::new(range.start), InsnIndex::new(range.end))
