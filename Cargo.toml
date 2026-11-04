@@ -359,7 +359,7 @@ component-async-tests = { path = "crates/misc/component-async-tests" }
 
 # Bytecode Alliance maintained dependencies:
 # ---------------------------
-regalloc2 = { git = "https://github.com/fe-lang/regalloc2", rev = "dd04d83e2d5668b8e056435b12b60b878d8b718c" }
+regalloc2 = { git = "https://github.com/fe-lang/regalloc2", rev = "47832decc6422facec6ac52a387c733ba3f4f9c9" }
 wasip1 = { version = "1.0.0", default-features = false }
 
 # cap-std family:

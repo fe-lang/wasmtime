@@ -3160,7 +3160,7 @@ dependencies = [
 [[package]]
 name = "regalloc2"
 version = "0.15.2"
-source = "git+https://github.com/fe-lang/regalloc2?rev=dd04d83e2d5668b8e056435b12b60b878d8b718c#dd04d83e2d5668b8e056435b12b60b878d8b718c"
+source = "git+https://github.com/fe-lang/regalloc2?rev=47832decc6422facec6ac52a387c733ba3f4f9c9#47832decc6422facec6ac52a387c733ba3f4f9c9"
 dependencies = [
  "allocator-api2",
  "bumpalo",
