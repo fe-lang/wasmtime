@@ -63,16 +63,17 @@ block2 cold:
 ;   movq %rsp, %rbp
 ; block0:
 ;   testl %edi, %edi
-;   jnz     label1; j label2
+;   jnz     label1; j label3
 ; block1:
 ;   movq %rdi, %rax
-;   jmp     label3
-; block3:
+;   jmp     label2
+; block2:
 ;   popq %rbp
 ;   retq
-; block2:
-;   movl $0x61, %eax
-;   jmp     label3
+; block3:
+;   movl $0x61, %r8d
+;   movq %r8, %rax
+;   jmp     label2
 ;
 ; Disassembled:
 ; block0: ; offset 0x0
@@ -87,6 +88,7 @@ block2 cold:
 ;   popq %rbp
 ;   retq
 ; block4: ; offset 0x11
-;   movl $0x61, %eax
+;   movl $0x61, %r8d
+;   movq %r8, %rax
 ;   jmp 0xf
 

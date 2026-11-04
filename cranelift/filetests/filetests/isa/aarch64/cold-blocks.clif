@@ -47,14 +47,14 @@ block2 cold:
 
 ; VCode:
 ; block0:
-;   cbnz w0, label1 ; b label2
+;   cbnz w0, label1 ; b label3
 ; block1:
-;   b label3
-; block3:
-;   ret
+;   b label2
 ; block2:
+;   ret
+; block3:
 ;   movz w0, #97
-;   b label3
+;   b label2
 ;
 ; Disassembled:
 ; block0: ; offset 0x0

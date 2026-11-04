@@ -50,14 +50,14 @@ block2 cold:
 ; VCode:
 ; block0:
 ;   sext.w a1,a0
-;   bne a1,zero,taken(label1),not_taken(label2)
+;   bne a1,zero,taken(label1),not_taken(label3)
 ; block1:
-;   j label3
-; block3:
-;   ret
+;   j label2
 ; block2:
+;   ret
+; block3:
 ;   li a0,97
-;   j label3
+;   j label2
 ;
 ; Disassembled:
 ; block0: ; offset 0x0

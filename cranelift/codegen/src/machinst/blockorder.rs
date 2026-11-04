@@ -199,12 +199,23 @@ impl BlockLoweringOrder {
         // Step 2: walk the postorder from the domtree in reverse to produce our desired node
         // lowering order, identifying critical edges to split along the way.
 
-        let mut lowered_order = Vec::new();
-        let mut blockindex_by_block = SecondaryMap::with_default(BlockIndex::invalid());
+        // A block that only a cold block reaches is cold too, so that each value a
+        // cold block defines is used only in cold blocks.
+        let mut cold_clif_blocks = SecondaryMap::with_default(false);
         for &block in domtree.cfg_rpo() {
-            let idx = BlockIndex::new(lowered_order.len());
-            lowered_order.push(LoweredBlock::Orig { block });
-            blockindex_by_block[block] = idx;
+            cold_clif_blocks[block] = f.is_effectively_cold(block)
+                || domtree.idom(block).is_some_and(|idom| cold_clif_blocks[idom]);
+        }
+
+        let mut lowered_order = Vec::new();
+        let mut cold_lowered_order = Vec::new();
+        for &block in domtree.cfg_rpo() {
+            let cold_block = cold_clif_blocks[block];
+            if cold_block {
+                cold_lowered_order.push(LoweredBlock::Orig { block });
+            } else {
+                lowered_order.push(LoweredBlock::Orig { block });
+            }
 
             if block_out_count[block] > 1 {
                 let range = block_succ_range[block].clone();
@@ -226,9 +237,29 @@ impl BlockLoweringOrder {
                             succ,
                             succ_idx: succ_ix as u32,
                         };
-                        lowered_order.push(*lb);
+                        // An edge runs only as often as both of its ends.
+                        if cold_block || cold_clif_blocks[succ] {
+                            cold_lowered_order.push(*lb);
+                        } else {
+                            lowered_order.push(*lb);
+                        }
                     }
                 }
+            }
+        }
+
+        // Cold blocks go last, in the register allocator's view of the function
+        // as in the emitted code, so that their calls do not split the live
+        // ranges of the hot blocks around them. Lowering walks this order in
+        // reverse and sees each use before its definition: a cold block's values
+        // are used only later among the cold blocks, and a hot block's values
+        // are used by hot blocks later in reverse postorder or by cold blocks.
+        lowered_order.append(&mut cold_lowered_order);
+
+        let mut blockindex_by_block = SecondaryMap::with_default(BlockIndex::invalid());
+        for (idx, lb) in lowered_order.iter().enumerate() {
+            if let LoweredBlock::Orig { block } = lb {
+                blockindex_by_block[*block] = BlockIndex::new(idx);
             }
         }
 
@@ -257,7 +288,7 @@ impl BlockLoweringOrder {
                         lowered_succ_indices
                             .extend(block_succs[range].iter().map(|lb| lb_to_bindex[lb]));
 
-                        if f.is_effectively_cold(block) {
+                        if cold_clif_blocks[block] {
                             cold_blocks.insert(bindex);
                         }
 
@@ -275,14 +306,14 @@ impl BlockLoweringOrder {
 
                     // Critical edges won't have successor information in block_succ_range, but
                     // they only have a single known successor to record anyway.
-                    &LoweredBlock::CriticalEdge { succ, .. } => {
+                    &LoweredBlock::CriticalEdge { pred, succ, .. } => {
                         let succ_index = lb_to_bindex[&LoweredBlock::Orig { block: succ }];
                         lowered_succ_indices.push(succ_index);
 
-                        // Edges inherit indirect branch and cold block metadata from their
-                        // successor.
+                        // Edges inherit indirect branch metadata from their successor, and
+                        // are cold if either end is.
 
-                        if f.is_effectively_cold(succ) {
+                        if cold_clif_blocks[pred] || cold_clif_blocks[succ] {
                             cold_blocks.insert(bindex);
                         }
 
@@ -353,6 +384,14 @@ mod test {
     use crate::isa::CallConv;
 
     fn build_test_func(n_blocks: usize, edges: &[(usize, usize)]) -> BlockLoweringOrder {
+        build_test_func_with_cold(n_blocks, edges, &[])
+    }
+
+    fn build_test_func_with_cold(
+        n_blocks: usize,
+        edges: &[(usize, usize)],
+        cold: &[usize],
+    ) -> BlockLoweringOrder {
         assert!(n_blocks > 0);
 
         let name = UserFuncName::testcase("test0");
@@ -391,11 +430,62 @@ mod test {
             }
         }
 
+        for &block in cold {
+            pos.func.layout.set_cold(blocks[block]);
+        }
+
         let mut cfg = ControlFlowGraph::new();
         cfg.compute(&func);
         let dom_tree = DominatorTree::with_function(&func, &cfg);
 
         BlockLoweringOrder::new(&func, &dom_tree, &mut Default::default())
+    }
+
+    /// The index of block `block` in the lowered order.
+    fn position(order: &BlockLoweringOrder, block: u32) -> usize {
+        order
+            .lowered_order
+            .iter()
+            .position(|lb| lb.orig_block() == Some(Block::from_u32(block)))
+            .unwrap()
+    }
+
+    #[test]
+    fn test_blockorder_cold_blocks_come_last() {
+        let order = build_test_func_with_cold(4, &[(0, 1), (0, 2), (1, 3), (2, 3)], &[1]);
+        assert_eq!(order.lowered_order.len(), 4);
+        for hot in [0, 2, 3] {
+            assert!(position(&order, hot) < position(&order, 1));
+        }
+        assert!(order.is_cold(BlockIndex::new(position(&order, 1))));
+    }
+
+    #[test]
+    fn test_blockorder_block_only_a_cold_block_reaches_is_cold() {
+        // Block 1 is cold and dominates block 2, which keeps a value block 1
+        // defines defined before its use in the lowered order.
+        let order = build_test_func_with_cold(4, &[(0, 1), (0, 3), (1, 2), (2, 3)], &[1]);
+        assert!(order.is_cold(BlockIndex::new(position(&order, 2))));
+        assert!(position(&order, 1) < position(&order, 2));
+        assert!(position(&order, 3) < position(&order, 1));
+    }
+
+    #[test]
+    fn test_blockorder_edge_out_of_a_cold_block_is_cold() {
+        // Block 1 is cold and branches to block 2 or 3, both of which block 0
+        // also reaches, so its edges are critical.
+        let order = build_test_func_with_cold(
+            5,
+            &[(0, 1), (0, 4), (1, 2), (1, 3), (2, 4), (3, 4), (4, 2), (4, 3)],
+            &[1],
+        );
+        for (index, lb) in order.lowered_order.iter().enumerate() {
+            if let LoweredBlock::CriticalEdge { pred, .. } = lb
+                && *pred == Block::from_u32(1)
+            {
+                assert!(order.is_cold(BlockIndex::new(index)));
+            }
+        }
     }
 
     #[test]

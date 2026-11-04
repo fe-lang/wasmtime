@@ -50,14 +50,14 @@ block2 cold:
 ; VCode:
 ; block0:
 ;   chi %r2, 0
-;   jglh label1 ; jg label2
+;   jglh label1 ; jg label3
 ; block1:
-;   jg label3
-; block3:
-;   br %r14
+;   jg label2
 ; block2:
+;   br %r14
+; block3:
 ;   lhi %r2, 97
-;   jg label3
+;   jg label2
 ;
 ; Disassembled:
 ; block0: ; offset 0x0
