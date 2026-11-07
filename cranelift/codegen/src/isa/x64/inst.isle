@@ -3927,6 +3927,19 @@
 (rule 1 (is_nonzero_band (ty_32_or_64 ty) a (ishl _ (u64_from_iconst 1) b))
   (CondResult.CC (x64_bt ty (put_in_gpr a) b) (CC.B)))
 
+;; A narrow one is a 32-bit `bt` of a bit index wrapped at the type's width,
+;; as the shift wraps its count, so that it stays among the type's bits.
+(rule 3 (is_nonzero_band (fits_in_16 ty) a (ishl _ (u64_from_iconst 1) b))
+  (CondResult.CC (x64_bt $I32 (put_in_gpr a) (bit_index ty b)) (CC.B)))
+
+;; A shift count wrapped at the width of `ty`, as `ishl` wraps it, in a
+;; register. A count masked already, as a bitmap's `index & 7` is, is used as
+;; it is.
+(decl bit_index (Type Value) Gpr)
+(rule 1 (bit_index $I8 b @ (band _ _ (u64_from_iconst 7))) b)
+(rule 1 (bit_index $I16 b @ (band _ _ (u64_from_iconst 15))) b)
+(rule (bit_index ty b) (x64_and $I32 b (RegMemImm.Imm (shift_mask ty))))
+
 ;; If a value is and'd one shifted by a variable value that matches `bt` as
 ;; well.
 (rule 1 (is_nonzero_band $I64 a (u64_from_iconst (bt_imm n)))

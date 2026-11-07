@@ -1592,3 +1592,113 @@ block2:
 ;   popq %rbp
 ;   retq
 
+
+;; A test of one bit of a byte, as a bitmap lookup makes, is a `bt`, whose
+;; index needs no count register. An index masked already needs no second
+;; mask.
+function %brif_byte_bit(i64, i64) -> i32 {
+block0(v0: i64, v1: i64):
+  v2 = load.i8 v0
+  v3 = ireduce.i8 v1
+  v4 = iconst.i8 7
+  v5 = band v3, v4
+  v6 = iconst.i8 1
+  v7 = ishl v6, v5
+  v8 = band v2, v7
+  brif v8, block1, block2
+
+block1:
+  v9 = iconst.i32 1
+  return v9
+
+block2:
+  v10 = iconst.i32 0
+  return v10
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   andb $0x7, %sil
+;   movzbq (%rdi), %rdi
+;   btl %esi, %edi
+;   jb      label2; j label1
+; block1:
+;   uninit  %rax
+;   xorl %eax, %eax
+;   popq %rbp
+;   retq
+; block2:
+;   movl $0x1, %eax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   andb $7, %sil
+;   movzbq (%rdi), %rdi ; trap: heap_oob
+;   btl %esi, %edi
+;   jb 0x19
+; block2: ; offset 0x15
+;   xorl %eax, %eax
+;   popq %rbp
+;   retq
+; block3: ; offset 0x19
+;   movl $1, %eax
+;   popq %rbp
+;   retq
+
+function %brif_halfword_bit(i16, i16) -> i32 {
+block0(v0: i16, v1: i16):
+  v2 = iconst.i16 1
+  v3 = ishl v2, v1
+  v4 = band v0, v3
+  brif v4, block1, block2
+
+block1:
+  v5 = iconst.i32 1
+  return v5
+
+block2:
+  v6 = iconst.i32 0
+  return v6
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   andl $0xf, %esi
+;   btl %esi, %edi
+;   jb      label2; j label1
+; block1:
+;   uninit  %rax
+;   xorl %eax, %eax
+;   popq %rbp
+;   retq
+; block2:
+;   movl $0x1, %eax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   andl $0xf, %esi
+;   btl %esi, %edi
+;   jb 0x14
+; block2: ; offset 0x10
+;   xorl %eax, %eax
+;   popq %rbp
+;   retq
+; block3: ; offset 0x14
+;   movl $1, %eax
+;   popq %rbp
+;   retq
+
