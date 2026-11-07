@@ -5,7 +5,7 @@
 // TODO: separate the IR-query core of `Lower` from the lowering logic built on
 // top of it, e.g. the side-effect/coloring analysis and the scan support.
 
-use crate::entity::SecondaryMap;
+use crate::entity::{EntitySet, SecondaryMap};
 use crate::inst_predicates::{has_lowering_side_effect, is_constant_64bit};
 use crate::ir::{
     ArgumentPurpose, Block, BlockArg, Constant, ConstantData, DataFlowGraph, ExternalName,
@@ -198,6 +198,13 @@ pub struct Lower<'func, I: VCodeInst> {
     ///
     /// See doc comment on `ValueUseState` for more details.
     value_ir_uses: SecondaryMap<Value, ValueUseState>,
+
+    /// Use-counts per SSA value counting only the instructions that name it,
+    /// without the propagation of `value_ir_uses`.
+    value_direct_uses: SecondaryMap<Value, ValueUseState>,
+
+    /// Values used outside the block that defines them.
+    nonlocal_values: EntitySet<Value>,
 
     /// Actual uses of each SSA value so far, incremented while lowering.
     value_lowered_uses: SecondaryMap<Value, u32>,
@@ -486,6 +493,23 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
         }
 
         let value_ir_uses = compute_use_states(f, sret_param);
+        let mut value_direct_uses = SecondaryMap::with_default(ValueUseState::Unused);
+        let mut nonlocal_values = EntitySet::new();
+        for block in f.layout.blocks() {
+            for inst in f.layout.block_insts(block) {
+                for arg in f.dfg.inst_values(inst) {
+                    value_direct_uses[arg].inc();
+                    if f.dfg
+                        .value_def(arg)
+                        .inst()
+                        .and_then(|def| f.layout.inst_block(def))
+                        != Some(block)
+                    {
+                        nonlocal_values.insert(arg);
+                    }
+                }
+            }
+        }
 
         Ok(Lower {
             f,
@@ -496,6 +520,8 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
             block_end_colors,
             side_effect_inst_entry_colors,
             value_ir_uses,
+            value_direct_uses,
+            nonlocal_values,
             value_lowered_uses: SecondaryMap::default(),
             inst_sunk: FxHashSet::default(),
             cur_scan_entry_color: None,
@@ -1546,6 +1572,16 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
             //   `ValueUseState`), and the instruction's color is *one
             //   less than* the current scan color.
             //
+            //   The output may also be used more than once indirectly when
+            //   its one direct use is the instruction being lowered in place,
+            //   whose results are used only in its own block. Lowering visits
+            //   uses before definitions, so every instruction that uses those
+            //   results, and could look through the lowered instruction to
+            //   this output, has been lowered already. If none of them put
+            //   the output in a register, nothing will need it again, and the
+            //   side-effecting instruction sinks only here: the others saw
+            //   the output as used more than once.
+            //
             //   This latter set of conditions is testing whether a
             //   side-effecting instruction can sink to the current scan
             //   location; this is possible if the in-color of this inst is
@@ -1593,8 +1629,19 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
                         " -> side-effecting op {} for val {}: use state {:?}",
                         src_inst, val, self.value_ir_uses[val]
                     );
+                    let used_only_here = self.value_direct_uses[val] == ValueUseState::Once
+                        && self.value_lowered_uses[val] == 0
+                        && self.cur_inst.is_some_and(|inst| {
+                            self.f.dfg.inst_values(inst).any(|arg| arg == val)
+                                && self
+                                    .f
+                                    .dfg
+                                    .inst_results(inst)
+                                    .iter()
+                                    .all(|&result| !self.nonlocal_values.contains(result))
+                        });
                     if self.cur_scan_entry_color.is_some()
-                        && self.value_ir_uses[val] == ValueUseState::Once
+                        && (self.value_ir_uses[val] == ValueUseState::Once || used_only_here)
                         && self.num_outputs(src_inst) == 1
                         && src_entry_color.get() + 1 == self.cur_scan_entry_color.unwrap().get()
                     {
