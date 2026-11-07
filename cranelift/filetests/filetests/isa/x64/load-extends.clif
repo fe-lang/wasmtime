@@ -290,3 +290,150 @@ block0(v0: i64):
 ;   popq %rbp
 ;   retq
 
+
+;; A load the extend cannot sink, here past a branch, zero-extends into the
+;; whole register already, as does a byte swap of one.
+function %load_uextend_i8_i64_after_branch(i64, i8) -> i64 {
+block0(v0: i64, v1: i8):
+  v2 = load.i8 v0
+  brif v1, block1, block2
+
+block1:
+  v3 = uextend.i64 v2
+  return v3
+
+block2:
+  v4 = iconst.i64 0
+  return v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movzbq (%rdi), %rax
+;   testb %sil, %sil
+;   jnz     label2; j label1
+; block1:
+;   uninit  %rax
+;   xorq %rax, %rax
+;   popq %rbp
+;   retq
+; block2:
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movzbq (%rdi), %rax ; trap: heap_oob
+;   testb %sil, %sil
+;   jne 0x16
+; block2: ; offset 0x11
+;   xorq %rax, %rax
+;   popq %rbp
+;   retq
+; block3: ; offset 0x16
+;   popq %rbp
+;   retq
+
+function %load_uextend_bswap_i16_i64_after_branch(i64, i8) -> i64 {
+block0(v0: i64, v1: i8):
+  v2 = load.i16 v0
+  brif v1, block1, block2
+
+block1:
+  v3 = bswap v2
+  v4 = uextend.i64 v3
+  return v4
+
+block2:
+  v5 = iconst.i64 0
+  return v5
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movzwq (%rdi), %rax
+;   testb %sil, %sil
+;   jnz     label2; j label1
+; block1:
+;   uninit  %rax
+;   xorq %rax, %rax
+;   popq %rbp
+;   retq
+; block2:
+;   rolw $0x8, %ax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movzwq (%rdi), %rax ; trap: heap_oob
+;   testb %sil, %sil
+;   jne 0x16
+; block2: ; offset 0x11
+;   xorq %rax, %rax
+;   popq %rbp
+;   retq
+; block3: ; offset 0x16
+;   rolw $8, %ax
+;   popq %rbp
+;   retq
+
+function %load_uextend_bswap_i32_i64_after_branch(i64, i8) -> i64 {
+block0(v0: i64, v1: i8):
+  v2 = load.i32 v0
+  brif v1, block1, block2
+
+block1:
+  v3 = bswap v2
+  v4 = uextend.i64 v3
+  return v4
+
+block2:
+  v5 = iconst.i64 0
+  return v5
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movl (%rdi), %eax
+;   testb %sil, %sil
+;   jnz     label2; j label1
+; block1:
+;   uninit  %rax
+;   xorq %rax, %rax
+;   popq %rbp
+;   retq
+; block2:
+;   bswapl %eax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movl (%rdi), %eax ; trap: heap_oob
+;   testb %sil, %sil
+;   jne 0x14
+; block2: ; offset 0xf
+;   xorq %rax, %rax
+;   popq %rbp
+;   retq
+; block3: ; offset 0x14
+;   bswapl %eax
+;   popq %rbp
+;   retq
+
