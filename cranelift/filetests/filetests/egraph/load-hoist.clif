@@ -83,4 +83,6 @@ function %non_can_move_does_not_hoist(i64 vmctx, i64, i32, i32) -> i32 fast {
 }
 
 ; check:  block2(v6: i32, v7: i32, v15: i32):
+; nextln:   v8 = uextend.i64 v7
 ; nextln:   v9 = load.i64 notrap aligned readonly v0+80
+; nextln:   v10 = iadd v9, v8

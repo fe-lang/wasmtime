@@ -6,8 +6,8 @@ use super::cost::Cost;
 use crate::ctxhash::NullCtx;
 use crate::dominator_tree::DominatorTree;
 use crate::hash_map::Entry as HashEntry;
-use crate::inst_predicates::is_pure_for_egraph;
-use crate::ir::{Block, Function, Inst, Value, ValueDef};
+use crate::inst_predicates::{has_lowering_side_effect, is_pure_for_egraph};
+use crate::ir::{Block, Function, Inst, InstructionData, Value, ValueDef};
 use crate::loop_analysis::{Loop, LoopAnalysis};
 use crate::scoped_hash_map::ScopedHashMap;
 use crate::trace;
@@ -857,11 +857,128 @@ impl<'a> Elaborator<'a> {
         }
     }
 
+    /// Move instructions within each block so that loads run next to their
+    /// uses.
+    ///
+    /// Elaboration places each pure instruction just before the first
+    /// skeleton instruction that needs it, while loads keep their place in
+    /// the skeleton. A block that loads values, combines them, and stores the
+    /// results therefore runs all of its loads first: each loaded value stays
+    /// live until the combining instructions at the first store, and lowering
+    /// can merge a load into its use only when no other load or store lies
+    /// between them.
+    ///
+    /// First, each load in turn moves down to just before its first use in the
+    /// block. Its uses have not moved yet, as only loads move and a load's
+    /// uses come after it, so it stays before all of them. A load passes only
+    /// pure instructions and other loads, so the memory it reads is
+    /// unchanged, and it passes a load that can trap only if it cannot trap
+    /// itself, so that traps keep their order. Then a pure instruction whose
+    /// last operand is a load that it alone uses but that could not move down
+    /// to it, past a store for example, moves up to just after that load.
+    fn place_near_uses(&mut self) {
+        let func = &mut *self.func;
+        let mut uses = SecondaryMap::<Value, u32>::with_capacity(func.dfg.num_values());
+        for block in func.layout.blocks() {
+            for inst in func.layout.block_insts(block) {
+                for arg in func.dfg.inst_values(inst) {
+                    uses[arg] += 1;
+                }
+            }
+        }
+
+        let mut insts = Vec::new();
+        let mut position = SecondaryMap::<Inst, u32>::new();
+        let mut first_use = SecondaryMap::<Inst, u32>::new();
+        // Prefix counts of the instructions that no load may pass and of the
+        // loads that can trap.
+        let mut barriers = Vec::new();
+        let mut stuck = EntitySet::<Inst>::new();
+        let mut next_block = func.layout.entry_block();
+        while let Some(block) = next_block {
+            next_block = func.layout.next_block(block);
+
+            insts.clear();
+            insts.extend(func.layout.block_insts(block));
+            barriers.clear();
+            barriers.push((0, 0));
+            let (mut fixed, mut trapping) = (0, 0);
+            for (index, &inst) in insts.iter().enumerate() {
+                position[inst] = index as u32;
+                for arg in func.dfg.inst_values(inst) {
+                    if let ValueDef::Result(def, _) = func.dfg.value_def(arg)
+                        && insts.get(position[def] as usize) == Some(&def)
+                        && first_use[def] == 0
+                    {
+                        first_use[def] = index as u32;
+                    }
+                }
+                match func.dfg.insts[inst] {
+                    InstructionData::Load { flags, .. } => {
+                        trapping += u32::from(!func.dfg.mem_flags[flags].notrap())
+                    }
+                    _ if has_lowering_side_effect(func, inst) => fixed += 1,
+                    _ => {}
+                }
+                barriers.push((fixed, trapping));
+            }
+
+            for (index, &inst) in insts.iter().enumerate() {
+                let InstructionData::Load { flags, .. } = func.dfg.insts[inst] else {
+                    continue;
+                };
+                let user = first_use[inst] as usize;
+                if user == 0 {
+                    continue;
+                }
+                let (before, after) = (barriers[index + 1], barriers[user]);
+                if after.0 != before.0
+                    || (after.1 > before.1 && !func.dfg.mem_flags[flags].notrap())
+                {
+                    stuck.insert(inst);
+                } else if func.layout.prev_inst(insts[user]) != Some(inst) {
+                    func.layout.remove_inst(inst);
+                    func.layout.insert_inst(inst, insts[user]);
+                    self.stats.elaborate_sink_load += 1;
+                }
+            }
+
+            insts.clear();
+            insts.extend(func.layout.block_insts(block));
+            for &inst in &insts {
+                if !is_pure_for_egraph(func, inst) || func.dfg.insts[inst].opcode().can_load() {
+                    continue;
+                }
+                let mut last = None;
+                for arg in func.dfg.inst_values(inst) {
+                    if let ValueDef::Result(def, _) = func.dfg.value_def(arg)
+                        && func.layout.inst_block(def) == Some(block)
+                        && last.is_none_or(|(last, _)| func.layout.pp_cmp(last, def).is_lt())
+                    {
+                        last = Some((def, arg));
+                    }
+                }
+                if let Some((load, value)) = last
+                    && stuck.contains(load)
+                    && uses[value] == 1
+                {
+                    let after = func.layout.next_inst(load).unwrap();
+                    if after != inst {
+                        func.layout.remove_inst(inst);
+                        func.layout.insert_inst(inst, after);
+                        self.stats.elaborate_move_up += 1;
+                    }
+                }
+            }
+        }
+    }
+
     pub(crate) fn elaborate(&mut self) {
         self.stats.elaborate_func += 1;
         self.stats.elaborate_func_pre_insts += self.func.dfg.num_insts() as u64;
         self.compute_best_values();
         self.elaborate_domtree(&self.domtree);
+        self.place_near_uses();
         self.stats.elaborate_func_post_insts += self.func.dfg.num_insts() as u64;
     }
 }
