@@ -1706,7 +1706,7 @@
 (decl gen_return_call_info (Sig ExternalName CallArgList) BoxReturnCallInfo)
 (extern constructor gen_return_call_info gen_return_call_info)
 
-(decl gen_return_call_ind_info (Sig Reg CallArgList) BoxReturnCallIndInfo)
+(decl gen_return_call_ind_info (Sig RegMem CallArgList) BoxReturnCallIndInfo)
 (extern constructor gen_return_call_ind_info gen_return_call_ind_info)
 
 ;; Helper for creating `CallKnown` instructions.

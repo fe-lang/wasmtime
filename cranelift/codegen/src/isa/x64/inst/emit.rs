@@ -483,7 +483,23 @@ pub(crate) fn emit(
         }
 
         Inst::ReturnCallUnknown { info: call_info } => {
-            let callee = call_info.dest;
+            let frame = state.frame_layout();
+            let callee = match &call_info.dest {
+                RegMem::Mem { addr }
+                    if frame.setup_area_size == 0 && frame.clobbered_callee_saves.is_empty() =>
+                {
+                    // Nothing to restore: jump through the address as it is.
+                    asm::GprMem::Mem(addr.clone().into())
+                }
+                // Read the callee before the epilogue frees the frame, which the
+                // address may point into.
+                RegMem::Mem { addr } => {
+                    let r10 = Writable::from_reg(regs::r10());
+                    asm::inst::movq_rm::new(r10, addr.clone()).emit(sink, info, state);
+                    asm::GprMem::Gpr(Gpr::unwrap_new(regs::r10()))
+                }
+                RegMem::Reg { reg } => asm::GprMem::Gpr(Gpr::unwrap_new(*reg)),
+            };
 
             emit_return_call_common_sequence(sink, info, state, &call_info);
 
