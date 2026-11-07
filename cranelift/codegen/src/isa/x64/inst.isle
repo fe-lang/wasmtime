@@ -3891,6 +3891,19 @@
 (rule 2 (is_nonzero (uextend _ (vany_true _ vec))) (is_vany_true vec))
 (rule 2 (is_nonzero (band _ a @ (value_type (ty_int (fits_in_64 ty))) b))
       (is_nonzero_band ty a b))
+;; `or` sets the flags from its result, as `test` of the result would. Not
+;; when the `bor` could sink a load, though: a branch, which tests the flags
+;; where it ends the block, can sink none, and a load left unsunk keeps the
+;; loads above it from sinking into their own `bor`s.
+(rule 2 (is_nonzero val @ (bor _ a @ (value_type (ty_int (fits_in_64 ty))) b))
+      (if-let false (load_sinks_into val a))
+      (if-let false (load_sinks_into val b))
+      (CondResult.CC (x64_produce_flags_side_effect (ProduceFlagsSideEffectOp.Or) ty a b) (CC.NZ)))
+
+;; Whether the instruction defining the first value could sink the load that
+;; defines the second: they share a block and no side effect lies between.
+(decl pure load_sinks_into (Value Value) bool)
+(extern constructor load_sinks_into load_sinks_into)
 
 ;; Like `is_nonzero` but with additional specializations for compare
 ;; operators. We break this out from `is_nonzero` because we want to

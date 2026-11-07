@@ -1407,3 +1407,188 @@ block2:
 ;   popq %rbp
 ;   retq
 
+
+;; `or` sets the flags a `test` of its result would.
+function %brif_bor(i64, i64, i64) -> i32 {
+block0(v0: i64, v1: i64, v2: i64):
+  v3 = bor v0, v1
+  v4 = bor v3, v2
+  brif v4, block1, block2
+
+block1:
+  v5 = iconst.i32 1
+  return v5
+
+block2:
+  v6 = iconst.i32 0
+  return v6
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   orq %rsi, %rdi
+;   orq %rdx, %rdi
+;   jnz     label2; j label1
+; block1:
+;   uninit  %rax
+;   xorl %eax, %eax
+;   popq %rbp
+;   retq
+; block2:
+;   movl $0x1, %eax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   orq %rsi, %rdi
+;   orq %rdx, %rdi
+;   jne 0x14
+; block2: ; offset 0x10
+;   xorl %eax, %eax
+;   popq %rbp
+;   retq
+; block3: ; offset 0x14
+;   movl $1, %eax
+;   popq %rbp
+;   retq
+
+function %icmp_eq_bor_zero(i64, i64, i64) -> i8 {
+block0(v0: i64, v1: i64, v2: i64):
+  v3 = bor v0, v1
+  v4 = bor v3, v2
+  v5 = iconst.i64 0
+  v6 = icmp eq v4, v5
+  return v6
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   orq %rsi, %rdi
+;   orq %rdx, %rdi
+;   sete %al
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   orq %rsi, %rdi
+;   orq %rdx, %rdi
+;   sete %al
+;   popq %rbp
+;   retq
+
+function %brif_bor_i8(i8, i8) -> i32 {
+block0(v0: i8, v1: i8):
+  v2 = bor v0, v1
+  brif v2, block1, block2
+
+block1:
+  v3 = iconst.i32 1
+  return v3
+
+block2:
+  v4 = iconst.i32 0
+  return v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   orb %sil, %dil
+;   jnz     label2; j label1
+; block1:
+;   uninit  %rax
+;   xorl %eax, %eax
+;   popq %rbp
+;   retq
+; block2:
+;   movl $0x1, %eax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   orb %sil, %dil
+;   jne 0x11
+; block2: ; offset 0xd
+;   xorl %eax, %eax
+;   popq %rbp
+;   retq
+; block3: ; offset 0x11
+;   movl $1, %eax
+;   popq %rbp
+;   retq
+
+
+;; A `bor` that sinks its loads keeps them, and its `test`.
+function %brif_bor_loads(i64) -> i32 {
+block0(v0: i64):
+  v1 = load.i64 v0
+  v2 = load.i64 v0+8
+  v3 = load.i64 v0+16
+  v4 = bor v1, v2
+  v5 = bor v4, v3
+  brif v5, block1, block2
+
+block1:
+  v6 = iconst.i32 1
+  return v6
+
+block2:
+  v7 = iconst.i32 0
+  return v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq (%rdi), %rsi
+;   orq 8(%rdi), %rsi
+;   orq 0x10(%rdi), %rsi
+;   testq %rsi, %rsi
+;   jnz     label2; j label1
+; block1:
+;   uninit  %rax
+;   xorl %eax, %eax
+;   popq %rbp
+;   retq
+; block2:
+;   movl $0x1, %eax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq (%rdi), %rsi ; trap: heap_oob
+;   orq 8(%rdi), %rsi ; trap: heap_oob
+;   orq 0x10(%rdi), %rsi ; trap: heap_oob
+;   testq %rsi, %rsi
+;   jne 0x1c
+; block2: ; offset 0x18
+;   xorl %eax, %eax
+;   popq %rbp
+;   retq
+; block3: ; offset 0x1c
+;   movl $1, %eax
+;   popq %rbp
+;   retq
+
