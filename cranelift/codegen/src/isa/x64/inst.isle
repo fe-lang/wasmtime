@@ -1597,8 +1597,14 @@
 (rule 1 (extend_to_gpr (and (sinkable_load_exact val) (value_type from_ty)) to_ty kind)
       (extend_to_gpr_types val from_ty to_ty kind))
 
+;; I8/I16 -> I32/I64 with a value that its register holds zero-extended
+;; already, when no load sinks into the extend.
+(rule (extend_to_gpr src @ (value_type (fits_in_16 _)) _ (ExtendKind.Zero))
+      (if-let true (value16_zeros_upper src))
+      src)
+
 ;; Otherwise emit the extend from a Gpr to a Gpr.
-(rule (extend_to_gpr (and val (value_type from_ty)) to_ty kind)
+(rule -1 (extend_to_gpr (and val (value_type from_ty)) to_ty kind)
       (extend_to_gpr_types val from_ty to_ty kind))
 
 ;; Calculates the correct extension mode for an extend between `from_ty` and `to_ty`.
@@ -1637,7 +1643,18 @@
 (rule (value32_zeros_upper32 (ishl _ _ _)) true)
 (rule (value32_zeros_upper32 (ushr _ _ _)) true)
 (rule (value32_zeros_upper32 (uload32 _ _ _ _)) true)
+(rule (value32_zeros_upper32 (load _ (little_or_native_endian _) _ _)) true)
+(rule (value32_zeros_upper32 (bswap _ _)) true)
 (rule -1 (value32_zeros_upper32 _) false)
+
+;; Tests whether the lowering of the input `Value`, which must be an 8- or
+;; 16-bit integer, zeroes the rest of its register. Narrow loads zero-extend
+;; into the whole register (`load_sub64_x64_movzx`), and a 16-bit byte swap
+;; rotates only the low 16 bits of one.
+(decl pure value16_zeros_upper (Value) bool)
+(rule (value16_zeros_upper (load _ (little_or_native_endian _) _ _)) true)
+(rule (value16_zeros_upper (bswap $I16 (load _ (little_or_native_endian _) _ _))) true)
+(rule -1 (value16_zeros_upper _) false)
 
 ;;;; Helpers for Working SSE tidbits ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
