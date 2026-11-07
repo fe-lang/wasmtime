@@ -1,0 +1,115 @@
+test compile precise-output
+target x86_64
+
+;; `v3` is used twice, but its load operand `v2` is used only by `v3` and
+;; nothing else looks through `v3`, so `v2` merges into the `xor`. The load
+;; may trap: it still runs after `v1` and before anything after `v3`.
+function %multi_use_result(i64) -> i64 {
+block0(v0: i64):
+    v1 = load.i64 v0
+    v2 = load.i64 v0+8
+    v3 = bxor v1, v2
+    v4 = imul v3, v3
+    return v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq (%rdi), %rax
+;   xorq 8(%rdi), %rax
+;   imulq %rax, %rax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq (%rdi), %rax ; trap: heap_oob
+;   xorq 8(%rdi), %rax ; trap: heap_oob
+;   imulq %rax, %rax
+;   popq %rbp
+;   retq
+
+;; The second load's address matches through `v2`, which puts `v1` in a
+;; register, so `v1` does not also merge into `v2`'s own `add`.
+function %user_looks_through(i64) -> i64, i64 {
+block0(v0: i64):
+    v1 = load.i64 notrap v0
+    v2 = iadd v0, v1
+    v3 = load.i64 notrap v2
+    return v2, v3
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq (%rdi), %rsi
+;   leaq (%rdi, %rsi), %rax
+;   movq (%rdi, %rsi), %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq (%rdi), %rsi
+;   leaq (%rdi, %rsi), %rax
+;   movq (%rdi, %rsi), %rdx
+;   popq %rbp
+;   retq
+
+;; `v3` is used in other blocks, so `v2` stays a separate load.
+function %result_used_in_other_blocks(i64, i8) -> i64 {
+block0(v0: i64, v1: i8):
+    v2 = load.i64 notrap v0
+    v3 = iadd v0, v2
+    brif v1, block1, block2
+
+block1:
+    v4 = imul v3, v3
+    return v4
+
+block2:
+    return v3
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq (%rdi), %r8
+;   leaq (%rdi, %r8), %rax
+;   testb %sil, %sil
+;   jnz     label2; j label1
+; block1:
+;   popq %rbp
+;   retq
+; block2:
+;   imulq %rax, %rax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq (%rdi), %r8
+;   leaq (%rdi, %r8), %rax
+;   testb %sil, %sil
+;   jne 0x16
+; block2: ; offset 0x14
+;   popq %rbp
+;   retq
+; block3: ; offset 0x16
+;   imulq %rax, %rax
+;   popq %rbp
+;   retq
+
