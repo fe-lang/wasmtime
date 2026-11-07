@@ -33,7 +33,7 @@ use regalloc2::PReg;
 type BoxCallInfo = Box<CallInfo<ExternalName>>;
 type BoxCallIndInfo = Box<CallInfo<RegMem>>;
 type BoxReturnCallInfo = Box<ReturnCallInfo<ExternalName>>;
-type BoxReturnCallIndInfo = Box<ReturnCallInfo<Reg>>;
+type BoxReturnCallIndInfo = Box<ReturnCallInfo<RegMem>>;
 type VecArgPair = Vec<ArgPair>;
 type BoxAtomic128RmwSeqArgs = Box<Atomic128RmwSeqArgs>;
 type BoxAtomic128XchgSeqArgs = Box<Atomic128XchgSeqArgs>;
@@ -353,7 +353,7 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
     fn gen_return_call_ind_info(
         &mut self,
         sig: Sig,
-        dest: Reg,
+        dest: &RegMem,
         uses: CallArgList,
     ) -> BoxReturnCallIndInfo {
         let new_stack_arg_size = self.lower_ctx.sigs()[sig].sized_stack_arg_space();
@@ -362,7 +362,7 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
             .accumulate_tail_args_size(new_stack_arg_size);
 
         Box::new(ReturnCallInfo {
-            dest,
+            dest: dest.clone(),
             uses,
             tmp: self.lower_ctx.temp_writable_gpr(),
             new_stack_arg_size,

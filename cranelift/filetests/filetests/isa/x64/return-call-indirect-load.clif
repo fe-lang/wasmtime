@@ -1,0 +1,80 @@
+test compile precise-output
+target x86_64
+
+;; A tail call through a loaded address jumps through memory, as from an
+;; interpreter's dispatch table.
+function %dispatch(i64, i64, i64) -> i64 tail {
+    sig0 = (i64, i64, i64) -> i64 tail
+
+block0(v0: i64, v1: i64, v2: i64):
+    v7 = iconst.i64 3
+    v3 = ishl v1, v7
+    v4 = iadd v0, v3
+    v5 = load.i64 notrap aligned readonly v4
+    v8 = iconst.i64 1
+    v6 = iadd v2, v8
+    return_call_indirect sig0, v5(v0, v1, v6)
+}
+
+; VCode:
+; block0:
+;   leaq 1(%rdx), %rdx
+;   return_call_unknown 0(%rdi,%rsi,8) (0) tmp=%r11 %rdi=%rdi %rsi=%rsi %rdx=%rdx
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   addq $1, %rdx
+;   jmpq *(%rdi, %rsi, 8)
+
+;; The jump reports a fault of its load as the load would.
+function %dispatch_trapping_load(i64, i64) -> i64 tail {
+    sig0 = (i64, i64) -> i64 tail
+
+block0(v0: i64, v1: i64):
+    v2 = load.i64 v0
+    return_call_indirect sig0, v2(v0, v1)
+}
+
+; VCode:
+; block0:
+;   return_call_unknown 0(%rdi) (0) tmp=%r11 %rdi=%rdi %rsi=%rsi
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   jmpq *(%rdi) ; trap: heap_oob
+
+;; A function with a frame reads the callee before its epilogue frees the
+;; frame.
+function %dispatch_from_frame(i64, i64, i64) -> i64 tail {
+    ss0 = explicit_slot 8
+    sig0 = (i64, i64, i64) -> i64 tail
+
+block0(v0: i64, v1: i64, v2: i64):
+    v3 = stack_addr.i64 ss0
+    store.i64 v0, v3
+    v4 = load.i64 v3
+    return_call_indirect sig0, v4(v0, v1, v2)
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block0:
+;   leaq <offset:1>+(%rsp), %r8
+;   movq %rdi, <offset:1>+(%rsp)
+;   return_call_unknown 0(%r8) (0) tmp=%r11 %rdi=%rdi %rsi=%rsi %rdx=%rdx
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block1: ; offset 0x8
+;   leaq (%rsp), %r8
+;   movq %rdi, (%rsp)
+;   movq (%r8), %r10 ; trap: heap_oob
+;   addq $0x10, %rsp
+;   popq %rbp
+;   jmpq *%r10
+
