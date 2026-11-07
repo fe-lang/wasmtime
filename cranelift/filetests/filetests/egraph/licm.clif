@@ -135,8 +135,8 @@ block1:
     return
 }
 
-; check: load
 ; check: f64const
+; check: load
 ; check: fdiv
 ; check: block2(v11: i64)
 ; check: iadd
