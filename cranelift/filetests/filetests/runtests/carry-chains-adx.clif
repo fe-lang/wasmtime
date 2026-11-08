@@ -32,3 +32,30 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ; run: %mac_row(1, 2, 3, 4, 5, 6) == [7, 11, 6, 0]
 ; run: %mac_row(-1, 0, -1, -1, 0, 0) == [0, -1, 0, 0]
 ; run: %mac_row(1311768467463790320, -81985529216486896, 1085102592571150095, -1, -2, 7) == [-8757983591596482545, 8762806269785687654, 1080279914381944991, 0]
+
+; Two chains interleave past the address of the second word's load.
+function %chains_past_an_address_sum(i64, i64, i64) -> i64, i64 {
+    ss0 = explicit_slot 16
+block0(v1: i64, v2: i64, v3: i64):
+    v0 = stack_addr.i64 ss0
+    v20 = iconst.i64 -1
+    store notrap v20, v0
+    v21 = iconst.i64 -2
+    store notrap v21, v0+8
+    v4 = load.i64 notrap v0
+    v5, v6 = uadd_overflow v4, v1
+    v7 = iconst.i64 8
+    v8 = iadd v0, v7
+    v9 = load.i64 notrap v8
+    v10, v11 = uadd_overflow v9, v2
+    v12, v13 = uadd_overflow_cin v10, v3, v6
+    v14, v15 = uadd_overflow_cin v12, v1, v11
+    v16 = uextend.i64 v13
+    v17 = uextend.i64 v15
+    v18 = iadd v16, v17
+    v19 = iadd v14, v5
+    return v19, v18
+}
+; run: %chains_past_an_address_sum(1, 1, 1) == [2, 1]
+; run: %chains_past_an_address_sum(0, 0, 0) == [-3, 0]
+; run: %chains_past_an_address_sum(2, 3, 0) == [6, 0]

@@ -146,3 +146,71 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   popq %rbp
 ;   retq
 
+
+;; The address of the second word's load is a sum the load folds into its
+;; addressing mode, so it leaves the first chain's carry in CF, and the two
+;; chains interleave.
+
+function %chains_past_an_address_sum(i64, i64, i64, i64) -> i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = load.i64 notrap v0
+    v5, v6 = uadd_overflow v4, v1
+    v7 = iconst.i64 8
+    v8 = iadd v0, v7
+    v9 = load.i64 notrap v8
+    v10, v11 = uadd_overflow v9, v2
+    v12, v13 = uadd_overflow_cin v10, v3, v6
+    v14, v15 = uadd_overflow_cin v12, v1, v11
+    v16 = uextend.i64 v13
+    v17 = uextend.i64 v15
+    v18 = iadd v16, v17
+    v19 = iadd v14, v5
+    return v19, v18
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rcx, %r8
+;   movq (%rdi), %rax
+;   uninit  %rcx
+;   xorq %rcx, %rcx
+;   adcxq %rsi, %rax
+;   movq 8(%rdi), %rcx
+;   adoxq %rdx, %rcx
+;   movq %r8, %rdx
+;   adcxq %rdx, %rcx
+;   setb %dl
+;   adoxq %rsi, %rcx
+;   seto %sil
+;   movzbq %dl, %rdx
+;   movzbq %sil, %rsi
+;   leaq (%rdx, %rsi), %rdx
+;   leaq (%rcx, %rax), %rax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rcx, %r8
+;   movq (%rdi), %rax
+;   xorq %rcx, %rcx
+;   adcxq %rsi, %rax
+;   movq 8(%rdi), %rcx
+;   adoxq %rdx, %rcx
+;   movq %r8, %rdx
+;   adcxq %rdx, %rcx
+;   setb %dl
+;   adoxq %rsi, %rcx
+;   seto %sil
+;   movzbq %dl, %rdx
+;   movzbq %sil, %rsi
+;   addq %rsi, %rdx
+;   addq %rcx, %rax
+;   popq %rbp
+;   retq
+
