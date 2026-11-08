@@ -95,6 +95,12 @@ pub(crate) fn define() -> TargetIsa {
         "AVX512VNNI: CPUID.07H:ECX.AVX512_VNNI[bit 11]",
         false,
     );
+    let has_sha = settings.add_bool(
+        "has_sha",
+        "Has support for the SHA extensions.",
+        "SHA: CPUID.07H:EBX.SHA[bit 29]",
+        false,
+    );
     let has_popcnt = settings.add_bool(
         "has_popcnt",
         "Has support for POPCNT.",
@@ -288,7 +294,7 @@ pub(crate) fn define() -> TargetIsa {
     let icelake_client = settings.add_preset(
         "icelake-client",
         "Ice Lake microarchitecture.",
-        preset!(cannonlake && has_avx512bitalg && has_avx512vnni),
+        preset!(cannonlake && has_avx512bitalg && has_avx512vnni && has_sha),
     );
     // LLVM doesn't use the name "icelake" but Cranelift did in the past; alias it
     settings.add_preset(
@@ -391,7 +397,14 @@ pub(crate) fn define() -> TargetIsa {
         "znver1",
         "Zen (first generation) microarchitecture.",
         preset!(
-            sse42 && has_popcnt && has_bmi1 && has_bmi2 && has_lzcnt && has_fma && has_cmpxchg16b
+            sse42
+                && has_popcnt
+                && has_bmi1
+                && has_bmi2
+                && has_lzcnt
+                && has_fma
+                && has_cmpxchg16b
+                && has_sha
         ),
     );
     let znver2 = settings.add_preset(

@@ -1339,6 +1339,9 @@
 (decl pure has_cmpxchg16b () bool)
 (extern constructor has_cmpxchg16b has_cmpxchg16b)
 
+(decl pure has_sha () bool)
+(extern constructor has_sha has_sha)
+
 ;;;; Helpers for Merging and Sinking Immediates/Loads  ;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Generate a mask for the bit-width of the given type
@@ -2797,6 +2800,14 @@
 (rule 1 (x64_pblendvb src1 src2 mask)
       (if-let true (has_avx))
       (x64_vpblendvb_rvmr src1 src2 mask))
+
+;; Helpers for creating SHA-256 instructions.
+(decl x64_sha256rnds2 (Xmm XmmMem128 Xmm) Xmm)
+(rule (x64_sha256rnds2 src1 src2 wk) (x64_sha256rnds2_rm0 src1 src2 wk))
+(decl x64_sha256msg1 (Xmm XmmMem128) Xmm)
+(rule (x64_sha256msg1 src1 src2) (x64_sha256msg1_a src1 src2))
+(decl x64_sha256msg2 (Xmm XmmMem128) Xmm)
+(rule (x64_sha256msg2 src1 src2) (x64_sha256msg2_a src1 src2))
 
 ;; Helper for creating `pblendw` instructions.
 (decl x64_pblendw (Xmm XmmMem128 u8) Xmm)

@@ -4748,6 +4748,20 @@
       (let ((mask Xmm (x64_paddusb mask (emit_xmm_mem_128_le_const 0x70707070707070707070707070707070))))
         (lower_pshufb src mask)))
 
+;; Rules for `x86_sha256rnds2`, `x86_sha256msg1` and `x86_sha256msg2` ;;;;;;;;;;;
+
+(rule (lower (x86_sha256rnds2 _ x y wk))
+      (if-let true (has_sha))
+      (x64_sha256rnds2 x y wk))
+
+(rule (lower (x86_sha256msg1 _ x y))
+      (if-let true (has_sha))
+      (x64_sha256msg1 x y))
+
+(rule (lower (x86_sha256msg2 _ x y))
+      (if-let true (has_sha))
+      (x64_sha256msg2 x y))
+
 ;; Rules for `x86_pshufb` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (rule (lower (x86_pshufb _ src mask))

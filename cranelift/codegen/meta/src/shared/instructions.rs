@@ -3005,6 +3005,55 @@ pub(crate) fn define(
 
     ig.push(
         Inst::new(
+            "x86_sha256rnds2",
+            r#"
+        Two SHA-256 rounds, with the semantics of `sha256rnds2` on x86.
+
+        `x` holds the working variables C, D, G and H and `y` A, B, E and F,
+        each in lanes 3, 2, 1, 0. The rounds add the message-and-constant sums
+        in lanes 0 and 1 of `wk`. The result holds A, B, E and F after them;
+        the input `y` holds C, D, G and H after them.
+            "#,
+            &formats.ternary,
+        )
+        .operands_in(vec![
+            Operand::new("x", I32x4),
+            Operand::new("y", I32x4),
+            Operand::new("wk", I32x4),
+        ])
+        .operands_out(vec![Operand::new("a", I32x4)]),
+    );
+
+    ig.push(
+        Inst::new(
+            "x86_sha256msg1",
+            r#"
+        The first half of the SHA-256 message schedule, with the semantics of
+        `sha256msg1` on x86: the words of `x` each plus sigma0 of the next
+        message word, the next being lane 0 of `y` after lane 3 of `x`.
+            "#,
+            &formats.binary,
+        )
+        .operands_in(vec![Operand::new("x", I32x4), Operand::new("y", I32x4)])
+        .operands_out(vec![Operand::new("a", I32x4)]),
+    );
+
+    ig.push(
+        Inst::new(
+            "x86_sha256msg2",
+            r#"
+        The second half of the SHA-256 message schedule, with the semantics of
+        `sha256msg2` on x86: the words of `x` each plus sigma1 of the word two
+        before it, taken from lanes 2 and 3 of `y` for the first two.
+            "#,
+            &formats.binary,
+        )
+        .operands_in(vec![Operand::new("x", I32x4), Operand::new("y", I32x4)])
+        .operands_out(vec![Operand::new("a", I32x4)]),
+    );
+
+    ig.push(
+        Inst::new(
             "uextend",
             r#"
         Convert `x` to a larger integer type by zero-extending.
