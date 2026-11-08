@@ -44,13 +44,13 @@ block0(v0: i64):
 ;   movq %rsi, %r10
 ;   addq $0x30, %r10
 ;   cmpq %rsp, %r10
-;   ja 0x38
+;   ja 0x35
 ;   subq $0x30, %rsp
 ; block1: ; offset 0x18
 ;   leaq (%rsp), %rax
-;   leaq 0x10(%rsp), %rdx
-;   leaq 0x18(%rsp), %rsi
-;   leaq 0x20(%rsp), %r8
+;   leaq -0x20(%rbp), %rdx
+;   leaq -0x18(%rbp), %rsi
+;   leaq -0x10(%rbp), %r8
 ;   movq %rsi, (%rdi)
 ;   movq %r8, 8(%rdi)
 ;   addq $0x30, %rsp
@@ -112,15 +112,15 @@ block0(v0: i32, v1: i64, v2: f32, v3: f64, v4: i8x16):
 ;   subq $0x30, %rsp
 ; block1: ; offset 0x8
 ;   movl %esi, (%rsp)
-;   movq %rdx, 4(%rsp)
-;   movss %xmm0, 0xc(%rsp)
-;   movsd %xmm1, 0x10(%rsp)
-;   movdqu %xmm2, 0x18(%rsp)
+;   movq %rdx, -0x2c(%rbp)
+;   movss %xmm0, -0x24(%rbp)
+;   movsd %xmm1, -0x20(%rbp)
+;   movdqu %xmm2, -0x18(%rbp)
 ;   movl (%rsp), %eax
-;   movq 4(%rsp), %rdx
-;   movss 0xc(%rsp), %xmm0
-;   movsd 0x10(%rsp), %xmm1
-;   movdqu 0x18(%rsp), %xmm2
+;   movq -0x2c(%rbp), %rdx
+;   movss -0x24(%rbp), %xmm0
+;   movsd -0x20(%rbp), %xmm1
+;   movdqu -0x18(%rbp), %xmm2
 ;   movdqu %xmm2, (%rdi)
 ;   addq $0x30, %rsp
 ;   popq %rbp

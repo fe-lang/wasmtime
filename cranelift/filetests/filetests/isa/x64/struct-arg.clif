@@ -108,7 +108,7 @@ block0(v0: i64, v1: i64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x50, %rsp
-;   movq %r12, 0x40(%rsp)
+;   movq %r12, -0x10(%rbp)
 ; block0:
 ;   movq %rdi, %r12
 ;   leaq (%rsp), %rdi
@@ -117,7 +117,7 @@ block0(v0: i64, v1: i64):
 ;   call    *%r8
 ;   movq %r12, %rdi
 ;   call    User(userextname0)
-;   movq 0x40(%rsp), %r12
+;   movq -0x10(%rbp), %r12
 ;   addq $0x50, %rsp
 ;   popq %rbp
 ;   retq
@@ -127,16 +127,16 @@ block0(v0: i64, v1: i64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x50, %rsp
-;   movq %r12, 0x40(%rsp)
-; block1: ; offset 0xd
+;   movq %r12, -0x10(%rbp)
+; block1: ; offset 0xc
 ;   movq %rdi, %r12
 ;   leaq (%rsp), %rdi
 ;   movl $0x40, %edx
 ;   movabsq $0, %r8 ; reloc_external Abs8 %Memcpy 0
 ;   callq *%r8
 ;   movq %r12, %rdi
-;   callq 0x2e ; reloc_external CallPCRel4 u0:0 -4
-;   movq 0x40(%rsp), %r12
+;   callq 0x2d ; reloc_external CallPCRel4 u0:0 -4
+;   movq -0x10(%rbp), %r12
 ;   addq $0x50, %rsp
 ;   popq %rbp
 ;   retq
@@ -186,8 +186,8 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0xd0, %rsp
-;   movq %r12, 0xc0(%rsp)
-;   movq %r15, 0xc8(%rsp)
+;   movq %r12, -0x10(%rbp)
+;   movq %r15, -8(%rbp)
 ; block0:
 ;   movq %rdi, %r12
 ;   movq %rdx, %r15
@@ -202,8 +202,8 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   call    *%rax
 ;   movq %r12, %rdi
 ;   call    User(userextname0)
-;   movq 0xc0(%rsp), %r12
-;   movq 0xc8(%rsp), %r15
+;   movq -0x10(%rbp), %r12
+;   movq -8(%rbp), %r15
 ;   addq $0xd0, %rsp
 ;   popq %rbp
 ;   retq
@@ -213,9 +213,9 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0xd0, %rsp
-;   movq %r12, 0xc0(%rsp)
-;   movq %r15, 0xc8(%rsp)
-; block1: ; offset 0x1b
+;   movq %r12, -0x10(%rbp)
+;   movq %r15, -8(%rbp)
+; block1: ; offset 0x13
 ;   movq %rdi, %r12
 ;   movq %rdx, %r15
 ;   leaq (%rsp), %rdi
@@ -228,9 +228,9 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq %r15, %rsi
 ;   callq *%rax
 ;   movq %r12, %rdi
-;   callq 0x5b ; reloc_external CallPCRel4 u0:0 -4
-;   movq 0xc0(%rsp), %r12
-;   movq 0xc8(%rsp), %r15
+;   callq 0x53 ; reloc_external CallPCRel4 u0:0 -4
+;   movq -0x10(%rbp), %r12
+;   movq -8(%rbp), %r15
 ;   addq $0xd0, %rsp
 ;   popq %rbp
 ;   retq

@@ -35,6 +35,14 @@ pub trait CodeSink {
 
     /// Resolves a `KnownOffset` value to the actual signed offset.
     fn known_offset(&self, offset: KnownOffset) -> i32;
+
+    /// The distance from RSP up to RBP, if RBP is a frame pointer from which
+    /// an RSP-relative address whose displacement includes `offset` may be
+    /// formed instead. Such an address takes whichever base encodes shorter.
+    fn frame_pointer_offset(&self, offset: KnownOffset) -> Option<i32> {
+        let _ = offset;
+        None
+    }
 }
 
 /// Provide a convenient implementation for testing.

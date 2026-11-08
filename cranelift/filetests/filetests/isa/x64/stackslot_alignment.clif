@@ -35,11 +35,11 @@ block0(v0: i64):
 ;   movq %rdi, %r10
 ;   addq $0x30, %r10
 ;   cmpq %rsp, %r10
-;   ja 0x27
+;   ja 0x26
 ;   subq $0x30, %rsp
 ; block1: ; offset 0x18
 ;   leaq (%rsp), %rax
-;   leaq 0x10(%rsp), %rdx
+;   leaq -0x20(%rbp), %rdx
 ;   addq $0x30, %rsp
 ;   popq %rbp
 ;   retq

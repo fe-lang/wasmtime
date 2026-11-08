@@ -729,10 +729,8 @@ impl ABIMachineSpec for X64ABIMachineSpec {
             insts.push(Inst::subq_mi(rsp, stack_size));
         }
 
-        // Store each clobbered register in order at offsets from RSP,
-        // placing them above the fixed frame slots.
-        let clobber_offset =
-            frame_layout.fixed_frame_storage_size + frame_layout.outgoing_args_size;
+        // Store each clobbered register in order above the fixed frame slots.
+        let clobber_base = clobber_area_base(frame_layout);
         let mut cur_offset = 0;
         for reg in &frame_layout.clobbered_callee_saves {
             let r_reg = reg.to_reg();
@@ -750,7 +748,7 @@ impl ABIMachineSpec for X64ABIMachineSpec {
             insts.push(Inst::store(
                 ty,
                 r_reg.into(),
-                Amode::imm_reg(i32::try_from(off + clobber_offset).unwrap(), regs::rsp()),
+                clobber_base.offset(i32::try_from(off).unwrap()).unwrap(),
             ));
 
             if flags.unwind_info() {
@@ -773,11 +771,10 @@ impl ABIMachineSpec for X64ABIMachineSpec {
     ) -> SmallVec<[Self::I; 16]> {
         let mut insts = SmallVec::new();
 
-        // Restore regs by loading from offsets of RSP. We compute the offset from
-        // the same base as above in clobber_save, as RSP won't change between the
-        // prologue and epilogue.
-        let mut cur_offset =
-            frame_layout.fixed_frame_storage_size + frame_layout.outgoing_args_size;
+        // Restore regs from where clobber_save stored them; neither RSP nor
+        // RBP changes between the prologue and epilogue.
+        let clobber_base = clobber_area_base(frame_layout);
+        let mut cur_offset = 0;
         for reg in &frame_layout.clobbered_callee_saves {
             let rreg = reg.to_reg();
             let ty = match rreg.class() {
@@ -791,7 +788,9 @@ impl ABIMachineSpec for X64ABIMachineSpec {
 
             insts.push(Inst::load(
                 ty,
-                Amode::imm_reg(cur_offset.try_into().unwrap(), regs::rsp()),
+                clobber_base
+                    .offset(i32::try_from(cur_offset).unwrap())
+                    .unwrap(),
                 Writable::from_reg(rreg.into()),
                 ExtKind::None,
             ));
@@ -876,6 +875,12 @@ impl ABIMachineSpec for X64ABIMachineSpec {
             RegClass::Float => vector_scale / 8,
             RegClass::Vector => unreachable!(),
         }
+    }
+
+    fn prefers_high_spillslots() -> bool {
+        // Spillslots lie just below the clobber area, so the highest ones
+        // are within a one-byte displacement of RBP.
+        true
     }
 
     fn get_machine_env(
@@ -1192,6 +1197,20 @@ fn is_callee_save_fastcall(r: RealReg, enable_pinned_reg: bool) -> bool {
             _ => false,
         },
         RegClass::Vector => unreachable!(),
+    }
+}
+
+/// The start of the clobber save area, just below the saved frame pointer.
+/// Addressed from RBP, the saves take one-byte displacements and no SIB byte.
+fn clobber_area_base(frame_layout: &FrameLayout) -> Amode {
+    if frame_layout.setup_area_size > 0 {
+        Amode::imm_reg(
+            -i32::try_from(frame_layout.clobber_size).unwrap(),
+            regs::rbp(),
+        )
+    } else {
+        let offset = frame_layout.fixed_frame_storage_size + frame_layout.outgoing_args_size;
+        Amode::imm_reg(i32::try_from(offset).unwrap(), regs::rsp())
     }
 }
 
