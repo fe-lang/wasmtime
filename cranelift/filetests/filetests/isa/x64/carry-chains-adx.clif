@@ -50,7 +50,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   adcxq %r8, %rdx
 ;   adoxq %rcx, %rax
 ;   seto %cl
-;   movabsq $0x0, %r8
+;   movl $0x0, %r8d
 ;   adcxq %r8, %rax
 ;   setb %r8b
 ;   movzbq %r8b, %r8
@@ -87,7 +87,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   adcxq %r8, %rdx
 ;   adoxq %rcx, %rax
 ;   seto %cl
-;   movabsq $0, %r8
+;   movl $0, %r8d
 ;   adcxq %r8, %rax
 ;   setb %r8b
 ;   movzbq %r8b, %r8
@@ -100,7 +100,6 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   addq $0x10, %rsp
 ;   popq %rbp
 ;   retq
-
 
 ;; A chain whose last carry goes nowhere is over: the pair after it takes
 ;; CF and OF afresh.
