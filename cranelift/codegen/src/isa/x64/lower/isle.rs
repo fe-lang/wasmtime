@@ -8,7 +8,6 @@ use generated_code::{AssemblerOutputs, Context, MInst, RegisterClass};
 // Types that the generated ISLE code uses via `use super::*`.
 use super::external::{CraneliftRegisters, PairedGpr, PairedXmm, isle_assembler_methods};
 use super::{MergeableLoadSize, is_int_or_ref_ty, is_mergeable_load, lower_to_amode};
-use crate::FxHashMap;
 use crate::inst_predicates::has_lowering_side_effect;
 use crate::ir::condcodes::{FloatCC, IntCC};
 use crate::ir::immediates::*;
@@ -24,6 +23,7 @@ use crate::machinst::{
     ArgPair, CallArgList, CallInfo, CallRetList, InstOutput, MachInst, VCodeConstant,
     VCodeConstantData,
 };
+use crate::{FxHashMap, FxHashSet};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use cranelift_assembler_x64 as asm;
@@ -2138,44 +2138,29 @@ const I8X16_USHR_MASKS: [u8; 128] = [
 ];
 
 /// Whether the lowering of `inst` never writes the flags: nothing for an
-/// instruction without side effects whose results are unused, and otherwise
-/// loads, stores that are not a load-op-store, extensions to 64 bits or
+/// instruction without side effects whose results are unused or whose uses
+/// absorb it (`FlagFree`), and otherwise loads, stores that are not a
+/// load-op-store, nonzero constants (`mov`), extensions to 64 bits or
 /// fewer, the register shuffles of `ireduce`, `iconcat` and `isplit`, and
-/// with BMI2 a widening 64-bit multiply, `mulx`, with the extensions of its
-/// operands that it absorbs. A zero constant is an `xor`, and a 128-bit
-/// extension lowered on its own zeroes or shifts its high half.
-fn leaves_flags_alone(ctx: &Lower<MInst>, has_bmi2: bool, inst: Inst) -> bool {
+/// with BMI2 a widening 64-bit multiply, `mulx`. A zero constant is an
+/// `xor`, and a 128-bit extension zeroes or shifts its high half.
+fn leaves_flags_alone(ctx: &Lower<MInst>, free: &FlagFree, inst: Inst) -> bool {
     let f = ctx.f;
-    if is_unlowered(ctx, inst) {
-        return true;
-    }
     let dfg = &f.dfg;
-    if has_bmi2 && is_widening_mul(f, inst) {
+    if is_unlowered(ctx, inst)
+        || dfg
+            .inst_results(inst)
+            .first()
+            .is_some_and(|result| free.values.contains(result))
+        || (free.has_bmi2 && is_widening_mul(f, inst))
+    {
         return true;
-    }
-    // A nonzero constant is a `mov`. A zero is an `xor`, unless every use
-    // takes it as an immediate or moves it into a register itself.
-    if let InstructionData::UnaryImm {
-        opcode: Opcode::Iconst,
-        imm,
-    } = dfg.insts[inst]
-        && dfg.ctrl_typevar(inst).bits() <= 64
-    {
-        return imm.bits() != 0 || only_carry_addend(f, dfg.inst_results(inst)[0]);
-    }
-    if has_bmi2
-        && dfg.insts[inst].opcode() == Opcode::Uextend
-        && dfg.ctrl_typevar(inst) == I128
-        && let Some(&result) = dfg.inst_results(inst).first()
-        && ctx.value_is_used_once(result)
-    {
-        // Its one use is later in the block; it must be a widening multiply.
-        let user =
-            core::iter::successors(f.layout.next_inst(inst), |&next| f.layout.next_inst(next))
-                .find(|&next| dfg.inst_values(next).any(|arg| arg == result));
-        return user.is_some_and(|user| is_widening_mul(f, user));
     }
     match dfg.insts[inst] {
+        InstructionData::UnaryImm {
+            opcode: Opcode::Iconst,
+            imm,
+        } => imm.bits() != 0 && dfg.ctrl_typevar(inst).bits() <= 64,
         InstructionData::Store {
             args: [value, _], ..
         } => !dfg.value_def(value).inst().is_some_and(|def| {
@@ -2216,23 +2201,6 @@ fn is_unlowered(ctx: &Lower<MInst>, inst: Inst) -> bool {
             .all(|&result| ctx.value_is_unused(result))
 }
 
-/// Whether every use of `value` is the addend of a carry op of 64 bits or
-/// fewer, which takes a constant as an immediate (`adc`, `sbb`) or moves it
-/// into a register itself (`adcx`, `adox`).
-fn only_carry_addend(f: &Function, value: Value) -> bool {
-    f.layout
-        .blocks()
-        .flat_map(|block| f.layout.block_insts(block))
-        .all(|inst| {
-            let mut uses = f.dfg.inst_values(inst).filter(|&arg| arg == value);
-            uses.next().is_none()
-                || (is_carry_op(f, inst)
-                    && f.dfg.ctrl_typevar(inst).bits() <= 64
-                    && f.dfg.inst_args(inst)[1] == value
-                    && uses.next().is_none())
-        })
-}
-
 /// Whether `inst` multiplies two 64-bit values zero-extended to 128 bits,
 /// which lowers to one `mul` or, with BMI2, `mulx` of the 64-bit values.
 fn is_widening_mul(f: &Function, inst: Inst) -> bool {
@@ -2248,19 +2216,107 @@ fn is_widening_mul(f: &Function, inst: Inst) -> bool {
 }
 
 impl IsleContext<'_, '_, MInst, X64Backend> {
-    /// How the carry of unsigned carry op `inst` travels, from a plan of its
-    /// whole block.
-    fn carry_plan(&self, inst: Inst) -> CarryPlan {
+    /// How the carry of unsigned carry op `inst` travels, from the plan of
+    /// its block, made once while the block is lowered.
+    fn carry_plan(&mut self, inst: Inst) -> CarryPlan {
         let f = self.lower_ctx.f;
-        let flags = &self.backend.x64_flags;
-        carry_plans(
-            self.lower_ctx,
-            flags.has_bmi2(),
-            flags.has_adx(),
-            f.layout.inst_block(inst).expect("instruction in a block"),
-        )
-        .remove(&inst)
-        .unwrap_or_default()
+        let block = f.layout.inst_block(inst).expect("instruction in a block");
+        let has_bmi2 = self.backend.x64_flags.has_bmi2();
+        let has_adx = self.backend.x64_flags.has_adx();
+        let mut state = self
+            .lower_ctx
+            .backend_state
+            .take()
+            .and_then(|state| state.downcast::<CarryState>().ok())
+            .unwrap_or_else(|| Box::new(CarryState::new(f, has_bmi2)));
+        if state.block != Some(block) {
+            state.plans = carry_plans(self.lower_ctx, &state.free, has_adx, block);
+            state.block = Some(block);
+        }
+        let plan = state.plans.get(&inst).copied().unwrap_or_default();
+        self.lower_ctx.backend_state = Some(state);
+        plan
+    }
+}
+
+/// The carry plans of the block being lowered, and what of the function
+/// leaves the flags alone.
+struct CarryState {
+    free: FlagFree,
+    block: Option<Block>,
+    plans: FxHashMap<Inst, CarryPlan>,
+}
+
+impl CarryState {
+    fn new(f: &Function, has_bmi2: bool) -> Self {
+        Self {
+            free: FlagFree::new(f, has_bmi2),
+            block: None,
+            plans: FxHashMap::default(),
+        }
+    }
+}
+
+/// Values whose definitions lower to nothing that writes the flags only
+/// because of how every use lowers: zero constants that are only carry op
+/// addends, an immediate or a `mov` there, and, with BMI2, 128-bit
+/// extensions that only widening multiplies (`mulx`) absorb.
+struct FlagFree {
+    has_bmi2: bool,
+    values: FxHashSet<Value>,
+}
+
+impl FlagFree {
+    fn new(f: &Function, has_bmi2: bool) -> Self {
+        let dfg = &f.dfg;
+        let insts = || {
+            f.layout
+                .blocks()
+                .flat_map(|block| f.layout.block_insts(block))
+        };
+        let candidate = |value: Value| {
+            dfg.value_def(value)
+                .inst()
+                .is_some_and(|def| match dfg.insts[def] {
+                    InstructionData::UnaryImm {
+                        opcode: Opcode::Iconst,
+                        imm,
+                    } => imm.bits() == 0,
+                    InstructionData::Unary {
+                        opcode: Opcode::Uextend,
+                        arg,
+                    } => has_bmi2 && dfg.ctrl_typevar(def) == I128 && dfg.value_type(arg) == I64,
+                    _ => false,
+                })
+        };
+        let mut values: FxHashSet<Value> = insts()
+            .flat_map(|inst| dfg.inst_results(inst).iter().copied())
+            .filter(|&value| candidate(value))
+            .collect();
+        for inst in insts() {
+            let args = dfg.inst_values(inst).collect::<Vec<_>>();
+            for (index, &arg) in args.iter().enumerate() {
+                if !values.contains(&arg) {
+                    continue;
+                }
+                let constant = dfg
+                    .value_def(arg)
+                    .inst()
+                    .is_some_and(|def| dfg.insts[def].opcode() == Opcode::Iconst);
+                let absorbed = if constant {
+                    is_carry_op(f, inst)
+                        && dfg.ctrl_typevar(inst).bits() <= 64
+                        && index == 1
+                        && args.iter().filter(|&&other| other == arg).count() == 1
+                } else {
+                    is_widening_mul(f, inst)
+                };
+                if !absorbed {
+                    values.remove(&arg);
+                }
+            }
+        }
+        Self { has_bmi2, values }
     }
 }
 
@@ -2313,7 +2369,7 @@ fn is_lane_op(f: &Function, inst: Inst) -> bool {
 /// from its start, which first clears both flags.
 fn carry_plans(
     ctx: &Lower<MInst>,
-    has_bmi2: bool,
+    free: &FlagFree,
     has_adx: bool,
     block: Block,
 ) -> FxHashMap<Inst, CarryPlan> {
@@ -2334,7 +2390,7 @@ fn carry_plans(
     let mut consumed = Vec::new();
     for inst in f.layout.block_insts(block) {
         if !is_carry_op(f, inst) || is_unlowered(ctx, inst) {
-            if !leaves_flags_alone(ctx, has_bmi2, inst) {
+            if !leaves_flags_alone(ctx, free, inst) {
                 (cf, of) = (None, None);
             }
             continue;

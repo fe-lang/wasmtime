@@ -37,3 +37,51 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
 ;   popq %rbp
 ;   retq
 
+
+;; A shared extended operand, and a product split twice, still lower to
+;; `mulx` alone.
+function %carry_past_shared_widening_muls(i64, i64, i64, i64, i64) -> i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5 = uextend.i128 v2
+    v6 = uextend.i128 v3
+    v7 = imul v5, v6
+    v8, v9 = isplit v7
+    v10, v11 = uadd_overflow v0, v8
+    v12 = uextend.i128 v4
+    v13 = imul v5, v12
+    v14, v15 = isplit v13
+    v16, v17 = isplit v13
+    v18, v19 = uadd_overflow_cin v1, v14, v11
+    v20 = iadd v9, v17
+    return v10, v18, v20
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   mulxq %rcx, %rcx, %r11 ;; implicit: %rdx
+;   movq %rdi, %rax
+;   addq %rcx, %rax
+;   mulxq %r8, %rcx, %r10 ;; implicit: %rdx
+;   movq %rsi, %rdx
+;   adcq %rcx, %rdx
+;   leaq (%r11, %r10), %rcx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   mulxq %rcx, %rcx, %r11
+;   movq %rdi, %rax
+;   addq %rcx, %rax
+;   mulxq %r8, %rcx, %r10
+;   movq %rsi, %rdx
+;   adcq %rcx, %rdx
+;   leaq (%r11, %r10), %rcx
+;   popq %rbp
+;   retq
+
