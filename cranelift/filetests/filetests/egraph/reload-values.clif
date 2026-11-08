@@ -132,22 +132,22 @@ block0(v0: i64):
 ;     store notrap aligned v41, v32+64
 ;     v42 = bxor v10, v31
 ;     store notrap aligned v42, v32+72
-;     v54 = load.i64 notrap aligned v0+80
-;     v43 = bxor v54, v31
+;     v43 = bxor v11, v31
 ;     store notrap aligned v43, v32+80
-;     v53 = load.i64 notrap aligned v0+88
-;     v44 = bxor v53, v31
+;     v54 = load.i64 notrap aligned v0+88
+;     v44 = bxor v54, v31
 ;     store notrap aligned v44, v32+88
-;     v52 = load.i64 notrap aligned v0+96
-;     v45 = bxor v52, v31
+;     v53 = load.i64 notrap aligned v0+96
+;     v45 = bxor v53, v31
 ;     store notrap aligned v45, v32+96
-;     v51 = load.i64 notrap aligned v0+104
-;     v46 = bxor v51, v31
+;     v52 = load.i64 notrap aligned v0+104
+;     v46 = bxor v52, v31
 ;     store notrap aligned v46, v32+104
-;     v50 = load.i64 notrap aligned v0+112
-;     v47 = bxor v50, v31
+;     v51 = load.i64 notrap aligned v0+112
+;     v47 = bxor v51, v31
 ;     store notrap aligned v47, v32+112
-;     v48 = bxor v16, v31
+;     v50 = load.i64 notrap aligned v0+120
+;     v48 = bxor v50, v31
 ;     store notrap aligned v48, v32+120
 ;     v49 = load.i64 notrap aligned v32+8
 ;     return v49
@@ -910,8 +910,7 @@ block0(v0: i64, v1: i64):
 ;     store notrap aligned v43, v33+48
 ;     v44 = bxor v7, v32
 ;     store notrap aligned v44, v33+40
-;     v55 = load.i64 notrap aligned v0+32
-;     v45 = bxor v55, v32
+;     v45 = bxor v6, v32
 ;     store notrap aligned v45, v33+32
 ;     v54 = load.i64 notrap aligned v0+24
 ;     v46 = bxor v54, v32
@@ -928,7 +927,6 @@ block0(v0: i64, v1: i64):
 ;     v50 = load.i64 notrap aligned v33+8
 ;     return v50
 ; }
-
 
 ;; Passing a slot to memset does not let other pointers reach it.
 
