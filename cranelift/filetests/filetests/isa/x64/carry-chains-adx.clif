@@ -1,0 +1,103 @@
+test compile precise-output
+set enable_multi_ret_implicit_sret
+target x86_64 has_bmi2 has_adx
+
+;; Two carry chains interleave: the low words of the products through CF
+;; with `adcx`, the high words a word up through OF with `adox`.
+function %mac_row(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    ;; [t0, t1, t2] + [a0, a1] * b, with a = v0 v1, b = v2, t = v3 v4 v5.
+    v6 = uextend.i128 v0
+    v7 = uextend.i128 v2
+    v8 = imul v6, v7
+    v9, v10 = isplit v8
+    v11, v12 = uadd_overflow v3, v9
+    v13, v14 = uadd_overflow v4, v10
+    v15 = uextend.i128 v1
+    v16 = uextend.i128 v2
+    v17 = imul v15, v16
+    v18, v19 = isplit v17
+    v20, v21 = uadd_overflow_cin v13, v18, v12
+    v22, v23 = uadd_overflow_cin v5, v19, v14
+    v24 = iconst.i64 0
+    v25, v26 = uadd_overflow_cin v22, v24, v21
+    v27 = uextend.i64 v26
+    v28 = uextend.i64 v23
+    v29 = iadd v27, v28
+    return v11, v20, v25, v29
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %rbx, (%rsp)
+; block0:
+;   movq %rdx, %rbx
+;   movq %r8, %r11
+;   movq <offset:0>+-0x10(%rbp), %rax
+;   movq %rsi, %rdx
+;   mulxq %rcx, %r10, %r8 ;; implicit: %rdx
+;   uninit  %rsi
+;   xorq %rsi, %rsi
+;   movq %r11, %rdx
+;   movq %rdx, %rsi
+;   adcxq %r10, %rsi
+;   adoxq %r8, %r9
+;   movq %rbx, %rdx
+;   mulxq %rcx, %r8, %rcx ;; implicit: %rdx
+;   movq %r9, %rdx
+;   adcxq %r8, %rdx
+;   adoxq %rcx, %rax
+;   seto %cl
+;   movabsq $0x0, %r8
+;   adcxq %r8, %rax
+;   setb %r8b
+;   movzbq %r8b, %r8
+;   movzbq %cl, %rcx
+;   leaq (%r8, %rcx), %rcx
+;   movq %rax, (%rdi)
+;   movq %rcx, 8(%rdi)
+;   movq %rsi, %rax
+;   movq (%rsp), %rbx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %rbx, (%rsp)
+; block1: ; offset 0xc
+;   movq %rdx, %rbx
+;   movq %r8, %r11
+;   movq 0x10(%rbp), %rax
+;   movq %rsi, %rdx
+;   mulxq %rcx, %r10, %r8
+;   xorq %rsi, %rsi
+;   movq %r11, %rdx
+;   movq %rdx, %rsi
+;   adcxq %r10, %rsi
+;   adoxq %r8, %r9
+;   movq %rbx, %rdx
+;   mulxq %rcx, %r8, %rcx
+;   movq %r9, %rdx
+;   adcxq %r8, %rdx
+;   adoxq %rcx, %rax
+;   seto %cl
+;   movabsq $0, %r8
+;   adcxq %r8, %rax
+;   setb %r8b
+;   movzbq %r8b, %r8
+;   movzbq %cl, %rcx
+;   addq %r8, %rcx
+;   movq %rax, (%rdi)
+;   movq %rcx, 8(%rdi)
+;   movq %rsi, %rax
+;   movq (%rsp), %rbx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+
