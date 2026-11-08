@@ -45,3 +45,24 @@ block2:
 ; run: %carry_past_load(1, 2) == 3
 ; run: %carry_past_load(-1, 1) == 42
 ; run: %carry_past_load(-1, 0) == -1
+
+function %no_borrow(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    v4 = uextend.i64 v3
+    v5 = iconst.i64 0
+    v6 = icmp eq v4, v5
+    brif v6, block1, block2
+
+block1:
+    return v2
+
+block2:
+    v7 = iconst.i64 -1
+    return v7
+}
+
+; run: %no_borrow(10, 3) == 7
+; run: %no_borrow(3, 3) == 0
+; run: %no_borrow(3, 10) == -1
+
