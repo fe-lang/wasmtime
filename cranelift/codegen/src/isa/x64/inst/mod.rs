@@ -1604,6 +1604,10 @@ impl asm::AvailableFeatures for &EmitInfo {
     fn avx512vnni(&self) -> bool {
         self.isa_flags.has_avx512vnni()
     }
+
+    fn sha(&self) -> bool {
+        self.isa_flags.has_sha()
+    }
 }
 
 impl MachInstEmit for Inst {

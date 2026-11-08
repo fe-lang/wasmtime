@@ -27,6 +27,7 @@ mod pma;
 mod recip;
 mod round;
 mod setcc;
+mod sha;
 mod shift;
 mod sqrt;
 mod stack;
@@ -67,6 +68,7 @@ pub fn list() -> Vec<Inst> {
     all.extend(recip::list());
     all.extend(round::list());
     all.extend(setcc::list());
+    all.extend(sha::list());
     all.extend(shift::list());
     all.extend(sqrt::list());
     all.extend(stack::list());
