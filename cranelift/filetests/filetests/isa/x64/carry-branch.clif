@@ -250,3 +250,98 @@ block2:
 ;   popq %rbp
 ;   retq
 
+
+;; A branch on a borrow whose difference goes unused still subtracts.
+
+function %borrow_of_unused_difference(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    brif v3, block1, block2
+block1:
+    v4 = iconst.i64 1
+    return v4
+block2:
+    v5 = iconst.i64 2
+    return v5
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   subq %rsi, %rdi
+;   jb      label2; j label1
+; block1:
+;   movl $0x2, %eax
+;   popq %rbp
+;   retq
+; block2:
+;   movl $0x1, %eax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   subq %rsi, %rdi
+;   jb 0x14
+; block2: ; offset 0xd
+;   movl $2, %eax
+;   popq %rbp
+;   retq
+; block3: ; offset 0x14
+;   movl $1, %eax
+;   popq %rbp
+;   retq
+
+function %no_borrow_of_unused_differences(i64, i64, i64, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4, v5 = usub_overflow v0, v2
+    v6, v7 = usub_overflow_bin v1, v3, v5
+    v8 = uextend.i64 v7
+    v9 = iconst.i64 0
+    v10 = icmp eq v8, v9
+    brif v10, block1, block2
+block1:
+    v11 = iconst.i64 1
+    return v11
+block2:
+    v12 = iconst.i64 2
+    return v12
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   subq %rdx, %rdi
+;   sbbq %rcx, %rsi
+;   jnb     label2; j label1
+; block1:
+;   movl $0x2, %eax
+;   popq %rbp
+;   retq
+; block2:
+;   movl $0x1, %eax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   subq %rdx, %rdi
+;   sbbq %rcx, %rsi
+;   jae 0x17
+; block2: ; offset 0x10
+;   movl $2, %eax
+;   popq %rbp
+;   retq
+; block3: ; offset 0x17
+;   movl $1, %eax
+;   popq %rbp
+;   retq
+
