@@ -590,22 +590,29 @@ block0(v0: i64, v1: i64):
 ;     store notrap aligned v43, v34+64
 ;     v44 = bxor v12, v33
 ;     store notrap aligned v44, v34+72
-;     v56 = load.i64 notrap aligned v2+80
-;     v45 = bxor v56, v33
+;     v62 = stack_addr.i64 ss1+80
+;     v63 = load.i64 notrap aligned v62
+;     v45 = bxor v63, v33
 ;     store notrap aligned v45, v34+80
-;     v55 = load.i64 notrap aligned v2+88
-;     v46 = bxor v55, v33
+;     v60 = stack_addr.i64 ss1+88
+;     v61 = load.i64 notrap aligned v60
+;     v46 = bxor v61, v33
 ;     store notrap aligned v46, v34+88
-;     v54 = load.i64 notrap aligned v2+96
-;     v47 = bxor v54, v33
+;     v58 = stack_addr.i64 ss1+96
+;     v59 = load.i64 notrap aligned v58
+;     v47 = bxor v59, v33
 ;     store notrap aligned v47, v34+96
-;     v53 = load.i64 notrap aligned v2+104
-;     v48 = bxor v53, v33
+;     v56 = stack_addr.i64 ss1+104
+;     v57 = load.i64 notrap aligned v56
+;     v48 = bxor v57, v33
 ;     store notrap aligned v48, v34+104
-;     v52 = load.i64 notrap aligned v2+112
-;     v49 = bxor v52, v33
+;     v54 = stack_addr.i64 ss1+112
+;     v55 = load.i64 notrap aligned v54
+;     v49 = bxor v55, v33
 ;     store notrap aligned v49, v34+112
-;     v50 = bxor v18, v33
+;     v52 = stack_addr.i64 ss1+120
+;     v53 = load.i64 notrap aligned v52
+;     v50 = bxor v53, v33
 ;     store notrap aligned v50, v34+120
 ;     v51 = load.i64 notrap aligned v34+8
 ;     return v51
@@ -1074,23 +1081,29 @@ block1:
 ;     store notrap aligned v43, v34+64
 ;     v44 = bxor v12, v33
 ;     store notrap aligned v44, v34+72
-;     v108 = load.i64 notrap aligned v2+80
-;     v45 = bxor v108, v33
+;     v113 = stack_addr.i64 ss1+80
+;     v114 = load.i64 notrap aligned v113
+;     v45 = bxor v114, v33
 ;     store notrap aligned v45, v34+80
-;     v107 = load.i64 notrap aligned v2+88
-;     v46 = bxor v107, v33
+;     v111 = stack_addr.i64 ss1+88
+;     v112 = load.i64 notrap aligned v111
+;     v46 = bxor v112, v33
 ;     store notrap aligned v46, v34+88
-;     v106 = load.i64 notrap aligned v2+96
-;     v47 = bxor v106, v33
+;     v109 = stack_addr.i64 ss1+96
+;     v110 = load.i64 notrap aligned v109
+;     v47 = bxor v110, v33
 ;     store notrap aligned v47, v34+96
-;     v105 = load.i64 notrap aligned v2+104
-;     v48 = bxor v105, v33
+;     v107 = stack_addr.i64 ss1+104
+;     v108 = load.i64 notrap aligned v107
+;     v48 = bxor v108, v33
 ;     store notrap aligned v48, v34+104
-;     v104 = load.i64 notrap aligned v2+112
-;     v49 = bxor v104, v33
+;     v105 = stack_addr.i64 ss1+112
+;     v106 = load.i64 notrap aligned v105
+;     v49 = bxor v106, v33
 ;     store notrap aligned v49, v34+112
-;     v103 = load.i64 notrap aligned v2+120
-;     v50 = bxor v103, v33
+;     v103 = stack_addr.i64 ss1+120
+;     v104 = load.i64 notrap aligned v103
+;     v50 = bxor v104, v33
 ;     store notrap aligned v50, v34+120
 ;     v51 = load.i64 notrap aligned v34+8
 ;     return v51
