@@ -223,6 +223,7 @@ impl MemFlagsData {
                 self.with_endianness(Endianness::Big)
             }
             "can_move" => self.with_can_move(),
+            "reload" => self.with_reload(),
 
             other => match TrapCode::from_str(other) {
                 Ok(code) => self.with_trap_code(Some(code)),
@@ -358,6 +359,22 @@ impl MemFlagsData {
     /// Set the `readonly` flag, returning new flags.
     pub const fn with_readonly(mut self) -> Self {
         self.flags = self.flags.with_readonly();
+        self
+    }
+
+    /// Test if the `reload` flag is set.
+    ///
+    /// A reload reads memory where it is instead of reusing an earlier load's
+    /// value: redundant-load elimination leaves it alone, so that it can sit
+    /// at its use rather than keep that value live in between. Removing the
+    /// flag never changes a program's meaning.
+    pub const fn reload(self) -> bool {
+        self.flags.reload()
+    }
+
+    /// Set the `reload` flag, returning new flags.
+    pub const fn with_reload(mut self) -> Self {
+        self.flags = self.flags.with_reload();
         self
     }
     /// Get the trap code to report if this memory access traps.

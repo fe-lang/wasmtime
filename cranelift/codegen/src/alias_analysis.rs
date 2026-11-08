@@ -941,6 +941,14 @@ impl<'a> AliasAnalysis<'a> {
                 );
 
                 OptResult::None
+            } else if opcode.can_load()
+                && func.dfg.insts[inst]
+                    .memflags_data(&func.dfg)
+                    .is_some_and(|flags| flags.reload())
+            {
+                // A reload reads memory where it is, and leaves no value for
+                // later loads to reuse.
+                OptResult::None
             } else if opcode.can_load() {
                 let last_store = state.get_last_store(func, inst);
                 let load_result = func.dfg.inst_results(inst)[0];
