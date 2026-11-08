@@ -1208,6 +1208,11 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
         Ok(vcode)
     }
 
+    /// Whether `val` has exactly one use.
+    pub fn value_is_used_once(&self, val: Value) -> bool {
+        self.value_ir_uses[val] == ValueUseState::Once
+    }
+
     pub fn value_is_unused(&self, val: Value) -> bool {
         match self.value_ir_uses[val] {
             ValueUseState::Unused => true,

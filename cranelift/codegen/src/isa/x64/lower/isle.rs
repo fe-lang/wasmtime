@@ -11,7 +11,10 @@ use super::{MergeableLoadSize, is_int_or_ref_ty, is_mergeable_load, lower_to_amo
 use crate::ir::condcodes::{FloatCC, IntCC};
 use crate::ir::immediates::*;
 use crate::ir::types::*;
-use crate::ir::{BlockCall, Inst, InstructionData, LibCall, Opcode, TrapCode, Value, ValueList};
+use crate::ir::{
+    BlockCall, Function, Inst, InstructionData, LibCall, Opcode, TrapCode, Value, ValueDef,
+    ValueList,
+};
 use crate::isa::x64::X64Backend;
 use crate::isa::x64::inst::{ReturnCallInfo, args::*, regs};
 use crate::isa::x64::lower::{InsnInput, emit_vm_call};
@@ -567,6 +570,53 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         Some(GprMemImm::unwrap_new(RegMemImm::Imm {
             simm32: i32::try_from(imm).ok()?.cast_unsigned(),
         }))
+    }
+
+    fn carry_flags_live(&mut self, inst: Inst, carry: Value) -> Option<()> {
+        let f = self.lower_ctx.f;
+        let ValueDef::Result(producer, 1) = f.dfg.value_def(carry) else {
+            return None;
+        };
+        if !matches!(
+            f.dfg.insts[producer].opcode(),
+            Opcode::UaddOverflow
+                | Opcode::UaddOverflowCin
+                | Opcode::UsubOverflow
+                | Opcode::UsubOverflowBin
+        ) {
+            return None;
+        }
+        let mut between = f.layout.next_inst(producer)?;
+        while between != inst {
+            if !leaves_flags_alone(f, between) {
+                return None;
+            }
+            between = f.layout.next_inst(between)?;
+        }
+        Some(())
+    }
+
+    fn carry_stays_in_flags(&mut self, inst: Inst) -> Option<()> {
+        let f = self.lower_ctx.f;
+        let carry = *f.dfg.inst_results(inst).get(1)?;
+        if self.lower_ctx.value_is_unused(carry) {
+            return Some(());
+        }
+        if !self.lower_ctx.value_is_used_once(carry) {
+            return None;
+        }
+        let mut user = f.layout.next_inst(inst)?;
+        while !f.dfg.inst_values(user).any(|arg| arg == carry) {
+            if !leaves_flags_alone(f, user) {
+                return None;
+            }
+            user = f.layout.next_inst(user)?;
+        }
+        (matches!(
+            f.dfg.insts[user].opcode(),
+            Opcode::UaddOverflowCin | Opcode::UsubOverflowBin
+        ) && f.dfg.inst_args(user)[2] == carry)
+            .then_some(())
     }
 
     fn sinkable_load(&mut self, val: Value) -> Option<SinkableLoad> {
@@ -2093,3 +2143,42 @@ const I8X16_USHR_MASKS: [u8; 128] = [
     0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
     0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
 ];
+
+/// Whether the lowering of `inst` never writes the flags: loads, stores
+/// that are not a load-op-store, extensions to 64 bits or fewer, and the
+/// register shuffles of `ireduce`, `iconcat` and `isplit`. A zero constant
+/// is an `xor`, and a 128-bit extension zeroes or shifts its high half.
+fn leaves_flags_alone(f: &Function, inst: Inst) -> bool {
+    let dfg = &f.dfg;
+    match dfg.insts[inst] {
+        InstructionData::UnaryImm {
+            opcode: Opcode::Iconst,
+            imm,
+        } => imm.bits() != 0 && dfg.ctrl_typevar(inst).bits() <= 64,
+        InstructionData::Store {
+            args: [value, _], ..
+        } => !dfg.value_def(value).inst().is_some_and(|def| {
+            matches!(
+                dfg.insts[def].opcode(),
+                Opcode::Iadd | Opcode::Isub | Opcode::Band | Opcode::Bor | Opcode::Bxor
+            )
+        }),
+        InstructionData::Unary {
+            opcode: Opcode::Uextend | Opcode::Sextend,
+            ..
+        } => dfg.ctrl_typevar(inst).bits() <= 64,
+        _ => matches!(
+            dfg.insts[inst].opcode(),
+            Opcode::Load
+                | Opcode::Uload8
+                | Opcode::Sload8
+                | Opcode::Uload16
+                | Opcode::Sload16
+                | Opcode::Uload32
+                | Opcode::Sload32
+                | Opcode::Ireduce
+                | Opcode::Iconcat
+                | Opcode::Isplit
+        ),
+    }
+}
