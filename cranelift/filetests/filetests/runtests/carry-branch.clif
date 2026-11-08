@@ -1,0 +1,63 @@
+test interpret
+test run
+set enable_llvm_abi_extensions=true
+target x86_64
+
+;; Branches on a borrow or carry still in the flags take the flag.
+
+function %borrow_masked(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    v4 = iconst.i8 1
+    v5 = band v3, v4
+    brif v5, block1, block2
+
+block1:
+    v6 = iconst.i64 -1
+    return v6
+
+block2:
+    return v2
+}
+
+; run: %borrow_masked(10, 3) == 7
+; run: %borrow_masked(3, 3) == 0
+; run: %borrow_masked(3, 10) == -1
+; run: %borrow_masked(0, 1) == -1
+
+function %carry_past_load(i64, i64) -> i64 {
+    ss0 = explicit_slot 8
+block0(v0: i64, v1: i64):
+    v2 = iconst.i64 42
+    v5 = stack_addr.i64 ss0
+    store notrap v2, v5
+    v3, v4 = uadd_overflow v0, v1
+    v6 = load.i64 notrap v5
+    brif v4, block1, block2
+
+block1:
+    return v6
+
+block2:
+    return v3
+}
+
+; run: %carry_past_load(1, 2) == 3
+; run: %carry_past_load(-1, 1) == 42
+; run: %carry_past_load(-1, 0) == -1
+
+; Branches on borrows whose differences go unused still subtract.
+function %borrow_of_unused_difference(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    brif v3, block1, block2
+block1:
+    v4 = iconst.i64 1
+    return v4
+block2:
+    v5 = iconst.i64 2
+    return v5
+}
+; run: %borrow_of_unused_difference(1, 2) == 1
+; run: %borrow_of_unused_difference(2, 1) == 2
+; run: %borrow_of_unused_difference(2, 2) == 2
