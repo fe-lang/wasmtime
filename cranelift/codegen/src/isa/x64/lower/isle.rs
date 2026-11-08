@@ -582,6 +582,11 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         (!self.carry_plan(inst).keep_out).then_some(())
     }
 
+    fn select_flags_live(&mut self, inst: Inst) -> Option<()> {
+        let block = self.lower_ctx.f.layout.inst_block(inst)?;
+        self.with_carry_state(block, |state| state.selects.contains(&inst).then_some(()))
+    }
+
     fn carry_branch(&mut self, cond: Value) -> Option<CC> {
         let def = self.lower_ctx.f.dfg.value_def(cond).inst()?;
         let block = self.lower_ctx.f.layout.inst_block(def)?;
@@ -2232,6 +2237,7 @@ impl IsleContext<'_, '_, MInst, X64Backend> {
             .unwrap_or_else(|| Box::new(CarryState::new(f, has_bmi2)));
         if state.block != Some(block) {
             (state.plans, state.branch) = carry_plans(self.lower_ctx, &state.free, has_adx, block);
+            state.selects = select_reuse(self.lower_ctx, &state.free, block);
             state.block = Some(block);
         }
         let result = query(&state);
@@ -2249,6 +2255,8 @@ struct CarryState {
     /// The block's branch condition, when it takes a carry from the flags,
     /// and the flag.
     branch: Option<(Value, CC)>,
+    /// The selects that take the flags of the select before them.
+    selects: FxHashSet<Inst>,
 }
 
 impl CarryState {
@@ -2258,6 +2266,7 @@ impl CarryState {
             block: None,
             plans: FxHashMap::default(),
             branch: None,
+            selects: FxHashSet::default(),
         }
     }
 }
@@ -2372,6 +2381,47 @@ fn is_carry_op(f: &Function, inst: Inst) -> bool {
             | Opcode::UsubOverflow
             | Opcode::UsubOverflowBin
     )
+}
+
+/// The integer selects of `block` whose condition is that of the select
+/// lowered before them, with only instructions that leave the flags alone
+/// between, so that they take its flags instead of comparing again. A
+/// condition comparing 128-bit or float values sets more than one flag test,
+/// and keeps its compare.
+fn select_reuse(ctx: &Lower<MInst>, free: &FlagFree, block: Block) -> FxHashSet<Inst> {
+    let f = ctx.f;
+    let dfg = &f.dfg;
+    let one_test = |cond: Value| {
+        dfg.value_def(cond)
+            .inst()
+            .is_none_or(|def| match dfg.insts[def] {
+                InstructionData::IntCompare { args: [lhs, _], .. } => {
+                    dfg.value_type(lhs).bits() <= 64
+                }
+                InstructionData::FloatCompare { .. } => false,
+                _ => true,
+            })
+    };
+    let mut reuse = FxHashSet::default();
+    let mut last = None;
+    for inst in f.layout.block_insts(block) {
+        if dfg.insts[inst].opcode() == Opcode::Select
+            && dfg.ctrl_typevar(inst).is_int()
+            && dfg.ctrl_typevar(inst).bits() <= 64
+            && !is_unlowered(ctx, inst)
+        {
+            let cond = dfg.inst_args(inst)[0];
+            if last == Some(cond) && one_test(cond) {
+                reuse.insert(inst);
+            }
+            last = Some(cond);
+            continue;
+        }
+        if !leaves_flags_alone(ctx, free, inst) {
+            last = None;
+        }
+    }
+    reuse
 }
 
 /// Whether carry op `inst` adds a constant that a 64-bit `adc` takes as a

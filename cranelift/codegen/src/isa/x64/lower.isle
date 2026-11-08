@@ -2417,6 +2417,23 @@
 
 (rule (lower (select _ cond x y)) (lower_select (is_nonzero_cmp cond) x y))
 
+;; A select on the condition of the select lowered just before it, with only
+;; instructions that leave the flags alone between, tests the flags that
+;; select's compare set instead of comparing again.
+(rule 1 (lower i @ (select _ cond x y))
+      (if-let _ (select_flags_live i))
+      (lower_select (reuse_flags (is_nonzero_cmp cond)) x y))
+
+(decl pure partial select_flags_live (Inst) Unit)
+(extern constructor select_flags_live select_flags_live)
+
+;; A condition's flag test without its compare; a condition testing more than
+;; one flag, which `select_reuse` leaves out, keeps its compare.
+(decl reuse_flags (CondResult) CondResult)
+(rule 1 (reuse_flags (CondResult.CC _ cc))
+      (CondResult.CC (ProducesFlags.AlreadyExistingFlags) cc))
+(rule 0 (reuse_flags cond) cond)
+
 ; Recursion: at most once to swap the And case for an Or.
 (decl rec lower_select (CondResult Value Value) InstOutput)
 (rule 0 (lower_select cond a @ (value_type (ty_int (fits_in_64 ty))) b)

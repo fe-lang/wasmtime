@@ -698,6 +698,14 @@
             (_y Unit (emit consumer_inst)))
         (value_reg consumer_result)))
 
+;; A consumer of flags an earlier instruction set, which nothing since has
+;; changed.
+(rule with_flags_existing_consumer_reg
+      (with_flags (ProducesFlags.AlreadyExistingFlags)
+                  (ConsumesFlags.ConsumesFlagsReturnsReg consumer_inst consumer_result))
+      (let ((_ Unit (emit consumer_inst)))
+        (value_reg consumer_result)))
+
 (rule with_flags_consumer_twice
       (with_flags (ProducesFlags.ProducesFlagsSideEffect producer_inst)
                   (ConsumesFlags.ConsumesFlagsTwiceReturnsValueRegs consumer_inst_1
