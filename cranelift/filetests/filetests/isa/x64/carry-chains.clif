@@ -1,0 +1,317 @@
+test compile precise-output
+set enable_llvm_abi_extensions=true
+target x86_64
+
+function %uadd_overflow_cin_i64(i64, i64, i8) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3, v4 = uadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   negb %dl
+;   movq %rdi, %rax
+;   adcq %rsi, %rax
+;   setb %dl
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   negb %dl
+;   movq %rdi, %rax
+;   adcq %rsi, %rax
+;   setb %dl
+;   popq %rbp
+;   retq
+
+function %uadd_overflow_cin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = uadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   negb %r8b
+;   movq %rdi, %rax
+;   adcq %rdx, %rax
+;   movq %rsi, %rdx
+;   adcq %rcx, %rdx
+;   setb %cl
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   negb %r8b
+;   movq %rdi, %rax
+;   adcq %rdx, %rax
+;   movq %rsi, %rdx
+;   adcq %rcx, %rdx
+;   setb %cl
+;   popq %rbp
+;   retq
+
+function %sadd_overflow_cin_i64(i64, i64, i8) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3, v4 = sadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   negb %dl
+;   movq %rdi, %rax
+;   adcq %rsi, %rax
+;   seto %dl
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   negb %dl
+;   movq %rdi, %rax
+;   adcq %rsi, %rax
+;   seto %dl
+;   popq %rbp
+;   retq
+
+function %sadd_overflow_cin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = sadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   negb %r8b
+;   movq %rdi, %rax
+;   adcq %rdx, %rax
+;   movq %rsi, %rdx
+;   adcq %rcx, %rdx
+;   seto %cl
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   negb %r8b
+;   movq %rdi, %rax
+;   adcq %rdx, %rax
+;   movq %rsi, %rdx
+;   adcq %rcx, %rdx
+;   seto %cl
+;   popq %rbp
+;   retq
+
+function %usub_overflow_bin_i64(i64, i64, i8) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3, v4 = usub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   negb %dl
+;   movq %rdi, %rax
+;   sbbq %rsi, %rax
+;   setb %dl
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   negb %dl
+;   movq %rdi, %rax
+;   sbbq %rsi, %rax
+;   setb %dl
+;   popq %rbp
+;   retq
+
+function %usub_overflow_bin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = usub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   negb %r8b
+;   movq %rdi, %rax
+;   sbbq %rdx, %rax
+;   movq %rsi, %rdx
+;   sbbq %rcx, %rdx
+;   setb %cl
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   negb %r8b
+;   movq %rdi, %rax
+;   sbbq %rdx, %rax
+;   movq %rsi, %rdx
+;   sbbq %rcx, %rdx
+;   setb %cl
+;   popq %rbp
+;   retq
+
+function %ssub_overflow_bin_i64(i64, i64, i8) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3, v4 = ssub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   negb %dl
+;   movq %rdi, %rax
+;   sbbq %rsi, %rax
+;   seto %dl
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   negb %dl
+;   movq %rdi, %rax
+;   sbbq %rsi, %rax
+;   seto %dl
+;   popq %rbp
+;   retq
+
+function %ssub_overflow_bin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = ssub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   negb %r8b
+;   movq %rdi, %rax
+;   sbbq %rdx, %rax
+;   movq %rsi, %rdx
+;   sbbq %rcx, %rdx
+;   seto %cl
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   negb %r8b
+;   movq %rdi, %rax
+;   sbbq %rdx, %rax
+;   movq %rsi, %rdx
+;   sbbq %rcx, %rdx
+;   seto %cl
+;   popq %rbp
+;   retq
+
+function %uadd_overflow_cin_i32(i32, i32, i8) -> i32, i8 {
+block0(v0: i32, v1: i32, v2: i8):
+    v3, v4 = uadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   negb %dl
+;   movq %rdi, %rax
+;   adcl %esi, %eax
+;   setb %dl
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   negb %dl
+;   movq %rdi, %rax
+;   adcl %esi, %eax
+;   setb %dl
+;   popq %rbp
+;   retq
+
+function %chain(i64, i64, i64, i64) -> i64, i64, i8 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4, v5 = uadd_overflow v0, v2
+    v6, v7 = uadd_overflow_cin v1, v3, v5
+    return v4, v6, v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rdi, %rax
+;   addq %rdx, %rax
+;   setb %dil
+;   negb %dil
+;   movq %rsi, %rdx
+;   adcq %rcx, %rdx
+;   setb %cl
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rdi, %rax
+;   addq %rdx, %rax
+;   setb %dil
+;   negb %dil
+;   movq %rsi, %rdx
+;   adcq %rcx, %rdx
+;   setb %cl
+;   popq %rbp
+;   retq
+
