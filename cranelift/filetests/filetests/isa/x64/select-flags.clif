@@ -1,0 +1,136 @@
+test compile precise-output
+set enable_llvm_abi_extensions=true
+target x86_64
+
+;; Selects on one condition with only stores between share one compare.
+
+function %selects_share_compare(i64, i64, i64, i64, i64) {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5 = iconst.i64 1
+    v6 = icmp eq v0, v5
+    v7 = select v6, v1, v2
+    store v7, v4
+    v8 = select v6, v2, v3
+    store v8, v4+8
+    v9 = select v6, v3, v1
+    store v9, v4+16
+    return
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   cmpq $0x1, %rdi
+;   movq %rdx, %r9
+;   cmoveq %rsi, %r9
+;   movq %r9, (%r8)
+;   movq %rcx, %r10
+;   cmoveq %rdx, %r10
+;   movq %r10, 8(%r8)
+;   cmoveq %rcx, %rsi
+;   movq %rsi, 0x10(%r8)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   cmpq $1, %rdi
+;   movq %rdx, %r9
+;   cmoveq %rsi, %r9
+;   movq %r9, (%r8) ; trap: heap_oob
+;   movq %rcx, %r10
+;   cmoveq %rdx, %r10
+;   movq %r10, 8(%r8) ; trap: heap_oob
+;   cmoveq %rcx, %rsi
+;   movq %rsi, 0x10(%r8) ; trap: heap_oob
+;   popq %rbp
+;   retq
+
+;; An addition between them writes the flags, so the second compares again.
+
+function %add_between(i64, i64, i64, i64) -> i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = icmp ult v0, v1
+    v5 = select v4, v1, v2
+    v6 = iadd v5, v3
+    v7 = select v4, v6, v3
+    return v5, v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   cmpq %rsi, %rdi
+;   movq %rdx, %rax
+;   cmovbq %rsi, %rax
+;   leaq (%rax, %rcx), %r8
+;   cmpq %rsi, %rdi
+;   movq %rcx, %rdx
+;   cmovbq %r8, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   cmpq %rsi, %rdi
+;   movq %rdx, %rax
+;   cmovbq %rsi, %rax
+;   leaq (%rax, %rcx), %r8
+;   cmpq %rsi, %rdi
+;   movq %rcx, %rdx
+;   cmovbq %r8, %rdx
+;   popq %rbp
+;   retq
+
+
+;; A select that lowering skips, whose only user is unused, compares nothing,
+;; so the select after it on the same condition compares again.
+
+function %skipped_select_between(i64, i64, i64, i64) -> i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = iconst.i64 1
+    v5 = band v0, v4
+    v6 = select v5, v1, v2
+    v7 = iconst.i64 2
+    v8 = band v0, v7
+    v9 = select v8, v1, v6
+    v10 = select v8, v6, v3
+    v11 = iadd v9, v9
+    return v6, v10
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   testq $0x1, %rdi
+;   movq %rdx, %rax
+;   cmovneq %rsi, %rax
+;   testq $0x2, %rdi
+;   movq %rcx, %rdx
+;   cmovneq %rax, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   testq $1, %rdi
+;   movq %rdx, %rax
+;   cmovneq %rsi, %rax
+;   testq $2, %rdi
+;   movq %rcx, %rdx
+;   cmovneq %rax, %rdx
+;   popq %rbp
+;   retq
+

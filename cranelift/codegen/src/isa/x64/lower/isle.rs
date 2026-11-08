@@ -28,6 +28,7 @@ use crate::{FxHashMap, FxHashSet};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use cranelift_assembler_x64 as asm;
+use cranelift_entity::EntitySet;
 use regalloc2::PReg;
 
 /// Type representing out-of-line data for calls. This type optional because the
@@ -599,6 +600,11 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
 
     fn carry_stays_in_flags(&mut self, inst: Inst) -> Option<()> {
         (!self.carry_plan(inst).keep_out).then_some(())
+    }
+
+    fn select_flags_live(&mut self, inst: Inst) -> Option<()> {
+        let block = self.lower_ctx.f.layout.inst_block(inst)?;
+        self.with_carry_state(block, |state| state.selects.contains(&inst).then_some(()))
     }
 
     fn carry_branch(&mut self, cond: Value) -> Option<(Value, CC)> {
@@ -2198,7 +2204,7 @@ const I8X16_USHR_MASKS: [u8; 128] = [
 fn leaves_flags_alone(ctx: &Lower<MInst>, free: &FlagFree, inst: Inst) -> bool {
     let f = ctx.f;
     let dfg = &f.dfg;
-    if is_unlowered(ctx, inst)
+    if is_unlowered(free, inst)
         || dfg
             .inst_results(inst)
             .first()
@@ -2240,16 +2246,9 @@ fn leaves_flags_alone(ctx: &Lower<MInst>, free: &FlagFree, inst: Inst) -> bool {
     }
 }
 
-/// Whether lowering skips `inst`: it has no side effects and its results
-/// are unused.
-fn is_unlowered(ctx: &Lower<MInst>, inst: Inst) -> bool {
-    !has_lowering_side_effect(ctx.f, inst)
-        && ctx
-            .f
-            .dfg
-            .inst_results(inst)
-            .iter()
-            .all(|&result| ctx.value_is_unused(result))
+/// Whether lowering skips `inst` (see `FlagFree::lowered`).
+fn is_unlowered(free: &FlagFree, inst: Inst) -> bool {
+    !free.lowered.contains(inst)
 }
 
 /// Whether `inst` multiplies two 64-bit values zero-extended to 128 bits,
@@ -2290,6 +2289,7 @@ impl IsleContext<'_, '_, MInst, X64Backend> {
             .unwrap_or_else(|| Box::new(CarryState::new(f, has_bmi2)));
         if state.block != Some(block) {
             (state.plans, state.branch) = carry_plans(self.lower_ctx, &state.free, has_adx, block);
+            state.selects = select_reuse(self.lower_ctx, &state.free, block);
             state.zeros.clear();
             state.block = Some(block);
         }
@@ -2308,6 +2308,8 @@ struct CarryState {
     /// The carry the block's branch takes from the flags, when it does, the
     /// branch condition and the flag.
     branch: Option<(Value, Value, CC)>,
+    /// The selects that take the flags of the select before them.
+    selects: FxHashSet<Inst>,
     /// The zero registers of the block's interleaved pairs, by pair.
     zeros: FxHashMap<usize, WritableGpr>,
 }
@@ -2319,6 +2321,7 @@ impl CarryState {
             block: None,
             plans: FxHashMap::default(),
             branch: None,
+            selects: FxHashSet::default(),
             zeros: FxHashMap::default(),
         }
     }
@@ -2332,6 +2335,14 @@ impl CarryState {
 struct FlagFree {
     has_bmi2: bool,
     values: FxHashSet<Value>,
+    /// The instructions lowering emits: those with a lowering side effect
+    /// and, transitively, the definitions of their operands. Lowering skips
+    /// the rest, which without the egraph pass include pure instructions
+    /// whose only users are themselves skipped. An operand that its user
+    /// folds into its own code, as a `band` into a `test`, still counts, so
+    /// this can include an instruction lowering skips; a select is never
+    /// folded into another instruction.
+    lowered: EntitySet<Inst>,
     /// The carry ins of carry ops: a chain is in flight while its last
     /// carry out is one.
     carry_ins: FxHashSet<Value>,
@@ -2412,9 +2423,26 @@ impl FlagFree {
             })
             .map(|inst| dfg.inst_args(inst)[2])
             .collect();
+        let mut lowered = EntitySet::with_capacity(dfg.num_insts());
+        let mut work: Vec<Inst> = insts()
+            .filter(|&inst| has_lowering_side_effect(f, inst))
+            .collect();
+        for &inst in &work {
+            lowered.insert(inst);
+        }
+        while let Some(inst) = work.pop() {
+            for arg in dfg.inst_values(inst) {
+                if let Some(def) = dfg.value_def(arg).inst()
+                    && lowered.insert(def)
+                {
+                    work.push(def);
+                }
+            }
+        }
         Self {
             has_bmi2,
             values,
+            lowered,
             carry_ins,
         }
     }
@@ -2454,6 +2482,47 @@ fn is_carry_op(f: &Function, inst: Inst) -> bool {
             | Opcode::UsubOverflow
             | Opcode::UsubOverflowBin
     )
+}
+
+/// The integer selects of `block` whose condition is that of the select
+/// lowered before them, with only instructions that leave the flags alone
+/// between, so that they take its flags instead of comparing again. A
+/// condition comparing 128-bit or float values sets more than one flag test,
+/// and keeps its compare.
+fn select_reuse(ctx: &Lower<MInst>, free: &FlagFree, block: Block) -> FxHashSet<Inst> {
+    let f = ctx.f;
+    let dfg = &f.dfg;
+    let one_test = |cond: Value| {
+        dfg.value_def(cond)
+            .inst()
+            .is_none_or(|def| match dfg.insts[def] {
+                InstructionData::IntCompare { args: [lhs, _], .. } => {
+                    dfg.value_type(lhs).bits() <= 64
+                }
+                InstructionData::FloatCompare { .. } => false,
+                _ => true,
+            })
+    };
+    let mut reuse = FxHashSet::default();
+    let mut last = None;
+    for inst in f.layout.block_insts(block) {
+        if dfg.insts[inst].opcode() == Opcode::Select
+            && dfg.ctrl_typevar(inst).is_int()
+            && dfg.ctrl_typevar(inst).bits() <= 64
+            && !is_unlowered(free, inst)
+        {
+            let cond = dfg.inst_args(inst)[0];
+            if last == Some(cond) && one_test(cond) {
+                reuse.insert(inst);
+            }
+            last = Some(cond);
+            continue;
+        }
+        if !leaves_flags_alone(ctx, free, inst) {
+            last = None;
+        }
+    }
+    reuse
 }
 
 /// Whether carry op `inst` adds a constant that a 64-bit `adc` takes as a
@@ -2512,7 +2581,7 @@ fn carry_plans(
     // as plain `adc`s they take an immediate, where `adcx` needs a register.
     let mut plain = FxHashSet::default();
     for inst in f.layout.block_insts(block) {
-        if !is_carry_op(f, inst) || is_unlowered(ctx, inst) {
+        if !is_carry_op(f, inst) || is_unlowered(free, inst) {
             if !leaves_flags_alone(ctx, free, inst) {
                 (cf, of) = (None, None);
             }
