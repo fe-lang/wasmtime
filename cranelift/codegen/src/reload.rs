@@ -411,6 +411,9 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
             }
         };
         values.sort_by_key(|value| core::cmp::Reverse((tail(value), *value)));
+        // Each reload: its use's position, the value, its home and the
+        // value's use before, where the reload ends its live range.
+        let mut chosen = Vec::new();
         for value in values {
             let weight = weight(func, value);
             if weight == 0 || live_out(value, block) {
@@ -422,40 +425,45 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                 let Some(home) = reloadable.get(&(value, at)) else {
                     break;
                 };
-                // A reload from a stack slot addresses the slot from the stack
-                // pointer. One from a value's place needs the value up to the
-                // reload: extending it there costs a register where the
-                // reloaded value no longer needs one, so the reload gains
-                // only while the reloaded value's use before comes ahead of
-                // the base's last use.
-                if i32::try_from(home.place.start).is_err() {
-                    break;
-                }
-                let base = match home.place.base {
-                    Base::Value(base) => match end.get(&base) {
-                        Some(&base_end) if base_end > before => Some((base, base_end)),
-                        _ => break,
-                    },
-                    Base::Slot(_) => None,
+                let based = match home.place.base {
+                    Base::Value(base) => end.contains_key(&base),
+                    Base::Slot(_) => true,
                 };
                 let busy = (before + 1..=at).any(|gap| pressure[gap as usize] > registers as i32);
-                if !busy {
+                if !based || !busy || i32::try_from(home.place.start).is_err() {
                     break;
                 }
                 for gap in before + 1..=at {
                     pressure[gap as usize] -= weight;
                 }
-                if let Some((base, base_end)) = base
-                    && base_end < at
-                {
-                    for gap in base_end + 1..=at {
-                        pressure[gap as usize] += 1;
-                    }
-                    end.insert(base, at);
-                }
-                reloads.push((insts[at as usize], value, *home));
+                chosen.push((at, value, *home, (at - before) * weight as u32));
             }
         }
+        // A reload from a stack slot addresses the slot from the stack
+        // pointer; one from a value's place keeps that base value live up to
+        // the reload. Extending a base past its last use costs a register
+        // there, which pays when its reloads free more: each frees its value
+        // from its use before up to the reload.
+        let mut bases = FxHashMap::<Value, (u32, u32)>::default();
+        for &(at, _, home, freed) in &chosen {
+            if let Base::Value(base) = home.place.base {
+                let (gain, last) = bases.entry(base).or_default();
+                *gain += freed;
+                *last = (*last).max(at);
+            }
+        }
+        reloads.extend(
+            chosen
+                .into_iter()
+                .filter(|(_, _, home, _)| match home.place.base {
+                    Base::Value(base) => {
+                        let (gain, last) = bases[&base];
+                        gain > last.saturating_sub(end[&base])
+                    }
+                    Base::Slot(_) => true,
+                })
+                .map(|(at, value, home, _)| (insts[at as usize], value, home)),
+        );
 
         for &(user, value, home) in &reloads {
             let start = Offset32::new(i32::try_from(home.place.start).unwrap());
