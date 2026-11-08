@@ -1,0 +1,202 @@
+test compile precise-output
+set enable_llvm_abi_extensions=true
+target x86_64
+
+;; A branch on a subtraction's borrow, masked to its low bit, branches on CF.
+
+function %borrow_masked(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    v4 = iconst.i8 1
+    v5 = band v3, v4
+    brif v5, block1, block2
+
+block1:
+    v6 = iconst.i64 0
+    return v6
+
+block2:
+    return v2
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rdi, %rax
+;   subq %rsi, %rax
+;   jb      label2; j label1
+; block1:
+;   popq %rbp
+;   retq
+; block2:
+;   uninit  %rax
+;   xorq %rax, %rax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rdi, %rax
+;   subq %rsi, %rax
+;   jb 0x12
+; block2: ; offset 0x10
+;   popq %rbp
+;   retq
+; block3: ; offset 0x12
+;   xorq %rax, %rax
+;   popq %rbp
+;   retq
+
+;; A load between them leaves the flags alone.
+
+function %carry_past_load(i64, i64, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64):
+    v3, v4 = uadd_overflow v0, v1
+    v5 = load.i64 notrap v2
+    brif v4, block1, block2
+
+block1:
+    return v5
+
+block2:
+    return v3
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   addq %rsi, %rdi
+;   movq (%rdx), %rax
+;   jb      label2; j label1
+; block1:
+;   movq %rdi, %rax
+;   popq %rbp
+;   retq
+; block2:
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   addq %rsi, %rdi
+;   movq (%rdx), %rax
+;   jb 0x15
+; block2: ; offset 0x10
+;   movq %rdi, %rax
+;   popq %rbp
+;   retq
+; block3: ; offset 0x15
+;   popq %rbp
+;   retq
+
+;; An addition between them writes the flags, so the carry is kept.
+
+function %carry_past_add(i64, i64, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64):
+    v3, v4 = uadd_overflow v0, v1
+    v5 = iadd v2, v3
+    brif v4, block1, block2
+
+block1:
+    return v5
+
+block2:
+    return v3
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rdi, %r8
+;   addq %rsi, %r8
+;   setb %dil
+;   leaq (%rdx, %r8), %rax
+;   testb %dil, %dil
+;   jnz     label2; j label1
+; block1:
+;   movq %r8, %rax
+;   popq %rbp
+;   retq
+; block2:
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rdi, %r8
+;   addq %rsi, %r8
+;   setb %dil
+;   leaq (%rdx, %r8), %rax
+;   testb %dil, %dil
+;   jne 0x20
+; block2: ; offset 0x1b
+;   movq %r8, %rax
+;   popq %rbp
+;   retq
+; block3: ; offset 0x20
+;   popq %rbp
+;   retq
+
+;; A carry used besides the branch stays in a register too.
+
+function %carry_used_twice(i64, i64) -> i64, i8 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    brif v3, block1, block2
+
+block1:
+    return v2, v3
+
+block2:
+    v4 = iconst.i8 0
+    return v2, v4
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rdi, %rax
+;   subq %rsi, %rax
+;   setb %dl
+;   testb %dl, %dl
+;   jnz     label2; j label1
+; block1:
+;   uninit  %rdx
+;   xorl %edx, %edx
+;   popq %rbp
+;   retq
+; block2:
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rdi, %rax
+;   subq %rsi, %rax
+;   setb %dl
+;   testb %dl, %dl
+;   jne 0x19
+; block2: ; offset 0x15
+;   xorl %edx, %edx
+;   popq %rbp
+;   retq
+; block3: ; offset 0x19
+;   popq %rbp
+;   retq
+
