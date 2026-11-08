@@ -81,6 +81,7 @@ fn emit_jcc_no_offset(sink: &mut MachBuffer<Inst>, cc: CC) {
         sink,
         incoming_arg_offset: 0,
         slot_offset: 0,
+        sp_to_fp: None,
     });
 }
 
@@ -97,6 +98,7 @@ fn uncond_jmp(sink: &mut MachBuffer<Inst>, label: MachLabel) {
         sink,
         incoming_arg_offset: 0,
         slot_offset: 0,
+        sp_to_fp: None,
     });
     debug_assert_eq!(sink.cur_offset(), uncond_disp_off + 4);
     debug_assert_eq!(sink.cur_offset(), uncond_end);
@@ -1846,6 +1848,10 @@ pub(crate) fn emit(
                     )
                     .unwrap(),
                     slot_offset: i32::try_from(frame.outgoing_args_size).unwrap(),
+                    // A frame with a setup area has RBP set up as its frame
+                    // pointer for the whole body.
+                    sp_to_fp: (frame.setup_area_size > 0)
+                        .then(|| i32::try_from(frame.sp_to_fp()).unwrap()),
                 },
             );
         }

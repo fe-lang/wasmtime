@@ -595,6 +595,12 @@ pub trait ABIMachineSpec {
         isa_flags: &Self::F,
     ) -> u32;
 
+    /// Whether spillslots with higher indices take shorter addresses, so the
+    /// most-accessed spillslots should get the highest indices.
+    fn prefers_high_spillslots() -> bool {
+        false
+    }
+
     /// Get the ABI-dependent MachineEnv for managing register allocation.
     fn get_machine_env(
         flags: &settings::Flags,
