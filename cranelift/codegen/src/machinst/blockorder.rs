@@ -204,7 +204,9 @@ impl BlockLoweringOrder {
         let mut cold_clif_blocks = SecondaryMap::with_default(false);
         for &block in domtree.cfg_rpo() {
             cold_clif_blocks[block] = f.is_effectively_cold(block)
-                || domtree.idom(block).is_some_and(|idom| cold_clif_blocks[idom]);
+                || domtree
+                    .idom(block)
+                    .is_some_and(|idom| cold_clif_blocks[idom]);
         }
 
         let mut lowered_order = Vec::new();
@@ -476,7 +478,16 @@ mod test {
         // also reaches, so its edges are critical.
         let order = build_test_func_with_cold(
             5,
-            &[(0, 1), (0, 4), (1, 2), (1, 3), (2, 4), (3, 4), (4, 2), (4, 3)],
+            &[
+                (0, 1),
+                (0, 4),
+                (1, 2),
+                (1, 3),
+                (2, 4),
+                (3, 4),
+                (4, 2),
+                (4, 3),
+            ],
             &[1],
         );
         for (index, lb) in order.lowered_order.iter().enumerate() {
