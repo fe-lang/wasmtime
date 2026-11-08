@@ -41,6 +41,10 @@ pub fn list() -> Vec<Inst> {
         inst("adcw", fmt("RM", [rw(r16), r(rm16)]), rex([0x66, 0x13]).r(), _64b | compat),
         inst("adcl", fmt("RM", [rw(r32), r(rm32)]), rex(0x13).r(), _64b | compat),
         inst("adcq", fmt("RM", [rw(r64), r(rm64)]), rex(0x13).w().r(), _64b),
+        // Add with carry in and out through CF (`adcx`) or OF (`adox`) alone:
+        // two carry chains can interleave.
+        inst("adcxq", fmt("RM", [rw(r64), r(rm64)]), rex([0x66, 0x0F, 0x38, 0xF6]).r().w(), _64b & adx),
+        inst("adoxq", fmt("RM", [rw(r64), r(rm64)]), rex([0xF3, 0x0F, 0x38, 0xF6]).r().w(), _64b & adx),
         // `LOCK`-prefixed memory-writing instructions.
         inst("lock_addb", fmt("MI", [rw(m8), r(imm8)]), rex([0xf0, 0x80]).digit(0).ib(), _64b | compat).custom(Mnemonic),
         inst("lock_addw", fmt("MI", [rw(m16), r(imm16)]), rex([0xf0, 0x66, 0x81]).digit(0).iw(), _64b | compat).custom(Mnemonic),

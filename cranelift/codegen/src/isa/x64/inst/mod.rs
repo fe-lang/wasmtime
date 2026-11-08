@@ -1547,6 +1547,10 @@ impl asm::AvailableFeatures for &EmitInfo {
         self.isa_flags.has_bmi2()
     }
 
+    fn adx(&self) -> bool {
+        self.isa_flags.has_adx()
+    }
+
     fn lzcnt(&self) -> bool {
         self.isa_flags.has_lzcnt()
     }

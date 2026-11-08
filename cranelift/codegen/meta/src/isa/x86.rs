@@ -115,6 +115,12 @@ pub(crate) fn define() -> TargetIsa {
         "BMI2: CPUID.(EAX=07H, ECX=0H):EBX.BMI2[bit 8]",
         false,
     );
+    let has_adx = settings.add_bool(
+        "has_adx",
+        "Has support for ADX.",
+        "ADX: CPUID.(EAX=07H, ECX=0H):EBX.ADX[bit 19]",
+        false,
+    );
 
     // CPUID.EAX=80000001H:ECX
     let has_lzcnt = settings.add_bool(
@@ -187,7 +193,7 @@ pub(crate) fn define() -> TargetIsa {
     let alderlake = settings.add_preset(
         "alderlake",
         "Alderlake microarchitecture.",
-        preset!(tremont && has_bmi1 && has_bmi2 && has_lzcnt && has_fma && has_avx_vnni),
+        preset!(tremont && has_bmi1 && has_bmi2 && has_adx && has_lzcnt && has_fma && has_avx_vnni),
     );
     let sierra_forest = settings.add_preset(
         "sierraforest",
@@ -239,7 +245,7 @@ pub(crate) fn define() -> TargetIsa {
     let broadwell = settings.add_preset(
         "broadwell",
         "Broadwell microarchitecture.",
-        preset!(haswell),
+        preset!(haswell && has_adx),
     );
     let skylake = settings.add_preset("skylake", "Skylake microarchitecture.", preset!(broadwell));
     let knights_landing = settings.add_preset(
@@ -391,7 +397,14 @@ pub(crate) fn define() -> TargetIsa {
         "znver1",
         "Zen (first generation) microarchitecture.",
         preset!(
-            sse42 && has_popcnt && has_bmi1 && has_bmi2 && has_lzcnt && has_fma && has_cmpxchg16b
+            sse42
+                && has_popcnt
+                && has_bmi1
+                && has_bmi2
+                && has_adx
+                && has_lzcnt
+                && has_fma
+                && has_cmpxchg16b
         ),
     );
     let znver2 = settings.add_preset(
