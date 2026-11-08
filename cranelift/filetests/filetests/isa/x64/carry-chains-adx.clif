@@ -34,31 +34,27 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   movq %rbx, (%rsp)
 ; block0:
 ;   movq %rdx, %rbx
-;   movq %r8, %r11
-;   movq <offset:0>+-0x10(%rbp), %rax
+;   movq <offset:0>+-0x10(%rbp), %r11
 ;   movq %rsi, %rdx
-;   mulxq %rcx, %r10, %r8 ;; implicit: %rdx
-;   uninit  %rsi
-;   xorq %rsi, %rsi
-;   movq %r11, %rdx
-;   movq %rdx, %rsi
-;   adcxq %r10, %rsi
-;   adoxq %r8, %r9
+;   mulxq %rcx, %r10, %rsi ;; implicit: %rdx
+;   uninit  %rax
+;   xorq %rax, %rax
+;   movq %r8, %rax
+;   adcxq %r10, %rax
+;   adoxq %rsi, %r9
 ;   movq %rbx, %rdx
-;   mulxq %rcx, %r8, %rcx ;; implicit: %rdx
+;   mulxq %rcx, %rsi, %rcx ;; implicit: %rdx
 ;   movq %r9, %rdx
-;   adcxq %r8, %rdx
-;   adoxq %rcx, %rax
+;   adcxq %rsi, %rdx
+;   adoxq %rcx, %r11
 ;   seto %cl
-;   movl $0x0, %r8d
-;   adcxq %r8, %rax
-;   setb %r8b
-;   movzbq %r8b, %r8
+;   adcq $0x0, %r11
+;   setb %sil
+;   movzbq %sil, %rsi
 ;   movzbq %cl, %rcx
-;   leaq (%r8, %rcx), %rcx
-;   movq %rax, (%rdi)
+;   leaq (%rsi, %rcx), %rcx
+;   movq %r11, (%rdi)
 ;   movq %rcx, 8(%rdi)
-;   movq %rsi, %rax
 ;   movq (%rsp), %rbx
 ;   addq $0x10, %rsp
 ;   popq %rbp
@@ -72,30 +68,26 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   movq %rbx, (%rsp)
 ; block1: ; offset 0xc
 ;   movq %rdx, %rbx
-;   movq %r8, %r11
-;   movq 0x10(%rbp), %rax
+;   movq 0x10(%rbp), %r11
 ;   movq %rsi, %rdx
-;   mulxq %rcx, %r10, %r8
-;   xorq %rsi, %rsi
-;   movq %r11, %rdx
-;   movq %rdx, %rsi
-;   adcxq %r10, %rsi
-;   adoxq %r8, %r9
+;   mulxq %rcx, %r10, %rsi
+;   xorq %rax, %rax
+;   movq %r8, %rax
+;   adcxq %r10, %rax
+;   adoxq %rsi, %r9
 ;   movq %rbx, %rdx
-;   mulxq %rcx, %r8, %rcx
+;   mulxq %rcx, %rsi, %rcx
 ;   movq %r9, %rdx
-;   adcxq %r8, %rdx
-;   adoxq %rcx, %rax
+;   adcxq %rsi, %rdx
+;   adoxq %rcx, %r11
 ;   seto %cl
-;   movl $0, %r8d
-;   adcxq %r8, %rax
-;   setb %r8b
-;   movzbq %r8b, %r8
+;   adcq $0, %r11
+;   setb %sil
+;   movzbq %sil, %rsi
 ;   movzbq %cl, %rcx
-;   addq %r8, %rcx
-;   movq %rax, (%rdi)
+;   addq %rsi, %rcx
+;   movq %r11, (%rdi)
 ;   movq %rcx, 8(%rdi)
-;   movq %rsi, %rax
 ;   movq (%rsp), %rbx
 ;   addq $0x10, %rsp
 ;   popq %rbp

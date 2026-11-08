@@ -2393,6 +2393,21 @@ fn is_carry_op(f: &Function, inst: Inst) -> bool {
     )
 }
 
+/// Whether carry op `inst` adds a constant that a 64-bit `adc` takes as a
+/// sign-extended 32-bit immediate.
+fn imm32_addend(f: &Function, inst: Inst) -> bool {
+    let dfg = &f.dfg;
+    dfg.value_def(dfg.inst_args(inst)[1])
+        .inst()
+        .is_some_and(|def| match dfg.insts[def] {
+            InstructionData::UnaryImm {
+                opcode: Opcode::Iconst,
+                imm,
+            } => i32::try_from(imm.bits()).is_ok(),
+            _ => false,
+        })
+}
+
 /// Whether carry op `inst` can be an `adcx` or `adox`: a 64-bit addition.
 fn is_lane_op(f: &Function, inst: Inst) -> bool {
     matches!(
@@ -2428,6 +2443,9 @@ fn carry_plans(
     let mut cf: Option<(Value, usize)> = None;
     let mut of: Option<(Value, usize)> = None;
     let mut consumed = Vec::new();
+    // Ops of a CF lane that add a constant while no OF chain is in flight:
+    // as plain `adc`s they take an immediate, where `adcx` needs a register.
+    let mut plain = FxHashSet::default();
     for inst in f.layout.block_insts(block) {
         if !is_carry_op(f, inst) || is_unlowered(ctx, inst) {
             if !leaves_flags_alone(ctx, free, inst) {
@@ -2450,6 +2468,9 @@ fn carry_plans(
             })
             .filter(|&(chain, _)| chains[chain].lane.is_none() || lane_op);
         if let Some((chain, lane)) = continued {
+            if lane == Lane::Cf && of.is_none() && imm32_addend(f, inst) {
+                plain.insert(inst);
+            }
             chains[chain].ops.push(inst);
             chains[chain].lane_ready &= lane_op;
             consumed.extend(carry_in);
@@ -2504,7 +2525,7 @@ fn carry_plans(
         if let Some(lane) = chain.lane {
             for (index, op) in chain.ops.iter().enumerate() {
                 let plan = plans.get_mut(op).unwrap();
-                plan.lane = Some(lane);
+                plan.lane = (!plain.contains(op)).then_some(lane);
                 plan.clear = index == 0 && lane == Lane::Cf;
             }
         }
