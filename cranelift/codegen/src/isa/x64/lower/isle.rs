@@ -2153,20 +2153,15 @@ fn leaves_flags_alone(ctx: &Lower<MInst>, has_bmi2: bool, inst: Inst) -> bool {
     if has_bmi2 && is_widening_mul(f, inst) {
         return true;
     }
-    // A constant that is only the addend of a carry op of 64 bits or fewer
-    // is an immediate there, or a `mov` for `adcx` and `adox`.
-    if dfg.insts[inst].opcode() == Opcode::Iconst
-        && let Some(&result) = dfg.inst_results(inst).first()
-        && ctx.value_is_used_once(result)
-        && let Some(user) =
-            core::iter::successors(f.layout.next_inst(inst), |&next| f.layout.next_inst(next))
-                .find(|&next| dfg.inst_values(next).any(|arg| arg == result))
-        && is_carry_op(f, user)
-        && dfg.ctrl_typevar(user).bits() <= 64
-        && dfg.inst_args(user)[1] == result
-        && dfg.inst_args(user)[0] != result
+    // A nonzero constant is a `mov`. A zero is an `xor`, unless every use
+    // takes it as an immediate or moves it into a register itself.
+    if let InstructionData::UnaryImm {
+        opcode: Opcode::Iconst,
+        imm,
+    } = dfg.insts[inst]
+        && dfg.ctrl_typevar(inst).bits() <= 64
     {
-        return true;
+        return imm.bits() != 0 || only_carry_addend(f, dfg.inst_results(inst)[0]);
     }
     if has_bmi2
         && dfg.insts[inst].opcode() == Opcode::Uextend
@@ -2181,10 +2176,6 @@ fn leaves_flags_alone(ctx: &Lower<MInst>, has_bmi2: bool, inst: Inst) -> bool {
         return user.is_some_and(|user| is_widening_mul(f, user));
     }
     match dfg.insts[inst] {
-        InstructionData::UnaryImm {
-            opcode: Opcode::Iconst,
-            imm,
-        } => imm.bits() != 0 && dfg.ctrl_typevar(inst).bits() <= 64,
         InstructionData::Store {
             args: [value, _], ..
         } => !dfg.value_def(value).inst().is_some_and(|def| {
@@ -2223,6 +2214,23 @@ fn is_unlowered(ctx: &Lower<MInst>, inst: Inst) -> bool {
             .inst_results(inst)
             .iter()
             .all(|&result| ctx.value_is_unused(result))
+}
+
+/// Whether every use of `value` is the addend of a carry op of 64 bits or
+/// fewer, which takes a constant as an immediate (`adc`, `sbb`) or moves it
+/// into a register itself (`adcx`, `adox`).
+fn only_carry_addend(f: &Function, value: Value) -> bool {
+    f.layout
+        .blocks()
+        .flat_map(|block| f.layout.block_insts(block))
+        .all(|inst| {
+            let mut uses = f.dfg.inst_values(inst).filter(|&arg| arg == value);
+            uses.next().is_none()
+                || (is_carry_op(f, inst)
+                    && f.dfg.ctrl_typevar(inst).bits() <= 64
+                    && f.dfg.inst_args(inst)[1] == value
+                    && uses.next().is_none())
+        })
 }
 
 /// Whether `inst` multiplies two 64-bit values zero-extended to 128 bits,
