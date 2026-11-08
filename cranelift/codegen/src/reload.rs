@@ -59,14 +59,14 @@ struct Place {
     end: i64,
 }
 
-/// Where a value is in memory, and the load that reads it from there.
+/// Where a value is in memory, and the load that read it: its opcode,
+/// address (for its type), flags and result type.
 #[derive(Clone, Copy, Debug)]
 struct Home {
     place: Place,
     opcode: Opcode,
     addr: Value,
     flags: MemFlags,
-    offset: Offset32,
     ty: Type,
 }
 
@@ -307,7 +307,6 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                                 opcode,
                                 addr: arg,
                                 flags,
-                                offset,
                                 ty,
                             },
                         );
@@ -423,34 +422,62 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                 let Some(home) = reloadable.get(&(value, at)) else {
                     break;
                 };
-                // The address must stay live up to the reload. Extending it
-                // there costs a register where the value no longer needs one,
-                // so the reload gains only while the value's use before
-                // comes ahead of the address's last use.
-                let addr_end = end[&home.addr];
+                // A reload from a stack slot addresses the slot from the stack
+                // pointer. One from a value's place needs the value up to the
+                // reload: extending it there costs a register where the
+                // reloaded value no longer needs one, so the reload gains
+                // only while the reloaded value's use before comes ahead of
+                // the base's last use.
+                if i32::try_from(home.place.start).is_err() {
+                    break;
+                }
+                let base = match home.place.base {
+                    Base::Value(base) => match end.get(&base) {
+                        Some(&base_end) if base_end > before => Some((base, base_end)),
+                        _ => break,
+                    },
+                    Base::Slot(_) => None,
+                };
                 let busy = (before + 1..=at).any(|gap| pressure[gap as usize] > registers as i32);
-                if !busy || addr_end <= before {
+                if !busy {
                     break;
                 }
                 for gap in before + 1..=at {
                     pressure[gap as usize] -= weight;
                 }
-                if addr_end < at {
-                    for gap in addr_end + 1..=at {
+                if let Some((base, base_end)) = base
+                    && base_end < at
+                {
+                    for gap in base_end + 1..=at {
                         pressure[gap as usize] += 1;
                     }
-                    end.insert(home.addr, at);
+                    end.insert(base, at);
                 }
                 reloads.push((insts[at as usize], value, *home));
             }
         }
 
         for &(user, value, home) in &reloads {
+            let start = Offset32::new(i32::try_from(home.place.start).unwrap());
+            let (arg, offset) = match home.place.base {
+                Base::Value(base) => (base, start),
+                Base::Slot(slot) => {
+                    let addr = func.dfg.make_inst(InstructionData::StackAddr {
+                        opcode: Opcode::StackAddr,
+                        stack_slot: slot,
+                        offset: start,
+                    });
+                    let pointer = func.dfg.value_type(home.addr);
+                    func.dfg.make_inst_results(addr, pointer);
+                    func.layout.insert_inst(addr, user);
+                    (func.dfg.first_result(addr), Offset32::new(0))
+                }
+            };
             let load = func.dfg.make_inst(InstructionData::Load {
                 opcode: home.opcode,
-                arg: home.addr,
+                arg,
                 flags: home.flags,
-                offset: home.offset,
+                offset,
             });
             func.dfg.make_inst_results(load, home.ty);
             let reloaded = func.dfg.first_result(load);
