@@ -1247,6 +1247,16 @@
 (rule smax 2 (lower (smax (and (fits_in_64 ty) (ty_int _)) x y))
       (cmp_and_choose ty (Cond.Gt) true x y))
 
+;; `i128`: compare both halves, then choose both.
+(rule umin_i128 3 (lower (umin $I128 x y))
+      (lower_select $I128 (emit_icmp (IntCC.UnsignedLessThan) x y) x y))
+(rule smin_i128 3 (lower (smin $I128 x y))
+      (lower_select $I128 (emit_icmp (IntCC.SignedLessThan) x y) x y))
+(rule umax_i128 3 (lower (umax $I128 x y))
+      (lower_select $I128 (emit_icmp (IntCC.UnsignedGreaterThan) x y) x y))
+(rule smax_i128 3 (lower (smax $I128 x y))
+      (lower_select $I128 (emit_icmp (IntCC.SignedGreaterThan) x y) x y))
+
 ;; Vector types.
 
 (rule (lower (smin ty @ (not_i64x2) x y))
