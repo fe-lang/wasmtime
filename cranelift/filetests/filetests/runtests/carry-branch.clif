@@ -46,6 +46,27 @@ block2:
 ; run: %carry_past_load(-1, 1) == 42
 ; run: %carry_past_load(-1, 0) == -1
 
+function %no_borrow(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    v4 = uextend.i64 v3
+    v5 = iconst.i64 0
+    v6 = icmp eq v4, v5
+    brif v6, block1, block2
+
+block1:
+    return v2
+
+block2:
+    v7 = iconst.i64 -1
+    return v7
+}
+
+; run: %no_borrow(10, 3) == 7
+; run: %no_borrow(3, 3) == 0
+; run: %no_borrow(3, 10) == -1
+
+
 ; Branches on borrows whose differences go unused still subtract.
 function %borrow_of_unused_difference(i64, i64) -> i64 {
 block0(v0: i64, v1: i64):
@@ -61,3 +82,22 @@ block2:
 ; run: %borrow_of_unused_difference(1, 2) == 1
 ; run: %borrow_of_unused_difference(2, 1) == 2
 ; run: %borrow_of_unused_difference(2, 2) == 2
+
+function %no_borrow_of_unused_differences(i64, i64, i64, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4, v5 = usub_overflow v0, v2
+    v6, v7 = usub_overflow_bin v1, v3, v5
+    v8 = uextend.i64 v7
+    v9 = iconst.i64 0
+    v10 = icmp eq v8, v9
+    brif v10, block1, block2
+block1:
+    v11 = iconst.i64 1
+    return v11
+block2:
+    v12 = iconst.i64 2
+    return v12
+}
+; run: %no_borrow_of_unused_differences(0, 1, 1, 0) == 1
+; run: %no_borrow_of_unused_differences(0, 1, 1, 1) == 2
+; run: %no_borrow_of_unused_differences(5, 1, 4, 1) == 1

@@ -2696,8 +2696,21 @@ fn carry_branch(
     let InstructionData::Brif { arg: cond, .. } = dfg.insts[term] else {
         return None;
     };
-    // The mask and extensions, each used only on the way to the branch.
+    // The mask, extensions and comparisons with 0 or 1, each used only on
+    // the way to the branch; a comparison can invert what the branch tests.
+    let constant = |value: Value| {
+        dfg.value_def(value)
+            .inst()
+            .and_then(|def| match dfg.insts[def] {
+                InstructionData::UnaryImm {
+                    opcode: Opcode::Iconst,
+                    imm,
+                } => Some(imm.bits()),
+                _ => None,
+            })
+    };
     let mut carry = cond;
+    let mut set = true;
     let mut on_the_way = Vec::new();
     while let Some(def) = dfg.value_def(carry).inst()
         && f.layout.inst_block(def) == Some(block)
@@ -2710,11 +2723,18 @@ fn carry_branch(
             InstructionData::Binary {
                 opcode: Opcode::Band,
                 args: [x, one],
-            } if dfg
-                .value_def(one)
-                .inst()
-                .is_some_and(|one| matches!(dfg.insts[one], InstructionData::UnaryImm { opcode: Opcode::Iconst, imm } if imm.bits() == 1)) =>
-            {
+            } if constant(one) == Some(1) => x,
+            InstructionData::IntCompare {
+                opcode: Opcode::Icmp,
+                cond: cc @ (IntCC::Equal | IntCC::NotEqual),
+                args: [x, bit],
+            } if matches!(constant(bit), Some(0 | 1)) => {
+                // `x == 1` and `x != 0` test the carry; the others its absence.
+                // The constant, used only here, is never lowered.
+                set ^= (cc == IntCC::Equal) == (constant(bit) == Some(0));
+                if ctx.value_is_used_once(bit) {
+                    on_the_way.extend(dfg.value_def(bit).inst());
+                }
                 x
             }
             _ => break,
@@ -2733,13 +2753,11 @@ fn carry_branch(
     let flags_kept = std::iter::successors(Some(after), |&inst| f.layout.next_inst(inst))
         .take_while(|&inst| inst != term)
         .all(|inst| on_the_way.contains(&inst) || leaves_flags_alone(ctx, free, inst));
-    (ctx.value_is_used_once(carry) && flags_kept).then_some((
-        carry,
-        cond,
-        if plan.lane == Some(Lane::Of) {
-            CC::O
-        } else {
-            CC::B
-        },
-    ))
+    let cc = match (plan.lane == Some(Lane::Of), set) {
+        (true, true) => CC::O,
+        (true, false) => CC::NO,
+        (false, true) => CC::B,
+        (false, false) => CC::NB,
+    };
+    (ctx.value_is_used_once(carry) && flags_kept).then_some((carry, cond, cc))
 }
