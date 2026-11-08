@@ -1,0 +1,20 @@
+test run
+target x86_64
+target x86_64 has_movbe
+
+function %swap_through_memory(i64) -> i64 {
+    ss0 = explicit_slot 8
+block0(v0: i64):
+    v1 = bswap v0
+    v2 = stack_addr.i64 ss0
+    store v1, v2
+    v3 = load.i64 v2
+    v4 = bswap v3
+    v5 = load.i32 v2
+    v6 = bswap v5
+    v7 = uextend.i64 v6
+    v8 = iadd v4, v7
+    return v8
+}
+; run: %swap_through_memory(0x0102030405060708) == 0x010203040608_0a0c
+; run: %swap_through_memory(-1) == 0xffff_fffe

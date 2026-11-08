@@ -101,6 +101,12 @@ pub(crate) fn define() -> TargetIsa {
         "SHA: CPUID.07H:EBX.SHA[bit 29]",
         false,
     );
+    let has_movbe = settings.add_bool(
+        "has_movbe",
+        "Has support for MOVBE.",
+        "MOVBE: CPUID.01H:ECX.MOVBE[bit 22]",
+        false,
+    );
     let has_popcnt = settings.add_bool(
         "has_popcnt",
         "Has support for POPCNT.",
@@ -235,7 +241,9 @@ pub(crate) fn define() -> TargetIsa {
     let haswell = settings.add_preset(
         "haswell",
         "Haswell microarchitecture.",
-        preset!(ivy_bridge && has_avx2 && has_bmi1 && has_bmi2 && has_fma && has_lzcnt),
+        preset!(
+            ivy_bridge && has_avx2 && has_bmi1 && has_bmi2 && has_fma && has_lzcnt && has_movbe
+        ),
     );
     settings.add_preset(
         "core-avx2",
@@ -405,6 +413,7 @@ pub(crate) fn define() -> TargetIsa {
                 && has_fma
                 && has_cmpxchg16b
                 && has_sha
+                && has_movbe
         ),
     );
     let znver2 = settings.add_preset(

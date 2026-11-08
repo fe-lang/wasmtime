@@ -99,6 +99,7 @@ pub enum Feature {
     avx_vnni,
     avx512vnni,
     sha,
+    movbe,
 }
 
 /// List all CPU features.
@@ -133,6 +134,7 @@ pub const ALL_FEATURES: &[Feature] = &[
     Feature::avx_vnni,
     Feature::avx512vnni,
     Feature::sha,
+    Feature::movbe,
 ];
 
 impl fmt::Display for Feature {
