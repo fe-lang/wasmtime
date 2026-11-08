@@ -1980,12 +1980,22 @@
 (rule (x64_add_with_flags_paired ty src1 src2)
       (asm_produce_flags (x64_add_raw ty src1 src2)))
 
-;; Helper for creating raw `adc` instructions; Cranelift only uses the 64-bit
-;; variant of this instruction. As with `add`, we match 8-bit immediates first;
-;; this allows a smaller instruction encoding.
+;; Helper for creating raw `adc` instructions. As with `add`, we match 8-bit
+;; immediates first; this allows a smaller instruction encoding.
 (decl x64_adc_raw (Type Gpr GprMemImm) AssemblerOutputs)
+(rule 2 (x64_adc_raw $I32 src1 (is_simm8 src2))   (x64_adcl_mi_sxb_raw src1 src2))
 (rule 2 (x64_adc_raw $I64 src1 (is_simm8 src2))   (x64_adcq_mi_sxb_raw src1 src2))
+
+;; Match the remaining immediates.
+(rule 1 (x64_adc_raw $I8  src1 (is_imm8 src2))    (x64_adcb_mi_raw src1 src2))
+(rule 1 (x64_adc_raw $I16 src1 (is_imm16 src2))   (x64_adcw_mi_raw src1 src2))
+(rule 1 (x64_adc_raw $I32 src1 (is_imm32 src2))   (x64_adcl_mi_raw src1 src2))
 (rule 1 (x64_adc_raw $I64 src1 (is_simm32 src2))  (x64_adcq_mi_sxl_raw src1 src2))
+
+;; Match the operand size to the instruction width.
+(rule 0 (x64_adc_raw ty @ $I8  src1 (is_gpr_mem src2)) (x64_adcb_rm_raw src1 (gpr_mem_8_for_ty  ty src2)))
+(rule 0 (x64_adc_raw ty @ $I16 src1 (is_gpr_mem src2)) (x64_adcw_rm_raw src1 (gpr_mem_16_for_ty ty src2)))
+(rule 0 (x64_adc_raw ty @ $I32 src1 (is_gpr_mem src2)) (x64_adcl_rm_raw src1 (gpr_mem_32_for_ty ty src2)))
 (rule 0 (x64_adc_raw ty @ $I64 src1 (is_gpr_mem src2)) (x64_adcq_rm_raw src1 (gpr_mem_64_for_ty ty src2)))
 
 ;; Normal use of the `adc` instruction consumes a previously-produced flag.
