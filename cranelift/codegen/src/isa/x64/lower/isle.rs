@@ -587,14 +587,14 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         self.with_carry_state(block, |state| state.selects.contains(&inst).then_some(()))
     }
 
-    fn carry_branch(&mut self, cond: Value) -> Option<CC> {
+    fn carry_branch(&mut self, cond: Value) -> Option<(Value, CC)> {
         let def = self.lower_ctx.f.dfg.value_def(cond).inst()?;
         let block = self.lower_ctx.f.layout.inst_block(def)?;
         self.with_carry_state(block, |state| {
             state
                 .branch
-                .filter(|&(branch_cond, _)| branch_cond == cond)
-                .map(|(_, cc)| cc)
+                .filter(|&(_, branch_cond, _)| branch_cond == cond)
+                .map(|(carry, _, cc)| (carry, cc))
         })
     }
 
@@ -2252,9 +2252,9 @@ struct CarryState {
     free: FlagFree,
     block: Option<Block>,
     plans: FxHashMap<Inst, CarryPlan>,
-    /// The block's branch condition, when it takes a carry from the flags,
-    /// and the flag.
-    branch: Option<(Value, CC)>,
+    /// The carry the block's branch takes from the flags, when it does, the
+    /// branch condition and the flag.
+    branch: Option<(Value, Value, CC)>,
     /// The selects that take the flags of the select before them.
     selects: FxHashSet<Inst>,
 }
@@ -2458,7 +2458,7 @@ fn carry_plans(
     free: &FlagFree,
     has_adx: bool,
     block: Block,
-) -> (FxHashMap<Inst, CarryPlan>, Option<(Value, CC)>) {
+) -> (FxHashMap<Inst, CarryPlan>, Option<(Value, Value, CC)>) {
     struct Chain {
         ops: Vec<Inst>,
         /// Every op so far can be an `adcx` or `adox`, and the first takes
@@ -2570,7 +2570,7 @@ fn carry_plans(
         plan.keep_out = !(ctx.value_is_unused(carry)
             || (ctx.value_is_used_once(carry) && consumed.contains(&carry)));
     }
-    (plans, branch.map(|(_, cond, cc)| (cond, cc)))
+    (plans, branch)
 }
 
 /// The carry that `block`'s closing `brif` tests, possibly masked to its
