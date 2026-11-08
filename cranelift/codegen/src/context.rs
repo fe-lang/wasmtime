@@ -196,9 +196,25 @@ impl Context {
             if isa.triple().architecture == Architecture::X86_64 {
                 let moved = crate::chain_selects::hoist_chain_selects(&mut self.func);
                 log::debug!("hoisted {moved} instructions out of carry chains");
+                self.reload_values(isa)?;
             }
         }
 
+        Ok(())
+    }
+
+    /// Load values from memory again near their uses where more values are
+    /// live than x86-64 has general-purpose registers to allocate.
+    pub fn reload_values<'a, FOI: Into<FlagsOrIsa<'a>>>(&mut self, fisa: FOI) -> CodegenResult<()> {
+        /// The general-purpose registers left to allocate beside the stack
+        /// and frame pointers.
+        const X64_REGISTERS: u32 = 14;
+        let added = crate::reload::reload_values(&mut self.func, X64_REGISTERS);
+        log::debug!("reloaded {added} values");
+        if added > 0 {
+            trace!("After reloading values:\n{}", self.func.display());
+            self.verify_if(fisa)?;
+        }
         Ok(())
     }
 

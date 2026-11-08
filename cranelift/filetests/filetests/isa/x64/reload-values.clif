@@ -1,0 +1,241 @@
+test compile precise-output
+set opt_level=speed
+target x86_64
+
+;; Values reused after a sum that keeps more of them live than registers
+;; load again at their later uses, into the xor as a memory operand.
+
+function %reused_after_sum(i64) -> i64 {
+    ss0 = explicit_slot 128
+block0(v0: i64):
+    v1 = load.i64 notrap aligned v0+0
+    v2 = load.i64 notrap aligned v0+8
+    v3 = load.i64 notrap aligned v0+16
+    v4 = load.i64 notrap aligned v0+24
+    v5 = load.i64 notrap aligned v0+32
+    v6 = load.i64 notrap aligned v0+40
+    v7 = load.i64 notrap aligned v0+48
+    v8 = load.i64 notrap aligned v0+56
+    v9 = load.i64 notrap aligned v0+64
+    v10 = load.i64 notrap aligned v0+72
+    v11 = load.i64 notrap aligned v0+80
+    v12 = load.i64 notrap aligned v0+88
+    v13 = load.i64 notrap aligned v0+96
+    v14 = load.i64 notrap aligned v0+104
+    v15 = load.i64 notrap aligned v0+112
+    v16 = load.i64 notrap aligned v0+120
+    v17 = iadd v1, v2
+    v18 = iadd v17, v3
+    v19 = iadd v18, v4
+    v20 = iadd v19, v5
+    v21 = iadd v20, v6
+    v22 = iadd v21, v7
+    v23 = iadd v22, v8
+    v24 = iadd v23, v9
+    v25 = iadd v24, v10
+    v26 = iadd v25, v11
+    v27 = iadd v26, v12
+    v28 = iadd v27, v13
+    v29 = iadd v28, v14
+    v30 = iadd v29, v15
+    v31 = iadd v30, v16
+    v32 = stack_addr.i64 ss0
+    v33 = bxor v1, v31
+    store notrap aligned v33, v32+0
+    v34 = bxor v2, v31
+    store notrap aligned v34, v32+8
+    v35 = bxor v3, v31
+    store notrap aligned v35, v32+16
+    v36 = bxor v4, v31
+    store notrap aligned v36, v32+24
+    v37 = bxor v5, v31
+    store notrap aligned v37, v32+32
+    v38 = bxor v6, v31
+    store notrap aligned v38, v32+40
+    v39 = bxor v7, v31
+    store notrap aligned v39, v32+48
+    v40 = bxor v8, v31
+    store notrap aligned v40, v32+56
+    v41 = bxor v9, v31
+    store notrap aligned v41, v32+64
+    v42 = bxor v10, v31
+    store notrap aligned v42, v32+72
+    v43 = bxor v11, v31
+    store notrap aligned v43, v32+80
+    v44 = bxor v12, v31
+    store notrap aligned v44, v32+88
+    v45 = bxor v13, v31
+    store notrap aligned v45, v32+96
+    v46 = bxor v14, v31
+    store notrap aligned v46, v32+104
+    v47 = bxor v15, v31
+    store notrap aligned v47, v32+112
+    v48 = bxor v16, v31
+    store notrap aligned v48, v32+120
+    v49 = load.i64 notrap aligned v32+8
+    return v49
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0xa0, %rsp
+;   movq %rbx, 0x80(%rsp)
+;   movq %r12, 0x88(%rsp)
+;   movq %r13, 0x90(%rsp)
+;   movq %r14, 0x98(%rsp)
+; block0:
+;   movq (%rdi), %r14
+;   movq 8(%rdi), %rdx
+;   leaq (%r14, %rdx), %rax
+;   movq 0x10(%rdi), %rsi
+;   leaq (%rax, %rsi), %rax
+;   movq 0x18(%rdi), %r8
+;   leaq (%rax, %r8), %rax
+;   movq 0x20(%rdi), %r9
+;   leaq (%rax, %r9), %rax
+;   movq 0x28(%rdi), %r10
+;   leaq (%rax, %r10), %rax
+;   movq 0x30(%rdi), %r11
+;   leaq (%rax, %r11), %rax
+;   movq 0x38(%rdi), %rbx
+;   leaq (%rax, %rbx), %rax
+;   movq 0x40(%rdi), %r12
+;   leaq (%rax, %r12), %rax
+;   movq 0x48(%rdi), %r13
+;   leaq (%rax, %r13), %rcx
+;   addq 0x50(%rdi), %rcx
+;   addq 0x58(%rdi), %rcx
+;   addq 0x60(%rdi), %rcx
+;   addq 0x68(%rdi), %rcx
+;   addq 0x70(%rdi), %rcx
+;   movq 0x78(%rdi), %rax
+;   leaq (%rcx, %rax), %rcx
+;   xorq %rcx, %r14
+;   movq %r14, <offset:1>+(%rsp)
+;   xorq %rcx, %rdx
+;   movq %rdx, <offset:1>+8(%rsp)
+;   xorq %rcx, %rsi
+;   movq %rsi, <offset:1>+0x10(%rsp)
+;   xorq %rcx, %r8
+;   movq %r8, <offset:1>+0x18(%rsp)
+;   xorq %rcx, %r9
+;   movq %r9, <offset:1>+0x20(%rsp)
+;   xorq %rcx, %r10
+;   movq %r10, <offset:1>+0x28(%rsp)
+;   xorq %rcx, %r11
+;   movq %r11, <offset:1>+0x30(%rsp)
+;   xorq %rcx, %rbx
+;   movq %rbx, <offset:1>+0x38(%rsp)
+;   xorq %rcx, %r12
+;   movq %r12, <offset:1>+0x40(%rsp)
+;   xorq %rcx, %r13
+;   movq %r13, <offset:1>+0x48(%rsp)
+;   movq %rcx, %rdx
+;   xorq 0x50(%rdi), %rdx
+;   movq %rdx, <offset:1>+0x50(%rsp)
+;   movq %rcx, %rdx
+;   xorq 0x58(%rdi), %rdx
+;   movq %rdx, <offset:1>+0x58(%rsp)
+;   movq %rcx, %rdx
+;   xorq 0x60(%rdi), %rdx
+;   movq %rdx, <offset:1>+0x60(%rsp)
+;   movq %rcx, %rdx
+;   xorq 0x68(%rdi), %rdx
+;   movq %rdx, <offset:1>+0x68(%rsp)
+;   movq %rcx, %rdx
+;   xorq 0x70(%rdi), %rdx
+;   movq %rdx, <offset:1>+0x70(%rsp)
+;   xorq %rcx, %rax
+;   movq %rax, <offset:1>+0x78(%rsp)
+;   movq <offset:1>+8(%rsp), %rax
+;   movq 0x80(%rsp), %rbx
+;   movq 0x88(%rsp), %r12
+;   movq 0x90(%rsp), %r13
+;   movq 0x98(%rsp), %r14
+;   addq $0xa0, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0xa0, %rsp
+;   movq %rbx, 0x80(%rsp)
+;   movq %r12, 0x88(%rsp)
+;   movq %r13, 0x90(%rsp)
+;   movq %r14, 0x98(%rsp)
+; block1: ; offset 0x2b
+;   movq (%rdi), %r14
+;   movq 8(%rdi), %rdx
+;   leaq (%r14, %rdx), %rax
+;   movq 0x10(%rdi), %rsi
+;   addq %rsi, %rax
+;   movq 0x18(%rdi), %r8
+;   addq %r8, %rax
+;   movq 0x20(%rdi), %r9
+;   addq %r9, %rax
+;   movq 0x28(%rdi), %r10
+;   addq %r10, %rax
+;   movq 0x30(%rdi), %r11
+;   addq %r11, %rax
+;   movq 0x38(%rdi), %rbx
+;   addq %rbx, %rax
+;   movq 0x40(%rdi), %r12
+;   addq %r12, %rax
+;   movq 0x48(%rdi), %r13
+;   leaq (%rax, %r13), %rcx
+;   addq 0x50(%rdi), %rcx
+;   addq 0x58(%rdi), %rcx
+;   addq 0x60(%rdi), %rcx
+;   addq 0x68(%rdi), %rcx
+;   addq 0x70(%rdi), %rcx
+;   movq 0x78(%rdi), %rax
+;   addq %rax, %rcx
+;   xorq %rcx, %r14
+;   movq %r14, (%rsp)
+;   xorq %rcx, %rdx
+;   movq %rdx, 8(%rsp)
+;   xorq %rcx, %rsi
+;   movq %rsi, 0x10(%rsp)
+;   xorq %rcx, %r8
+;   movq %r8, 0x18(%rsp)
+;   xorq %rcx, %r9
+;   movq %r9, 0x20(%rsp)
+;   xorq %rcx, %r10
+;   movq %r10, 0x28(%rsp)
+;   xorq %rcx, %r11
+;   movq %r11, 0x30(%rsp)
+;   xorq %rcx, %rbx
+;   movq %rbx, 0x38(%rsp)
+;   xorq %rcx, %r12
+;   movq %r12, 0x40(%rsp)
+;   xorq %rcx, %r13
+;   movq %r13, 0x48(%rsp)
+;   movq %rcx, %rdx
+;   xorq 0x50(%rdi), %rdx
+;   movq %rdx, 0x50(%rsp)
+;   movq %rcx, %rdx
+;   xorq 0x58(%rdi), %rdx
+;   movq %rdx, 0x58(%rsp)
+;   movq %rcx, %rdx
+;   xorq 0x60(%rdi), %rdx
+;   movq %rdx, 0x60(%rsp)
+;   movq %rcx, %rdx
+;   xorq 0x68(%rdi), %rdx
+;   movq %rdx, 0x68(%rsp)
+;   movq %rcx, %rdx
+;   xorq 0x70(%rdi), %rdx
+;   movq %rdx, 0x70(%rsp)
+;   xorq %rcx, %rax
+;   movq %rax, 0x78(%rsp)
+;   movq 8(%rsp), %rax
+;   movq 0x80(%rsp), %rbx
+;   movq 0x88(%rsp), %r12
+;   movq 0x90(%rsp), %r13
+;   movq 0x98(%rsp), %r14
+;   addq $0xa0, %rsp
+;   popq %rbp
+;   retq
+

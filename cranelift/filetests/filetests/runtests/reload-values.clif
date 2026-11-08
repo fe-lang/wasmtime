@@ -1,0 +1,378 @@
+test run
+set opt_level=speed
+target x86_64
+
+function %reloads(i64) -> i64 {
+    ss0 = explicit_slot 128
+    ss1 = explicit_slot 128
+block0(v0: i64):
+    v1 = stack_addr.i64 ss1
+    v2 = iconst.i64 3
+    v3 = imul v0, v2
+    store notrap aligned v3, v1+0
+    v4 = iconst.i64 10
+    v5 = imul v0, v4
+    store notrap aligned v5, v1+8
+    v6 = iconst.i64 17
+    v7 = imul v0, v6
+    store notrap aligned v7, v1+16
+    v8 = iconst.i64 24
+    v9 = imul v0, v8
+    store notrap aligned v9, v1+24
+    v10 = iconst.i64 31
+    v11 = imul v0, v10
+    store notrap aligned v11, v1+32
+    v12 = iconst.i64 38
+    v13 = imul v0, v12
+    store notrap aligned v13, v1+40
+    v14 = iconst.i64 45
+    v15 = imul v0, v14
+    store notrap aligned v15, v1+48
+    v16 = iconst.i64 52
+    v17 = imul v0, v16
+    store notrap aligned v17, v1+56
+    v18 = iconst.i64 59
+    v19 = imul v0, v18
+    store notrap aligned v19, v1+64
+    v20 = iconst.i64 66
+    v21 = imul v0, v20
+    store notrap aligned v21, v1+72
+    v22 = iconst.i64 73
+    v23 = imul v0, v22
+    store notrap aligned v23, v1+80
+    v24 = iconst.i64 80
+    v25 = imul v0, v24
+    store notrap aligned v25, v1+88
+    v26 = iconst.i64 87
+    v27 = imul v0, v26
+    store notrap aligned v27, v1+96
+    v28 = iconst.i64 94
+    v29 = imul v0, v28
+    store notrap aligned v29, v1+104
+    v30 = iconst.i64 101
+    v31 = imul v0, v30
+    store notrap aligned v31, v1+112
+    v32 = iconst.i64 108
+    v33 = imul v0, v32
+    store notrap aligned v33, v1+120
+    v100 = iconst.i64 0
+    v101 = load.i64 notrap aligned v1+0
+    v102 = load.i64 notrap aligned v1+8
+    v103 = load.i64 notrap aligned v1+16
+    v104 = load.i64 notrap aligned v1+24
+    v105 = load.i64 notrap aligned v1+32
+    v106 = load.i64 notrap aligned v1+40
+    v107 = load.i64 notrap aligned v1+48
+    v108 = load.i64 notrap aligned v1+56
+    v109 = load.i64 notrap aligned v1+64
+    v110 = load.i64 notrap aligned v1+72
+    v111 = load.i64 notrap aligned v1+80
+    v112 = load.i64 notrap aligned v1+88
+    v113 = load.i64 notrap aligned v1+96
+    v114 = load.i64 notrap aligned v1+104
+    v115 = load.i64 notrap aligned v1+112
+    v116 = load.i64 notrap aligned v1+120
+    v117 = iadd v101, v102
+    v118 = iadd v117, v103
+    v119 = iadd v118, v104
+    v120 = iadd v119, v105
+    v121 = iadd v120, v106
+    v122 = iadd v121, v107
+    v123 = iadd v122, v108
+    v124 = iadd v123, v109
+    v125 = iadd v124, v110
+    v126 = iadd v125, v111
+    v127 = iadd v126, v112
+    v128 = iadd v127, v113
+    v129 = iadd v128, v114
+    v130 = iadd v129, v115
+    v131 = iadd v130, v116
+    v132 = stack_addr.i64 ss0
+    v133 = bxor v101, v131
+    store notrap aligned v133, v132+0
+    v134 = bxor v102, v131
+    store notrap aligned v134, v132+8
+    v135 = bxor v103, v131
+    store notrap aligned v135, v132+16
+    v136 = bxor v104, v131
+    store notrap aligned v136, v132+24
+    v137 = bxor v105, v131
+    store notrap aligned v137, v132+32
+    v138 = bxor v106, v131
+    store notrap aligned v138, v132+40
+    v139 = bxor v107, v131
+    store notrap aligned v139, v132+48
+    v140 = bxor v108, v131
+    store notrap aligned v140, v132+56
+    v141 = bxor v109, v131
+    store notrap aligned v141, v132+64
+    v142 = bxor v110, v131
+    store notrap aligned v142, v132+72
+    v143 = bxor v111, v131
+    store notrap aligned v143, v132+80
+    v144 = bxor v112, v131
+    store notrap aligned v144, v132+88
+    v145 = bxor v113, v131
+    store notrap aligned v145, v132+96
+    v146 = bxor v114, v131
+    store notrap aligned v146, v132+104
+    v147 = bxor v115, v131
+    store notrap aligned v147, v132+112
+    v148 = bxor v116, v131
+    store notrap aligned v148, v132+120
+    v149 = load.i64 notrap aligned v132+0
+    v501 = iconst.i64 0
+    v150 = rotl v149, v501
+    v151 = load.i64 notrap aligned v132+8
+    v502 = iconst.i64 1
+    v152 = rotl v151, v502
+    v153 = bxor v150, v152
+    v154 = load.i64 notrap aligned v132+16
+    v503 = iconst.i64 2
+    v155 = rotl v154, v503
+    v156 = bxor v153, v155
+    v157 = load.i64 notrap aligned v132+24
+    v504 = iconst.i64 3
+    v158 = rotl v157, v504
+    v159 = bxor v156, v158
+    v160 = load.i64 notrap aligned v132+32
+    v505 = iconst.i64 4
+    v161 = rotl v160, v505
+    v162 = bxor v159, v161
+    v163 = load.i64 notrap aligned v132+40
+    v506 = iconst.i64 5
+    v164 = rotl v163, v506
+    v165 = bxor v162, v164
+    v166 = load.i64 notrap aligned v132+48
+    v507 = iconst.i64 6
+    v167 = rotl v166, v507
+    v168 = bxor v165, v167
+    v169 = load.i64 notrap aligned v132+56
+    v508 = iconst.i64 7
+    v170 = rotl v169, v508
+    v171 = bxor v168, v170
+    v172 = load.i64 notrap aligned v132+64
+    v509 = iconst.i64 8
+    v173 = rotl v172, v509
+    v174 = bxor v171, v173
+    v175 = load.i64 notrap aligned v132+72
+    v510 = iconst.i64 9
+    v176 = rotl v175, v510
+    v177 = bxor v174, v176
+    v178 = load.i64 notrap aligned v132+80
+    v511 = iconst.i64 10
+    v179 = rotl v178, v511
+    v180 = bxor v177, v179
+    v181 = load.i64 notrap aligned v132+88
+    v512 = iconst.i64 11
+    v182 = rotl v181, v512
+    v183 = bxor v180, v182
+    v184 = load.i64 notrap aligned v132+96
+    v513 = iconst.i64 12
+    v185 = rotl v184, v513
+    v186 = bxor v183, v185
+    v187 = load.i64 notrap aligned v132+104
+    v514 = iconst.i64 13
+    v188 = rotl v187, v514
+    v189 = bxor v186, v188
+    v190 = load.i64 notrap aligned v132+112
+    v515 = iconst.i64 14
+    v191 = rotl v190, v515
+    v192 = bxor v189, v191
+    v193 = load.i64 notrap aligned v132+120
+    v516 = iconst.i64 15
+    v194 = rotl v193, v516
+    v195 = bxor v192, v194
+    return v195
+}
+; run: %reloads(1) == 17497803
+; run: %reloads(81985529216486895) == 3993036465209571345
+; run: %reloads(-5) == 241838537
+
+function %reloads_past_store(i64) -> i64 {
+    ss0 = explicit_slot 128
+    ss1 = explicit_slot 128
+block0(v0: i64):
+    v1 = stack_addr.i64 ss1
+    v2 = iconst.i64 3
+    v3 = imul v0, v2
+    store notrap aligned v3, v1+0
+    v4 = iconst.i64 10
+    v5 = imul v0, v4
+    store notrap aligned v5, v1+8
+    v6 = iconst.i64 17
+    v7 = imul v0, v6
+    store notrap aligned v7, v1+16
+    v8 = iconst.i64 24
+    v9 = imul v0, v8
+    store notrap aligned v9, v1+24
+    v10 = iconst.i64 31
+    v11 = imul v0, v10
+    store notrap aligned v11, v1+32
+    v12 = iconst.i64 38
+    v13 = imul v0, v12
+    store notrap aligned v13, v1+40
+    v14 = iconst.i64 45
+    v15 = imul v0, v14
+    store notrap aligned v15, v1+48
+    v16 = iconst.i64 52
+    v17 = imul v0, v16
+    store notrap aligned v17, v1+56
+    v18 = iconst.i64 59
+    v19 = imul v0, v18
+    store notrap aligned v19, v1+64
+    v20 = iconst.i64 66
+    v21 = imul v0, v20
+    store notrap aligned v21, v1+72
+    v22 = iconst.i64 73
+    v23 = imul v0, v22
+    store notrap aligned v23, v1+80
+    v24 = iconst.i64 80
+    v25 = imul v0, v24
+    store notrap aligned v25, v1+88
+    v26 = iconst.i64 87
+    v27 = imul v0, v26
+    store notrap aligned v27, v1+96
+    v28 = iconst.i64 94
+    v29 = imul v0, v28
+    store notrap aligned v29, v1+104
+    v30 = iconst.i64 101
+    v31 = imul v0, v30
+    store notrap aligned v31, v1+112
+    v32 = iconst.i64 108
+    v33 = imul v0, v32
+    store notrap aligned v33, v1+120
+    v100 = iconst.i64 0
+    v101 = load.i64 notrap aligned v1+0
+    v102 = load.i64 notrap aligned v1+8
+    v103 = load.i64 notrap aligned v1+16
+    v104 = load.i64 notrap aligned v1+24
+    v105 = load.i64 notrap aligned v1+32
+    v106 = load.i64 notrap aligned v1+40
+    v107 = load.i64 notrap aligned v1+48
+    v108 = load.i64 notrap aligned v1+56
+    v109 = load.i64 notrap aligned v1+64
+    v110 = load.i64 notrap aligned v1+72
+    v111 = load.i64 notrap aligned v1+80
+    v112 = load.i64 notrap aligned v1+88
+    v113 = load.i64 notrap aligned v1+96
+    v114 = load.i64 notrap aligned v1+104
+    v115 = load.i64 notrap aligned v1+112
+    v116 = load.i64 notrap aligned v1+120
+    v117 = iadd v101, v102
+    v118 = iadd v117, v103
+    v119 = iadd v118, v104
+    v120 = iadd v119, v105
+    v121 = iadd v120, v106
+    v122 = iadd v121, v107
+    v123 = iadd v122, v108
+    v124 = iadd v123, v109
+    v125 = iadd v124, v110
+    v126 = iadd v125, v111
+    v127 = iadd v126, v112
+    v128 = iadd v127, v113
+    v129 = iadd v128, v114
+    v130 = iadd v129, v115
+    v131 = iadd v130, v116
+    v132 = stack_addr.i64 ss0
+    store notrap aligned v131, v1+96
+    v133 = bxor v101, v131
+    store notrap aligned v133, v132+0
+    v134 = bxor v102, v131
+    store notrap aligned v134, v132+8
+    v135 = bxor v103, v131
+    store notrap aligned v135, v132+16
+    v136 = bxor v104, v131
+    store notrap aligned v136, v132+24
+    v137 = bxor v105, v131
+    store notrap aligned v137, v132+32
+    v138 = bxor v106, v131
+    store notrap aligned v138, v132+40
+    v139 = bxor v107, v131
+    store notrap aligned v139, v132+48
+    v140 = bxor v108, v131
+    store notrap aligned v140, v132+56
+    v141 = bxor v109, v131
+    store notrap aligned v141, v132+64
+    v142 = bxor v110, v131
+    store notrap aligned v142, v132+72
+    v143 = bxor v111, v131
+    store notrap aligned v143, v132+80
+    v144 = bxor v112, v131
+    store notrap aligned v144, v132+88
+    v145 = bxor v113, v131
+    store notrap aligned v145, v132+96
+    v146 = bxor v114, v131
+    store notrap aligned v146, v132+104
+    v147 = bxor v115, v131
+    store notrap aligned v147, v132+112
+    v148 = bxor v116, v131
+    store notrap aligned v148, v132+120
+    v149 = load.i64 notrap aligned v132+0
+    v517 = iconst.i64 0
+    v150 = rotl v149, v517
+    v151 = load.i64 notrap aligned v132+8
+    v518 = iconst.i64 1
+    v152 = rotl v151, v518
+    v153 = bxor v150, v152
+    v154 = load.i64 notrap aligned v132+16
+    v519 = iconst.i64 2
+    v155 = rotl v154, v519
+    v156 = bxor v153, v155
+    v157 = load.i64 notrap aligned v132+24
+    v520 = iconst.i64 3
+    v158 = rotl v157, v520
+    v159 = bxor v156, v158
+    v160 = load.i64 notrap aligned v132+32
+    v521 = iconst.i64 4
+    v161 = rotl v160, v521
+    v162 = bxor v159, v161
+    v163 = load.i64 notrap aligned v132+40
+    v522 = iconst.i64 5
+    v164 = rotl v163, v522
+    v165 = bxor v162, v164
+    v166 = load.i64 notrap aligned v132+48
+    v523 = iconst.i64 6
+    v167 = rotl v166, v523
+    v168 = bxor v165, v167
+    v169 = load.i64 notrap aligned v132+56
+    v524 = iconst.i64 7
+    v170 = rotl v169, v524
+    v171 = bxor v168, v170
+    v172 = load.i64 notrap aligned v132+64
+    v525 = iconst.i64 8
+    v173 = rotl v172, v525
+    v174 = bxor v171, v173
+    v175 = load.i64 notrap aligned v132+72
+    v526 = iconst.i64 9
+    v176 = rotl v175, v526
+    v177 = bxor v174, v176
+    v178 = load.i64 notrap aligned v132+80
+    v527 = iconst.i64 10
+    v179 = rotl v178, v527
+    v180 = bxor v177, v179
+    v181 = load.i64 notrap aligned v132+88
+    v528 = iconst.i64 11
+    v182 = rotl v181, v528
+    v183 = bxor v180, v182
+    v184 = load.i64 notrap aligned v132+96
+    v529 = iconst.i64 12
+    v185 = rotl v184, v529
+    v186 = bxor v183, v185
+    v187 = load.i64 notrap aligned v132+104
+    v530 = iconst.i64 13
+    v188 = rotl v187, v530
+    v189 = bxor v186, v188
+    v190 = load.i64 notrap aligned v132+112
+    v531 = iconst.i64 14
+    v191 = rotl v190, v531
+    v192 = bxor v189, v191
+    v193 = load.i64 notrap aligned v132+120
+    v532 = iconst.i64 15
+    v194 = rotl v193, v532
+    v195 = bxor v192, v194
+    return v195
+}
+; run: %reloads_past_store(1) == 17497803
+; run: %reloads_past_store(81985529216486895) == 3993036465209571345
+; run: %reloads_past_store(-5) == 241838537
