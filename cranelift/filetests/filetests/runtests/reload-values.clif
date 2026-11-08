@@ -55,7 +55,9 @@ block0(v0: i64):
     v32 = iconst.i64 108
     v33 = imul v0, v32
     store notrap aligned v33, v1+120
-    v100 = iconst.i64 0
+    jump block1
+
+block1:
     v101 = load.i64 notrap aligned v1+0
     v102 = load.i64 notrap aligned v1+8
     v103 = load.i64 notrap aligned v1+16
@@ -242,7 +244,9 @@ block0(v0: i64):
     v32 = iconst.i64 108
     v33 = imul v0, v32
     store notrap aligned v33, v1+120
-    v100 = iconst.i64 0
+    jump block1
+
+block1:
     v101 = load.i64 notrap aligned v1+0
     v102 = load.i64 notrap aligned v1+8
     v103 = load.i64 notrap aligned v1+16
