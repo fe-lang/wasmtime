@@ -13,7 +13,8 @@ use crate::ir::condcodes::{FloatCC, IntCC};
 use crate::ir::immediates::*;
 use crate::ir::types::*;
 use crate::ir::{
-    Block, BlockCall, Function, Inst, InstructionData, LibCall, Opcode, TrapCode, Value, ValueList,
+    Block, BlockCall, Function, Inst, InstructionData, LibCall, Opcode, TrapCode, Value, ValueDef,
+    ValueList,
 };
 use crate::isa::x64::X64Backend;
 use crate::isa::x64::inst::{ReturnCallInfo, args::*, regs};
@@ -579,6 +580,17 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
 
     fn carry_stays_in_flags(&mut self, inst: Inst) -> Option<()> {
         (!self.carry_plan(inst).keep_out).then_some(())
+    }
+
+    fn carry_branch(&mut self, cond: Value) -> Option<CC> {
+        let def = self.lower_ctx.f.dfg.value_def(cond).inst()?;
+        let block = self.lower_ctx.f.layout.inst_block(def)?;
+        self.with_carry_state(block, |state| {
+            state
+                .branch
+                .filter(|&(branch_cond, _)| branch_cond == cond)
+                .map(|(_, cc)| cc)
+        })
     }
 
     fn carry_lane_cf(&mut self, inst: Inst) -> Option<()> {
@@ -2200,8 +2212,16 @@ impl IsleContext<'_, '_, MInst, X64Backend> {
     /// How the carry of unsigned carry op `inst` travels, from the plan of
     /// its block, made once while the block is lowered.
     fn carry_plan(&mut self, inst: Inst) -> CarryPlan {
+        let block = self.lower_ctx.f.layout.inst_block(inst);
+        self.with_carry_state(block.expect("instruction in a block"), |state| {
+            state.plans.get(&inst).copied().unwrap_or_default()
+        })
+    }
+
+    /// `query` on the carry state of `block`, planned once while the block
+    /// is lowered.
+    fn with_carry_state<T>(&mut self, block: Block, query: impl FnOnce(&CarryState) -> T) -> T {
         let f = self.lower_ctx.f;
-        let block = f.layout.inst_block(inst).expect("instruction in a block");
         let has_bmi2 = self.backend.x64_flags.has_bmi2();
         let has_adx = self.backend.x64_flags.has_adx();
         let mut state = self
@@ -2211,12 +2231,12 @@ impl IsleContext<'_, '_, MInst, X64Backend> {
             .and_then(|state| state.downcast::<CarryState>().ok())
             .unwrap_or_else(|| Box::new(CarryState::new(f, has_bmi2)));
         if state.block != Some(block) {
-            state.plans = carry_plans(self.lower_ctx, &state.free, has_adx, block);
+            (state.plans, state.branch) = carry_plans(self.lower_ctx, &state.free, has_adx, block);
             state.block = Some(block);
         }
-        let plan = state.plans.get(&inst).copied().unwrap_or_default();
+        let result = query(&state);
         self.lower_ctx.backend_state = Some(state);
-        plan
+        result
     }
 }
 
@@ -2226,6 +2246,9 @@ struct CarryState {
     free: FlagFree,
     block: Option<Block>,
     plans: FxHashMap<Inst, CarryPlan>,
+    /// The block's branch condition, when it takes a carry from the flags,
+    /// and the flag.
+    branch: Option<(Value, CC)>,
 }
 
 impl CarryState {
@@ -2234,6 +2257,7 @@ impl CarryState {
             free: FlagFree::new(f, has_bmi2),
             block: None,
             plans: FxHashMap::default(),
+            branch: None,
         }
     }
 }
@@ -2369,7 +2393,7 @@ fn carry_plans(
     free: &FlagFree,
     has_adx: bool,
     block: Block,
-) -> FxHashMap<Inst, CarryPlan> {
+) -> (FxHashMap<Inst, CarryPlan>, Option<(Value, CC)>) {
     struct Chain {
         ops: Vec<Inst>,
         /// Every op so far can be an `adcx` or `adox`, and the first takes
@@ -2466,10 +2490,78 @@ fn carry_plans(
             }
         }
     }
+    let branch = carry_branch(ctx, free, block, &plans);
+    if let Some((carry, _, _)) = branch {
+        consumed.push(carry);
+    }
     for (&inst, plan) in plans.iter_mut() {
         let carry = dfg.inst_results(inst)[1];
         plan.keep_out = !(ctx.value_is_unused(carry)
             || (ctx.value_is_used_once(carry) && consumed.contains(&carry)));
     }
-    plans
+    (plans, branch.map(|(_, cond, cc)| (cond, cc)))
+}
+
+/// The carry that `block`'s closing `brif` tests, possibly masked to its
+/// low bit or extended, when it is the carry out of a carry op of the block
+/// with only instructions that leave the flags alone after it: the carry,
+/// the branch condition and the flag holding the carry.
+fn carry_branch(
+    ctx: &Lower<MInst>,
+    free: &FlagFree,
+    block: Block,
+    plans: &FxHashMap<Inst, CarryPlan>,
+) -> Option<(Value, Value, CC)> {
+    let f = ctx.f;
+    let dfg = &f.dfg;
+    let term = f.layout.last_inst(block)?;
+    let InstructionData::Brif { arg: cond, .. } = dfg.insts[term] else {
+        return None;
+    };
+    // The mask and extensions, each used only on the way to the branch.
+    let mut carry = cond;
+    let mut on_the_way = Vec::new();
+    while let Some(def) = dfg.value_def(carry).inst()
+        && f.layout.inst_block(def) == Some(block)
+    {
+        let next = match dfg.insts[def] {
+            InstructionData::Unary {
+                opcode: Opcode::Uextend,
+                arg,
+            } => arg,
+            InstructionData::Binary {
+                opcode: Opcode::Band,
+                args: [x, one],
+            } if dfg
+                .value_def(one)
+                .inst()
+                .is_some_and(|one| matches!(dfg.insts[one], InstructionData::UnaryImm { opcode: Opcode::Iconst, imm } if imm.bits() == 1)) =>
+            {
+                x
+            }
+            _ => break,
+        };
+        if !ctx.value_is_used_once(carry) {
+            return None;
+        }
+        on_the_way.push(def);
+        carry = next;
+    }
+    let ValueDef::Result(op, 1) = dfg.value_def(carry) else {
+        return None;
+    };
+    let plan = plans.get(&op)?;
+    let after = f.layout.next_inst(op)?;
+    let flags_kept = std::iter::successors(Some(after), |&inst| f.layout.next_inst(inst))
+        .take_while(|&inst| inst != term)
+        .all(|inst| on_the_way.contains(&inst) || leaves_flags_alone(ctx, free, inst));
+    (ctx.value_is_used_once(carry) && flags_kept).then_some((
+        carry,
+        cond,
+        if plan.lane == Some(Lane::Of) {
+            CC::O
+        } else {
+            CC::B
+        },
+    ))
 }
