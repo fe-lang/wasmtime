@@ -195,6 +195,16 @@
 
 ;;;; Rules for `uadd_overflow` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; A carry out that is unused, or whose one use takes it from the flags,
+;; needs no `setb`.
+(rule 3 (lower i @ (uadd_overflow _ x y @ (value_type (fits_in_64 ty))))
+      (if-let _ (carry_stays_in_flags i))
+      (flags_only_overflow_op (x64_produce_flags (ProduceFlagsOp.Add) ty x y)))
+
+(rule 2 (lower i @ (uadd_overflow _ x y @ (value_type $I128)))
+      (if-let _ (carry_stays_in_flags i))
+      (flags_only_overflow_op_128 (ProduceFlagsOp.Add) (ChainFlagsOp.Adc) x y))
+
 (rule 1 (lower (uadd_overflow _ x y @ (value_type (fits_in_64 ty))))
       (construct_overflow_op_alu ty (CC.B) (ProduceFlagsOp.Add) x y))
 
@@ -205,23 +215,100 @@
 ;;;; Rules for `*_overflow_cin` and `*_overflow_bin` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; `neg` of the carry's low byte sets CF exactly when the carry is nonzero, and
-;; `adc`/`sbb` take it from there:
+;; `adc`/`sbb` take it from there. A carry straight from the CF of the
+;; `adc`/`sbb` before is still in the flags, and an unsigned carry out that
+;; is unused, or whose one use takes it from the flags, stays there:
 ;;
-;;   neg c_in
+;;   neg c_in       ; unless CF holds it
 ;;   adc x, y
-;;   setb c_out
+;;   setb c_out     ; unless the flags carry it on
 
-(rule 1 (lower (uadd_overflow_cin _ x y @ (value_type (fits_in_64 ty)) c_in))
-      (lower_carry_chain (x64_adc_chained ty x y) (CC.B) c_in))
+(rule 1 (lower i @ (uadd_overflow_cin _ x y @ (value_type (fits_in_64 ty)) c_in))
+      (carry_op i c_in (x64_adc_chained ty x y)))
 
 (rule 1 (lower (sadd_overflow_cin _ x y @ (value_type (fits_in_64 ty)) c_in))
       (lower_carry_chain (x64_adc_chained ty x y) (CC.O) c_in))
 
-(rule 1 (lower (usub_overflow_bin _ x y @ (value_type (fits_in_64 ty)) b_in))
-      (lower_carry_chain (x64_sbb_chained ty x y) (CC.B) b_in))
+(rule 1 (lower i @ (usub_overflow_bin _ x y @ (value_type (fits_in_64 ty)) b_in))
+      (carry_op i b_in (x64_sbb_chained ty x y)))
 
 (rule 1 (lower (ssub_overflow_bin _ x y @ (value_type (fits_in_64 ty)) b_in))
       (lower_carry_chain (x64_sbb_chained ty x y) (CC.O) b_in))
+
+(decl carry_op (Inst Value ConsumesAndProducesFlags) InstOutput)
+(rule (carry_op i carry op)
+      (let ((_ Unit (carry_in i carry))
+            (value Reg (emit_chained op)))
+        (output_pair value (carry_out i))))
+
+(decl carry_op_128 (Inst Value ChainFlagsOp Value Value) InstOutput)
+(rule (carry_op_128 i carry op x y)
+      (let ((x_regs ValueRegs x)
+            (y_regs ValueRegs y)
+            (_ Unit (carry_in i carry))
+            (lo Reg (emit_chained (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 0) (value_regs_get_gpr y_regs 0))))
+            (hi Reg (emit_chained (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 1) (value_regs_get_gpr y_regs 1)))))
+        (output_pair (value_regs lo hi) (carry_out i))))
+
+;; Sets CF to `carry`, the carry in of `inst`, unless it holds it already.
+;; Taking the carry from the flags still counts as a use of it, so that its
+;; producer is lowered even when nothing else uses its results.
+(decl carry_in (Inst Value) Unit)
+(rule 1 (carry_in i carry)
+      (if-let _ (carry_flags_live i carry))
+      (let ((_ ValueRegs (put_in_regs carry)))
+        (unit)))
+(rule 0 (carry_in _ carry)
+      (let ((_ Reg (emit_producer (x64_neg_paired $I8 carry))))
+        (unit)))
+
+;; The unsigned carry out of `inst`, in CF, as a register: none when it is
+;; unused or its one use takes it from the flags.
+(decl carry_out (Inst) ValueRegs)
+(rule 1 (carry_out i)
+      (if-let _ (carry_stays_in_flags i))
+      (value_reg (invalid_reg)))
+(rule 0 (carry_out _)
+      (value_reg (emit_consumer (x64_setcc (CC.B)))))
+
+;; Whether `carry`, the carry in of `inst`, is the carry out of an unsigned
+;; `*_overflow`, `*_overflow_cin` or `*_overflow_bin` earlier in its block,
+;; with only instructions that leave the flags alone in between: CF still
+;; holds it.
+(decl pure partial carry_flags_live (Inst Value) Unit)
+(extern constructor carry_flags_live carry_flags_live)
+
+;; Whether the carry out of `inst` is unused, or its one use takes it from
+;; the flags.
+(decl pure partial carry_stays_in_flags (Inst) Unit)
+(extern constructor carry_stays_in_flags carry_stays_in_flags)
+
+(decl emit_chained (ConsumesAndProducesFlags) Reg)
+(rule (emit_chained (ConsumesAndProducesFlags.ReturnsReg inst reg))
+      (let ((_ Unit (emit inst)))
+        reg))
+
+(decl emit_producer (ProducesFlags) Reg)
+(rule (emit_producer (ProducesFlags.ProducesFlagsReturnsResultWithConsumer inst reg))
+      (let ((_ Unit (emit inst)))
+        reg))
+
+(decl emit_consumer (ConsumesFlags) Reg)
+(rule (emit_consumer (ConsumesFlags.ConsumesFlagsReturnsReg inst reg))
+      (let ((_ Unit (emit inst)))
+        reg))
+
+(decl flags_only_overflow_op (ProducesFlags) InstOutput)
+(rule (flags_only_overflow_op producer)
+      (output_pair (emit_producer producer) (value_reg (invalid_reg))))
+
+(decl flags_only_overflow_op_128 (ProduceFlagsOp ChainFlagsOp Value Value) InstOutput)
+(rule (flags_only_overflow_op_128 lo_op hi_op x y)
+      (let ((x_regs ValueRegs x)
+            (y_regs ValueRegs y)
+            (lo Reg (emit_producer (x64_produce_flags lo_op $I64 (value_regs_get_gpr x_regs 0) (value_regs_get_gpr y_regs 0))))
+            (hi Reg (emit_chained (x64_chain_flags hi_op $I64 (value_regs_get_gpr x_regs 1) (value_regs_get_gpr y_regs 1)))))
+        (output_pair (value_regs lo hi) (value_reg (invalid_reg)))))
 
 ;; The 128-bit forms carry through both halves:
 ;;
@@ -230,14 +317,14 @@
 ;;   adc x_hi, y_hi
 ;;   setb c_out
 
-(rule 0 (lower (uadd_overflow_cin _ x y @ (value_type $I128) c_in))
-      (lower_carry_chain_128 (ChainFlagsOp.Adc) (CC.B) x y c_in))
+(rule 0 (lower i @ (uadd_overflow_cin _ x y @ (value_type $I128) c_in))
+      (carry_op_128 i c_in (ChainFlagsOp.Adc) x y))
 
 (rule 0 (lower (sadd_overflow_cin _ x y @ (value_type $I128) c_in))
       (lower_carry_chain_128 (ChainFlagsOp.Adc) (CC.O) x y c_in))
 
-(rule 0 (lower (usub_overflow_bin _ x y @ (value_type $I128) b_in))
-      (lower_carry_chain_128 (ChainFlagsOp.Sbb) (CC.B) x y b_in))
+(rule 0 (lower i @ (usub_overflow_bin _ x y @ (value_type $I128) b_in))
+      (carry_op_128 i b_in (ChainFlagsOp.Sbb) x y))
 
 (rule 0 (lower (ssub_overflow_bin _ x y @ (value_type $I128) b_in))
       (lower_carry_chain_128 (ChainFlagsOp.Sbb) (CC.O) x y b_in))
@@ -280,6 +367,14 @@
         (construct_overflow_op_alu_128 (CC.O) (ProduceFlagsOp.Add) (ChainFlagsOp.Adc) x y))
 
 ;;;; Rules for `usub_overflow` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(rule 3 (lower i @ (usub_overflow _ x y @ (value_type (fits_in_64 ty))))
+      (if-let _ (carry_stays_in_flags i))
+      (flags_only_overflow_op (x64_produce_flags (ProduceFlagsOp.Sub) ty x y)))
+
+(rule 2 (lower i @ (usub_overflow _ x y @ (value_type $I128)))
+      (if-let _ (carry_stays_in_flags i))
+      (flags_only_overflow_op_128 (ProduceFlagsOp.Sub) (ChainFlagsOp.Sbb) x y))
 
 (rule 1 (lower (usub_overflow _ x y @ (value_type (fits_in_64 ty))))
       (construct_overflow_op_alu ty (CC.B) (ProduceFlagsOp.Sub) x y))
