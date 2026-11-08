@@ -1,0 +1,39 @@
+test compile precise-output
+set enable_llvm_abi_extensions=true
+target x86_64 has_bmi2
+
+;; `mulx` leaves the flags alone, so the carry stays in CF across it.
+function %carry_past_widening_mul(i64, i64, i64, i64, i64) -> i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5, v6 = uadd_overflow v0, v1
+    v7 = uextend.i128 v2
+    v8 = uextend.i128 v3
+    v9 = imul v7, v8
+    v10, v11 = isplit v9
+    v12, v13 = uadd_overflow_cin v10, v4, v6
+    return v5, v12, v11
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rdi, %rax
+;   addq %rsi, %rax
+;   mulxq %rcx, %rdx, %rcx ;; implicit: %rdx
+;   adcq %r8, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rdi, %rax
+;   addq %rsi, %rax
+;   mulxq %rcx, %rdx, %rcx
+;   adcq %r8, %rdx
+;   popq %rbp
+;   retq
+

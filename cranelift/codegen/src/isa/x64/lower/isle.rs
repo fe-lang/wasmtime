@@ -13,7 +13,8 @@ use crate::ir::condcodes::{FloatCC, IntCC};
 use crate::ir::immediates::*;
 use crate::ir::types::*;
 use crate::ir::{
-    BlockCall, Inst, InstructionData, LibCall, Opcode, TrapCode, Value, ValueDef, ValueList,
+    BlockCall, Function, Inst, InstructionData, LibCall, Opcode, TrapCode, Value, ValueDef,
+    ValueList,
 };
 use crate::isa::x64::X64Backend;
 use crate::isa::x64::inst::{ReturnCallInfo, args::*, regs};
@@ -607,7 +608,7 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         }
         let mut between = f.layout.next_inst(producer)?;
         while between != inst {
-            if !leaves_flags_alone(self.lower_ctx, between) {
+            if !leaves_flags_alone(self.lower_ctx, self.backend.x64_flags.has_bmi2(), between) {
                 return None;
             }
             between = f.layout.next_inst(between)?;
@@ -626,7 +627,7 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         }
         let mut user = f.layout.next_inst(inst)?;
         while !f.dfg.inst_values(user).any(|arg| arg == carry) {
-            if !leaves_flags_alone(self.lower_ctx, user) {
+            if !leaves_flags_alone(self.lower_ctx, self.backend.x64_flags.has_bmi2(), user) {
                 return None;
             }
             user = f.layout.next_inst(user)?;
@@ -2166,10 +2167,11 @@ const I8X16_USHR_MASKS: [u8; 128] = [
 /// Whether the lowering of `inst` never writes the flags: nothing for an
 /// instruction without side effects whose results are unused, and otherwise
 /// loads, stores that are not a load-op-store, extensions to 64 bits or
-/// fewer, and the register shuffles of `ireduce`, `iconcat` and `isplit`. A
-/// zero constant is an `xor`, and a 128-bit extension zeroes or shifts its
-/// high half.
-fn leaves_flags_alone(ctx: &Lower<MInst>, inst: Inst) -> bool {
+/// fewer, the register shuffles of `ireduce`, `iconcat` and `isplit`, and
+/// with BMI2 a widening 64-bit multiply, `mulx`, with the extensions of its
+/// operands that it absorbs. A zero constant is an `xor`, and a 128-bit
+/// extension lowered on its own zeroes or shifts its high half.
+fn leaves_flags_alone(ctx: &Lower<MInst>, has_bmi2: bool, inst: Inst) -> bool {
     let f = ctx.f;
     if !has_lowering_side_effect(f, inst)
         && f.dfg
@@ -2180,6 +2182,21 @@ fn leaves_flags_alone(ctx: &Lower<MInst>, inst: Inst) -> bool {
         return true;
     }
     let dfg = &f.dfg;
+    if has_bmi2 && is_widening_mul(f, inst) {
+        return true;
+    }
+    if has_bmi2
+        && dfg.insts[inst].opcode() == Opcode::Uextend
+        && dfg.ctrl_typevar(inst) == I128
+        && let Some(&result) = dfg.inst_results(inst).first()
+        && ctx.value_is_used_once(result)
+    {
+        // Its one use is later in the block; it must be a widening multiply.
+        let user =
+            core::iter::successors(f.layout.next_inst(inst), |&next| f.layout.next_inst(next))
+                .find(|&next| dfg.inst_values(next).any(|arg| arg == result));
+        return user.is_some_and(|user| is_widening_mul(f, user));
+    }
     match dfg.insts[inst] {
         InstructionData::UnaryImm {
             opcode: Opcode::Iconst,
@@ -2211,4 +2228,18 @@ fn leaves_flags_alone(ctx: &Lower<MInst>, inst: Inst) -> bool {
                 | Opcode::Isplit
         ),
     }
+}
+
+/// Whether `inst` multiplies two 64-bit values zero-extended to 128 bits,
+/// which lowers to one `mul` or, with BMI2, `mulx` of the 64-bit values.
+fn is_widening_mul(f: &Function, inst: Inst) -> bool {
+    let dfg = &f.dfg;
+    dfg.insts[inst].opcode() == Opcode::Imul
+        && dfg.ctrl_typevar(inst) == I128
+        && dfg.inst_args(inst).iter().all(|&arg| {
+            dfg.value_def(arg).inst().is_some_and(|def| {
+                dfg.insts[def].opcode() == Opcode::Uextend
+                    && dfg.value_type(dfg.inst_args(def)[0]) == I64
+            })
+        })
 }
