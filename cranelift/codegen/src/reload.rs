@@ -60,7 +60,8 @@ struct Place {
 }
 
 /// Where a value is in memory, and the load that read it: its opcode,
-/// address (for its type), flags and result type.
+/// address (for its type), flags and result type, and the extension of the
+/// loaded value that the value is, if any.
 #[derive(Clone, Copy, Debug)]
 struct Home {
     place: Place,
@@ -68,6 +69,7 @@ struct Home {
     addr: Value,
     flags: MemFlags,
     ty: Type,
+    extend: Option<(Opcode, Type)>,
 }
 
 /// The place `addr + offset` names for `size` bytes.
@@ -308,6 +310,7 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                                 addr: arg,
                                 flags,
                                 ty,
+                                extend: None,
                             },
                         );
                     }
@@ -334,6 +337,20 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                     let place = place(func, addr, offset, size);
                     homes.retain(|_, home| !may_overlap(&home.place, &place, &escaped));
                     stored.push(place);
+                }
+                // A loaded value widened to the width of a multiply, say, is in
+                // memory too, a load and an extension away.
+                InstructionData::Unary {
+                    opcode: opcode @ (Opcode::Uextend | Opcode::Sextend),
+                    arg,
+                } => {
+                    if let Some(&home) = homes.get(&func.dfg.resolve_aliases(arg))
+                        && home.extend.is_none()
+                    {
+                        let result = func.dfg.first_result(inst);
+                        let extend = Some((opcode, func.dfg.value_type(result)));
+                        homes.insert(result, Home { extend, ..home });
+                    }
                 }
                 ref data => {
                     let opcode = data.opcode();
@@ -488,8 +505,17 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                 offset,
             });
             func.dfg.make_inst_results(load, home.ty);
-            let reloaded = func.dfg.first_result(load);
             func.layout.insert_inst(load, user);
+            let mut reloaded = func.dfg.first_result(load);
+            if let Some((opcode, ty)) = home.extend {
+                let extend = func.dfg.make_inst(InstructionData::Unary {
+                    opcode,
+                    arg: reloaded,
+                });
+                func.dfg.make_inst_results(extend, ty);
+                func.layout.insert_inst(extend, user);
+                reloaded = func.dfg.first_result(extend);
+            }
             let aliases: Vec<Value> = func
                 .dfg
                 .inst_values(user)
