@@ -8,13 +8,13 @@ use generated_code::{AssemblerOutputs, Context, MInst, RegisterClass};
 // Types that the generated ISLE code uses via `use super::*`.
 use super::external::{CraneliftRegisters, PairedGpr, PairedXmm, isle_assembler_methods};
 use super::{MergeableLoadSize, is_int_or_ref_ty, is_mergeable_load, lower_to_amode};
+use crate::FxHashMap;
 use crate::inst_predicates::has_lowering_side_effect;
 use crate::ir::condcodes::{FloatCC, IntCC};
 use crate::ir::immediates::*;
 use crate::ir::types::*;
 use crate::ir::{
-    BlockCall, Function, Inst, InstructionData, LibCall, Opcode, TrapCode, Value, ValueDef,
-    ValueList,
+    Block, BlockCall, Function, Inst, InstructionData, LibCall, Opcode, TrapCode, Value, ValueList,
 };
 use crate::isa::x64::X64Backend;
 use crate::isa::x64::inst::{ReturnCallInfo, args::*, regs};
@@ -573,51 +573,24 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         }))
     }
 
-    fn carry_flags_live(&mut self, inst: Inst, carry: Value) -> Option<()> {
-        let f = self.lower_ctx.f;
-        let ValueDef::Result(producer, 1) = f.dfg.value_def(carry) else {
-            return None;
-        };
-        if !matches!(
-            f.dfg.insts[producer].opcode(),
-            Opcode::UaddOverflow
-                | Opcode::UaddOverflowCin
-                | Opcode::UsubOverflow
-                | Opcode::UsubOverflowBin
-        ) {
-            return None;
-        }
-        let mut between = f.layout.next_inst(producer)?;
-        while between != inst {
-            if !leaves_flags_alone(self.lower_ctx, self.backend.x64_flags.has_bmi2(), between) {
-                return None;
-            }
-            between = f.layout.next_inst(between)?;
-        }
-        Some(())
+    fn carry_flags_live(&mut self, inst: Inst) -> Option<()> {
+        self.carry_plan(inst).fused_in.then_some(())
     }
 
     fn carry_stays_in_flags(&mut self, inst: Inst) -> Option<()> {
-        let f = self.lower_ctx.f;
-        let carry = *f.dfg.inst_results(inst).get(1)?;
-        if self.lower_ctx.value_is_unused(carry) {
-            return Some(());
-        }
-        if !self.lower_ctx.value_is_used_once(carry) {
-            return None;
-        }
-        let mut user = f.layout.next_inst(inst)?;
-        while !f.dfg.inst_values(user).any(|arg| arg == carry) {
-            if !leaves_flags_alone(self.lower_ctx, self.backend.x64_flags.has_bmi2(), user) {
-                return None;
-            }
-            user = f.layout.next_inst(user)?;
-        }
-        (matches!(
-            f.dfg.insts[user].opcode(),
-            Opcode::UaddOverflowCin | Opcode::UsubOverflowBin
-        ) && f.dfg.inst_args(user)[2] == carry)
-            .then_some(())
+        (!self.carry_plan(inst).keep_out).then_some(())
+    }
+
+    fn carry_lane_cf(&mut self, inst: Inst) -> Option<()> {
+        (self.carry_plan(inst).lane == Some(Lane::Cf)).then_some(())
+    }
+
+    fn carry_lane_of(&mut self, inst: Inst) -> Option<()> {
+        (self.carry_plan(inst).lane == Some(Lane::Of)).then_some(())
+    }
+
+    fn carry_lane_clears(&mut self, inst: Inst) -> Option<()> {
+        self.carry_plan(inst).clear.then_some(())
     }
 
     fn sinkable_load(&mut self, val: Value) -> Option<SinkableLoad> {
@@ -2154,16 +2127,26 @@ const I8X16_USHR_MASKS: [u8; 128] = [
 /// extension lowered on its own zeroes or shifts its high half.
 fn leaves_flags_alone(ctx: &Lower<MInst>, has_bmi2: bool, inst: Inst) -> bool {
     let f = ctx.f;
-    if !has_lowering_side_effect(f, inst)
-        && f.dfg
-            .inst_results(inst)
-            .iter()
-            .all(|&result| ctx.value_is_unused(result))
-    {
+    if is_unlowered(ctx, inst) {
         return true;
     }
     let dfg = &f.dfg;
     if has_bmi2 && is_widening_mul(f, inst) {
+        return true;
+    }
+    // A constant that is only the addend of a carry op of 64 bits or fewer
+    // is an immediate there, or a `mov` for `adcx` and `adox`.
+    if dfg.insts[inst].opcode() == Opcode::Iconst
+        && let Some(&result) = dfg.inst_results(inst).first()
+        && ctx.value_is_used_once(result)
+        && let Some(user) =
+            core::iter::successors(f.layout.next_inst(inst), |&next| f.layout.next_inst(next))
+                .find(|&next| dfg.inst_values(next).any(|arg| arg == result))
+        && is_carry_op(f, user)
+        && dfg.ctrl_typevar(user).bits() <= 64
+        && dfg.inst_args(user)[1] == result
+        && dfg.inst_args(user)[0] != result
+    {
         return true;
     }
     if has_bmi2
@@ -2211,6 +2194,18 @@ fn leaves_flags_alone(ctx: &Lower<MInst>, has_bmi2: bool, inst: Inst) -> bool {
     }
 }
 
+/// Whether lowering skips `inst`: it has no side effects and its results
+/// are unused.
+fn is_unlowered(ctx: &Lower<MInst>, inst: Inst) -> bool {
+    !has_lowering_side_effect(ctx.f, inst)
+        && ctx
+            .f
+            .dfg
+            .inst_results(inst)
+            .iter()
+            .all(|&result| ctx.value_is_unused(result))
+}
+
 /// Whether `inst` multiplies two 64-bit values zero-extended to 128 bits,
 /// which lowers to one `mul` or, with BMI2, `mulx` of the 64-bit values.
 fn is_widening_mul(f: &Function, inst: Inst) -> bool {
@@ -2223,4 +2218,165 @@ fn is_widening_mul(f: &Function, inst: Inst) -> bool {
                     && dfg.value_type(dfg.inst_args(def)[0]) == I64
             })
         })
+}
+
+impl IsleContext<'_, '_, MInst, X64Backend> {
+    /// How the carry of unsigned carry op `inst` travels, from a plan of its
+    /// whole block.
+    fn carry_plan(&self, inst: Inst) -> CarryPlan {
+        let f = self.lower_ctx.f;
+        let flags = &self.backend.x64_flags;
+        carry_plans(
+            self.lower_ctx,
+            flags.has_bmi2(),
+            flags.has_adx(),
+            f.layout.inst_block(inst).expect("instruction in a block"),
+        )
+        .remove(&inst)
+        .unwrap_or_default()
+    }
+}
+
+/// How the carry of an unsigned carry op travels on x64.
+#[derive(Clone, Copy, Default)]
+struct CarryPlan {
+    /// The carry in is the carry out of the op before it in its chain,
+    /// still in the flags.
+    fused_in: bool,
+    /// The carry out is wanted in a register.
+    keep_out: bool,
+    /// Interleaved with another chain: `adcx` through CF, or `adox` through
+    /// OF, which leave each other's flag alone.
+    lane: Option<Lane>,
+    /// The first op of an interleaved pair clears CF and OF first.
+    clear: bool,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Lane {
+    Cf,
+    Of,
+}
+
+/// The unsigned `*_overflow`, `*_overflow_cin` and `*_overflow_bin`: their
+/// carry out is CF.
+fn is_carry_op(f: &Function, inst: Inst) -> bool {
+    matches!(
+        f.dfg.insts[inst].opcode(),
+        Opcode::UaddOverflow
+            | Opcode::UaddOverflowCin
+            | Opcode::UsubOverflow
+            | Opcode::UsubOverflowBin
+    )
+}
+
+/// Whether carry op `inst` can be an `adcx` or `adox`: a 64-bit addition.
+fn is_lane_op(f: &Function, inst: Inst) -> bool {
+    matches!(
+        f.dfg.insts[inst].opcode(),
+        Opcode::UaddOverflow | Opcode::UaddOverflowCin
+    ) && f.dfg.ctrl_typevar(inst) == I64
+}
+
+/// Plans the carries of `block`'s carry ops in one pass. A chain is a run
+/// of carry ops each taking the carry of the one before; its carries stay
+/// in CF while only instructions that leave the flags alone come between.
+/// With ADX, a 64-bit addition chain that starts while another is in
+/// flight runs through OF as `adox`, and the other through CF as `adcx`
+/// from its start, which first clears both flags.
+fn carry_plans(
+    ctx: &Lower<MInst>,
+    has_bmi2: bool,
+    has_adx: bool,
+    block: Block,
+) -> FxHashMap<Inst, CarryPlan> {
+    struct Chain {
+        ops: Vec<Inst>,
+        /// Every op so far can be an `adcx` or `adox`, and the first takes
+        /// no carry in.
+        lane_ready: bool,
+        lane: Option<Lane>,
+    }
+    let f = ctx.f;
+    let dfg = &f.dfg;
+    let mut plans = FxHashMap::default();
+    let mut chains: Vec<Chain> = Vec::new();
+    // The carry and chain in flight in CF and in OF.
+    let mut cf: Option<(Value, usize)> = None;
+    let mut of: Option<(Value, usize)> = None;
+    let mut consumed = Vec::new();
+    for inst in f.layout.block_insts(block) {
+        if !is_carry_op(f, inst) || is_unlowered(ctx, inst) {
+            if !leaves_flags_alone(ctx, has_bmi2, inst) {
+                (cf, of) = (None, None);
+            }
+            continue;
+        }
+        let carry_in = matches!(
+            dfg.insts[inst].opcode(),
+            Opcode::UaddOverflowCin | Opcode::UsubOverflowBin
+        )
+        .then(|| dfg.inst_args(inst)[2]);
+        let carry_out = dfg.inst_results(inst)[1];
+        let lane_op = has_adx && is_lane_op(f, inst);
+        let continued = [(cf, Lane::Cf), (of, Lane::Of)]
+            .into_iter()
+            .find_map(|(open, lane)| {
+                let (carry, chain) = open?;
+                (Some(carry) == carry_in).then_some((chain, lane))
+            })
+            .filter(|&(chain, _)| chains[chain].lane.is_none() || lane_op);
+        if let Some((chain, lane)) = continued {
+            chains[chain].ops.push(inst);
+            chains[chain].lane_ready &= lane_op;
+            consumed.extend(carry_in);
+            plans.insert(
+                inst,
+                CarryPlan {
+                    fused_in: true,
+                    ..CarryPlan::default()
+                },
+            );
+            match lane {
+                Lane::Cf => cf = Some((carry_out, chain)),
+                Lane::Of => of = Some((carry_out, chain)),
+            }
+            continue;
+        }
+        let id = chains.len();
+        chains.push(Chain {
+            ops: vec![inst],
+            lane_ready: lane_op && carry_in.is_none(),
+            lane: None,
+        });
+        plans.insert(inst, CarryPlan::default());
+        match cf {
+            Some((_, other))
+                if of.is_none()
+                    && chains[id].lane_ready
+                    && chains[other].lane_ready
+                    && chains[other].lane.is_none() =>
+            {
+                chains[other].lane = Some(Lane::Cf);
+                chains[id].lane = Some(Lane::Of);
+                of = Some((carry_out, id));
+            }
+            _ => (cf, of) = (Some((carry_out, id)), None),
+        }
+    }
+    for chain in &chains {
+        if let Some(lane) = chain.lane {
+            for (index, op) in chain.ops.iter().enumerate() {
+                let plan = plans.get_mut(op).unwrap();
+                plan.lane = Some(lane);
+                plan.clear = index == 0 && lane == Lane::Cf;
+            }
+        }
+    }
+    for (&inst, plan) in plans.iter_mut() {
+        let carry = dfg.inst_results(inst)[1];
+        plan.keep_out = !(ctx.value_is_unused(carry)
+            || (ctx.value_is_used_once(carry) && consumed.contains(&carry)));
+    }
+    plans
 }
