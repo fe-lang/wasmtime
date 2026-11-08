@@ -2839,6 +2839,14 @@
 
 ;; Rules for `bswap` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; With MOVBE, a load whose bytes are swapped loads them swapped.
+(rule 1 (lower (bswap $I32 (sinkable_load load)))
+      (if-let true (has_movbe))
+      (x64_movbe_load $I32 (sink_load load)))
+(rule 1 (lower (bswap $I64 (sinkable_load load)))
+      (if-let true (has_movbe))
+      (x64_movbe_load $I64 (sink_load load)))
+
 ;; x64 bswap instruction is only for 32- or 64-bit swaps
 ;; implement the 16-bit swap as a rotl by 8
 (rule (lower (bswap $I16 src))
@@ -3384,6 +3392,14 @@
                     offset))
       (side_effect
        (x64_movrm ty (to_amode flags address offset) value)))
+
+;; With MOVBE, a store of a value whose bytes are swapped stores them swapped.
+(rule 3 (lower (store (little_or_native_endian flags) (bswap $I32 value) address offset))
+      (if-let true (has_movbe))
+      (side_effect (x64_movbe_store $I32 (to_amode flags address offset) value)))
+(rule 3 (lower (store (little_or_native_endian flags) (bswap $I64 value) address offset))
+      (if-let true (has_movbe))
+      (side_effect (x64_movbe_store $I64 (to_amode flags address offset) value)))
 
 ;; Explicit 8/16/32-bit opcodes.
 (rule (lower (istore8 (little_or_native_endian flags) value address offset))
