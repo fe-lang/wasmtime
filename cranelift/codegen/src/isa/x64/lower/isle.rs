@@ -13,8 +13,7 @@ use crate::ir::condcodes::{FloatCC, IntCC};
 use crate::ir::immediates::*;
 use crate::ir::types::*;
 use crate::ir::{
-    BlockCall, Function, Inst, InstructionData, LibCall, Opcode, TrapCode, Value, ValueDef,
-    ValueList,
+    BlockCall, Inst, InstructionData, LibCall, Opcode, TrapCode, Value, ValueDef, ValueList,
 };
 use crate::isa::x64::X64Backend;
 use crate::isa::x64::inst::{ReturnCallInfo, args::*, regs};
@@ -608,7 +607,7 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         }
         let mut between = f.layout.next_inst(producer)?;
         while between != inst {
-            if !leaves_flags_alone(f, between) {
+            if !leaves_flags_alone(self.lower_ctx, between) {
                 return None;
             }
             between = f.layout.next_inst(between)?;
@@ -627,7 +626,7 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         }
         let mut user = f.layout.next_inst(inst)?;
         while !f.dfg.inst_values(user).any(|arg| arg == carry) {
-            if !leaves_flags_alone(f, user) {
+            if !leaves_flags_alone(self.lower_ctx, user) {
                 return None;
             }
             user = f.layout.next_inst(user)?;
@@ -2164,11 +2163,22 @@ const I8X16_USHR_MASKS: [u8; 128] = [
     0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
 ];
 
-/// Whether the lowering of `inst` never writes the flags: loads, stores
-/// that are not a load-op-store, extensions to 64 bits or fewer, and the
-/// register shuffles of `ireduce`, `iconcat` and `isplit`. A zero constant
-/// is an `xor`, and a 128-bit extension zeroes or shifts its high half.
-fn leaves_flags_alone(f: &Function, inst: Inst) -> bool {
+/// Whether the lowering of `inst` never writes the flags: nothing for an
+/// instruction without side effects whose results are unused, and otherwise
+/// loads, stores that are not a load-op-store, extensions to 64 bits or
+/// fewer, and the register shuffles of `ireduce`, `iconcat` and `isplit`. A
+/// zero constant is an `xor`, and a 128-bit extension zeroes or shifts its
+/// high half.
+fn leaves_flags_alone(ctx: &Lower<MInst>, inst: Inst) -> bool {
+    let f = ctx.f;
+    if !has_lowering_side_effect(f, inst)
+        && f.dfg
+            .inst_results(inst)
+            .iter()
+            .all(|&result| ctx.value_is_unused(result))
+    {
+        return true;
+    }
     let dfg = &f.dfg;
     match dfg.insts[inst] {
         InstructionData::UnaryImm {

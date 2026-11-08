@@ -486,3 +486,33 @@ block0(v0: i64, v1: i64):
 ;   popq %rbp
 ;   retq
 
+
+function %carry_past_dead_overflow(i64, i64, i64, i64) -> i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4, v5 = uadd_overflow v0, v1
+    v6, v7 = uadd_overflow v2, v3
+    v8, v9 = uadd_overflow_cin v2, v3, v5
+    return v4, v8
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rdi, %rax
+;   addq %rsi, %rax
+;   adcq %rcx, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rdi, %rax
+;   addq %rsi, %rax
+;   adcq %rcx, %rdx
+;   popq %rbp
+;   retq
+
