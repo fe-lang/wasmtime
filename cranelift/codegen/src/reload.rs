@@ -9,7 +9,10 @@
 //! its use. A load's address is known early, so the new load runs ahead of the
 //! computation that needs it. A value a store wrote is in memory too, but
 //! loading it back puts the store's forwarding latency on the path from the
-//! value to its use, which slowed a latency-bound hash (BLAKE2) twofold.
+//! value to its use, which slowed a latency-bound hash (BLAKE2) twofold. For
+//! the same reason a load of a place its block stored to earlier is no home:
+//! the new load's address is ready long before the store, so the core runs
+//! the load first and must flush when the store turns out to write its bytes.
 //!
 //! Each block is scanned in order, tracking where in memory each value is. An
 //! access's place is a base, a value or a stack slot, and a range of byte
@@ -220,6 +223,8 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
     let mut position_of = SecondaryMap::<Inst, u32>::new();
     let mut uses = FxHashMap::<Value, Vec<u32>>::default();
     let mut homes = FxHashMap::<Value, Home>::default();
+    // The places the block has stored to so far.
+    let mut stored = Vec::<Place>::new();
     let mut reloadable = FxHashMap::<(Value, u32), Home>::default();
     let mut pressure = Vec::new();
     let mut reloads = Vec::new();
@@ -230,6 +235,7 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
         let count = insts.len() as u32;
         uses.clear();
         homes.clear();
+        stored.clear();
         reloadable.clear();
         reloads.clear();
 
@@ -257,8 +263,12 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                     let result = func.dfg.first_result(inst);
                     let ty = func.dfg.value_type(result);
                     let arg = func.dfg.resolve_aliases(arg);
-                    if let Some(size) = load_size(opcode, ty) {
-                        let place = place(func, arg, offset, size);
+                    if let Some(size) = load_size(opcode, ty)
+                        && let place = place(func, arg, offset, size)
+                        && !stored
+                            .iter()
+                            .any(|written| may_overlap(written, &place, &escaped))
+                    {
                         homes.insert(
                             result,
                             Home {
@@ -293,6 +303,7 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                     };
                     let place = place(func, addr, offset, size);
                     homes.retain(|_, home| !may_overlap(&home.place, &place, &escaped));
+                    stored.push(place);
                 }
                 ref data => {
                     let opcode = data.opcode();
