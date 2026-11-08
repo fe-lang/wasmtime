@@ -2292,8 +2292,9 @@ impl CarryState {
 
 /// Values whose definitions lower to nothing that writes the flags only
 /// because of how every use lowers: zero constants that are only carry op
-/// addends, an immediate or a `mov` there, and, with BMI2, 128-bit
-/// extensions that only widening multiplies (`mulx`) absorb.
+/// addends, an immediate or a `mov` there; with BMI2, 128-bit extensions
+/// that only widening multiplies (`mulx`) absorb; and address sums that only
+/// loads and stores take, which fold them into their addressing modes.
 struct FlagFree {
     has_bmi2: bool,
     values: FxHashSet<Value>,
@@ -2322,6 +2323,12 @@ impl FlagFree {
                         opcode: Opcode::Uextend,
                         arg,
                     } => has_bmi2 && dfg.ctrl_typevar(def) == I128 && dfg.value_type(arg) == I64,
+                    // A load or store folds an address sum into its
+                    // addressing mode (`to_amode`).
+                    InstructionData::Binary {
+                        opcode: Opcode::Iadd,
+                        ..
+                    } => dfg.ctrl_typevar(def) == I64,
                     _ => false,
                 })
         };
@@ -2339,11 +2346,21 @@ impl FlagFree {
                     .value_def(arg)
                     .inst()
                     .is_some_and(|def| dfg.insts[def].opcode() == Opcode::Iconst);
+                let address = matches!(
+                    dfg.value_def(arg).inst().map(|def| dfg.insts[def].opcode()),
+                    Some(Opcode::Iadd)
+                );
                 let absorbed = if constant {
                     is_carry_op(f, inst)
                         && dfg.ctrl_typevar(inst).bits() <= 64
                         && index == 1
                         && args.iter().filter(|&&other| other == arg).count() == 1
+                } else if address {
+                    match dfg.insts[inst] {
+                        InstructionData::Load { .. } => index == 0,
+                        InstructionData::Store { .. } => index == 1,
+                        _ => false,
+                    }
                 } else {
                     is_widening_mul(f, inst)
                 };
