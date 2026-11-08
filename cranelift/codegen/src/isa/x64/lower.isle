@@ -294,8 +294,11 @@
 (rule 0 (lane_clear _ x) x)
 
 ;; The addend of a lane op. A constant moves into a register with `mov`,
-;; which leaves the flags alone, where `imm` zeroes with `xor`.
+;; which leaves the flags alone, where `imm` zeroes with `xor`; below 2^32
+;; a `movl`, which zero-extends, is half the size.
 (decl lane_operand (Value) GprMem64)
+(rule 2 (lane_operand (u64_from_iconst (u32_from_u64 c)))
+      (x64_movl_oi c))
 (rule 1 (lane_operand (u64_from_iconst c))
       (x64_movabsq_oi c))
 (rule 0 (lane_operand y) y)
