@@ -427,6 +427,82 @@
         (overflow XReg (rv_srli (rv_and signs_differ lhs_sign_changed) (imm12_const 63))))
     (output_pair diff overflow)))
 
+;;;; Rules for `*_overflow_cin` and `*_overflow_bin` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; The carry (or borrow) in is 1 exactly when its byte is nonzero. Each 64-bit
+;; word adds (or subtracts) it after the other operand, and carries out if
+;; either step wrapped.
+
+(rule 0 (lower (uadd_overflow_cin $I64 x y c_in))
+  (let ((sum ValueRegs (add_with_carry x y (carry_in c_in))))
+    (output_pair (value_regs_get sum 0) (value_regs_get sum 1))))
+
+(rule 1 (lower (uadd_overflow_cin $I128 x y c_in))
+  (let ((low ValueRegs (add_with_carry (value_regs_get x 0) (value_regs_get y 0) (carry_in c_in)))
+        (high ValueRegs (add_with_carry (value_regs_get x 1) (value_regs_get y 1) (value_regs_get low 1))))
+    (output_pair (value_regs (value_regs_get low 0) (value_regs_get high 0))
+                 (value_regs_get high 1))))
+
+(rule 0 (lower (usub_overflow_bin $I64 x y b_in))
+  (let ((diff ValueRegs (sub_with_borrow x y (carry_in b_in))))
+    (output_pair (value_regs_get diff 0) (value_regs_get diff 1))))
+
+(rule 1 (lower (usub_overflow_bin $I128 x y b_in))
+  (let ((low ValueRegs (sub_with_borrow (value_regs_get x 0) (value_regs_get y 0) (carry_in b_in)))
+        (high ValueRegs (sub_with_borrow (value_regs_get x 1) (value_regs_get y 1) (value_regs_get low 1))))
+    (output_pair (value_regs (value_regs_get low 0) (value_regs_get high 0))
+                 (value_regs_get high 1))))
+
+;; A signed sum overflows when its operands share a sign the result lacks; a
+;; signed difference when its operands differ in sign and the result's sign
+;; differs from the minuend's. The carry or borrow in does not change either.
+
+(rule 0 (lower (sadd_overflow_cin $I64 x y c_in))
+  (let ((sum XReg (value_regs_get (add_with_carry x y (carry_in c_in)) 0)))
+    (output_pair sum (signed_add_overflow x y sum))))
+
+(rule 1 (lower (sadd_overflow_cin $I128 x y c_in))
+  (let ((low ValueRegs (add_with_carry (value_regs_get x 0) (value_regs_get y 0) (carry_in c_in)))
+        (high XReg (value_regs_get (add_with_carry (value_regs_get x 1) (value_regs_get y 1) (value_regs_get low 1)) 0)))
+    (output_pair (value_regs (value_regs_get low 0) high)
+                 (signed_add_overflow (value_regs_get x 1) (value_regs_get y 1) high))))
+
+(rule 0 (lower (ssub_overflow_bin $I64 x y b_in))
+  (let ((diff XReg (value_regs_get (sub_with_borrow x y (carry_in b_in)) 0)))
+    (output_pair diff (signed_sub_overflow x y diff))))
+
+(rule 1 (lower (ssub_overflow_bin $I128 x y b_in))
+  (let ((low ValueRegs (sub_with_borrow (value_regs_get x 0) (value_regs_get y 0) (carry_in b_in)))
+        (high XReg (value_regs_get (sub_with_borrow (value_regs_get x 1) (value_regs_get y 1) (value_regs_get low 1)) 0)))
+    (output_pair (value_regs (value_regs_get low 0) high)
+                 (signed_sub_overflow (value_regs_get x 1) (value_regs_get y 1) high))))
+
+;; 1 when the carry's byte is nonzero, else 0.
+(decl carry_in (Value) XReg)
+(rule (carry_in carry) (rv_snez (zext carry)))
+
+;; `x + y + carry` and its carry out, for `carry` 0 or 1.
+(decl add_with_carry (XReg XReg XReg) ValueRegs)
+(rule (add_with_carry x y carry)
+  (let ((sum XReg (rv_add x y))
+        (total XReg (rv_add sum carry)))
+    (value_regs total (rv_or (rv_sltu sum x) (rv_sltu total sum)))))
+
+;; `x - y - borrow` and its borrow out, for `borrow` 0 or 1.
+(decl sub_with_borrow (XReg XReg XReg) ValueRegs)
+(rule (sub_with_borrow x y borrow)
+  (let ((diff XReg (rv_sub x y))
+        (total XReg (rv_sub diff borrow)))
+    (value_regs total (rv_or (rv_sltu x y) (rv_sltu diff borrow)))))
+
+(decl signed_add_overflow (XReg XReg XReg) XReg)
+(rule (signed_add_overflow x y sum)
+  (rv_srli (rv_and (rv_xor sum x) (rv_xor sum y)) (imm12_const 63)))
+
+(decl signed_sub_overflow (XReg XReg XReg) XReg)
+(rule (signed_sub_overflow x y diff)
+  (rv_srli (rv_and (rv_xor x y) (rv_xor x diff)) (imm12_const 63)))
+
 ;;;; Rules for umul_overflow ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (rule 0 (lower (umul_overflow $I64 x y))
