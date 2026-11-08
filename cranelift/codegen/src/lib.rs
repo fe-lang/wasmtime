@@ -92,6 +92,7 @@ mod isle_prelude;
 mod nan_canonicalization;
 mod opts;
 mod ranges;
+mod reload;
 mod remove_constant_phis;
 mod result;
 mod scoped_hash_map;

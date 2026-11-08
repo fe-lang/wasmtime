@@ -1,0 +1,455 @@
+test optimize precise-output
+set opt_level=speed
+target x86_64
+
+;; Sixteen loaded values summed and reused: past the sum, more are live than
+;; registers, so later uses load them again.
+
+function %reused_after_sum(i64) -> i64 {
+    ss0 = explicit_slot 128
+block0(v0: i64):
+    v1 = load.i64 notrap aligned v0+0
+    v2 = load.i64 notrap aligned v0+8
+    v3 = load.i64 notrap aligned v0+16
+    v4 = load.i64 notrap aligned v0+24
+    v5 = load.i64 notrap aligned v0+32
+    v6 = load.i64 notrap aligned v0+40
+    v7 = load.i64 notrap aligned v0+48
+    v8 = load.i64 notrap aligned v0+56
+    v9 = load.i64 notrap aligned v0+64
+    v10 = load.i64 notrap aligned v0+72
+    v11 = load.i64 notrap aligned v0+80
+    v12 = load.i64 notrap aligned v0+88
+    v13 = load.i64 notrap aligned v0+96
+    v14 = load.i64 notrap aligned v0+104
+    v15 = load.i64 notrap aligned v0+112
+    v16 = load.i64 notrap aligned v0+120
+    v17 = iadd v1, v2
+    v18 = iadd v17, v3
+    v19 = iadd v18, v4
+    v20 = iadd v19, v5
+    v21 = iadd v20, v6
+    v22 = iadd v21, v7
+    v23 = iadd v22, v8
+    v24 = iadd v23, v9
+    v25 = iadd v24, v10
+    v26 = iadd v25, v11
+    v27 = iadd v26, v12
+    v28 = iadd v27, v13
+    v29 = iadd v28, v14
+    v30 = iadd v29, v15
+    v31 = iadd v30, v16
+    v32 = stack_addr.i64 ss0
+    v33 = bxor v1, v31
+    store notrap aligned v33, v32+0
+    v34 = bxor v2, v31
+    store notrap aligned v34, v32+8
+    v35 = bxor v3, v31
+    store notrap aligned v35, v32+16
+    v36 = bxor v4, v31
+    store notrap aligned v36, v32+24
+    v37 = bxor v5, v31
+    store notrap aligned v37, v32+32
+    v38 = bxor v6, v31
+    store notrap aligned v38, v32+40
+    v39 = bxor v7, v31
+    store notrap aligned v39, v32+48
+    v40 = bxor v8, v31
+    store notrap aligned v40, v32+56
+    v41 = bxor v9, v31
+    store notrap aligned v41, v32+64
+    v42 = bxor v10, v31
+    store notrap aligned v42, v32+72
+    v43 = bxor v11, v31
+    store notrap aligned v43, v32+80
+    v44 = bxor v12, v31
+    store notrap aligned v44, v32+88
+    v45 = bxor v13, v31
+    store notrap aligned v45, v32+96
+    v46 = bxor v14, v31
+    store notrap aligned v46, v32+104
+    v47 = bxor v15, v31
+    store notrap aligned v47, v32+112
+    v48 = bxor v16, v31
+    store notrap aligned v48, v32+120
+    v49 = load.i64 notrap aligned v32+8
+    return v49
+}
+
+; function %reused_after_sum(i64) -> i64 fast {
+;     ss0 = explicit_slot 128
+;
+; block0(v0: i64):
+;     v1 = load.i64 notrap aligned v0
+;     v2 = load.i64 notrap aligned v0+8
+;     v17 = iadd v1, v2
+;     v3 = load.i64 notrap aligned v0+16
+;     v18 = iadd v17, v3
+;     v4 = load.i64 notrap aligned v0+24
+;     v19 = iadd v18, v4
+;     v5 = load.i64 notrap aligned v0+32
+;     v20 = iadd v19, v5
+;     v6 = load.i64 notrap aligned v0+40
+;     v21 = iadd v20, v6
+;     v7 = load.i64 notrap aligned v0+48
+;     v22 = iadd v21, v7
+;     v8 = load.i64 notrap aligned v0+56
+;     v23 = iadd v22, v8
+;     v9 = load.i64 notrap aligned v0+64
+;     v24 = iadd v23, v9
+;     v10 = load.i64 notrap aligned v0+72
+;     v25 = iadd v24, v10
+;     v11 = load.i64 notrap aligned v0+80
+;     v26 = iadd v25, v11
+;     v12 = load.i64 notrap aligned v0+88
+;     v27 = iadd v26, v12
+;     v13 = load.i64 notrap aligned v0+96
+;     v28 = iadd v27, v13
+;     v14 = load.i64 notrap aligned v0+104
+;     v29 = iadd v28, v14
+;     v15 = load.i64 notrap aligned v0+112
+;     v30 = iadd v29, v15
+;     v16 = load.i64 notrap aligned v0+120
+;     v31 = iadd v30, v16
+;     v33 = bxor v1, v31
+;     v32 = stack_addr.i64 ss0
+;     store notrap aligned v33, v32
+;     v34 = bxor v2, v31
+;     store notrap aligned v34, v32+8
+;     v35 = bxor v3, v31
+;     store notrap aligned v35, v32+16
+;     v36 = bxor v4, v31
+;     store notrap aligned v36, v32+24
+;     v37 = bxor v5, v31
+;     store notrap aligned v37, v32+32
+;     v38 = bxor v6, v31
+;     store notrap aligned v38, v32+40
+;     v39 = bxor v7, v31
+;     store notrap aligned v39, v32+48
+;     v40 = bxor v8, v31
+;     store notrap aligned v40, v32+56
+;     v41 = bxor v9, v31
+;     store notrap aligned v41, v32+64
+;     v42 = bxor v10, v31
+;     store notrap aligned v42, v32+72
+;     v54 = load.i64 notrap aligned v0+80
+;     v43 = bxor v54, v31
+;     store notrap aligned v43, v32+80
+;     v53 = load.i64 notrap aligned v0+88
+;     v44 = bxor v53, v31
+;     store notrap aligned v44, v32+88
+;     v52 = load.i64 notrap aligned v0+96
+;     v45 = bxor v52, v31
+;     store notrap aligned v45, v32+96
+;     v51 = load.i64 notrap aligned v0+104
+;     v46 = bxor v51, v31
+;     store notrap aligned v46, v32+104
+;     v50 = load.i64 notrap aligned v0+112
+;     v47 = bxor v50, v31
+;     store notrap aligned v47, v32+112
+;     v48 = bxor v16, v31
+;     store notrap aligned v48, v32+120
+;     v49 = load.i64 notrap aligned v32+8
+;     return v49
+; }
+
+;; A store over lane 12 keeps that lane's value; other lanes reload instead.
+
+function %store_over_one_lane(i64) -> i64 {
+    ss0 = explicit_slot 128
+block0(v0: i64):
+    v1 = load.i64 notrap aligned v0+0
+    v2 = load.i64 notrap aligned v0+8
+    v3 = load.i64 notrap aligned v0+16
+    v4 = load.i64 notrap aligned v0+24
+    v5 = load.i64 notrap aligned v0+32
+    v6 = load.i64 notrap aligned v0+40
+    v7 = load.i64 notrap aligned v0+48
+    v8 = load.i64 notrap aligned v0+56
+    v9 = load.i64 notrap aligned v0+64
+    v10 = load.i64 notrap aligned v0+72
+    v11 = load.i64 notrap aligned v0+80
+    v12 = load.i64 notrap aligned v0+88
+    v13 = load.i64 notrap aligned v0+96
+    v14 = load.i64 notrap aligned v0+104
+    v15 = load.i64 notrap aligned v0+112
+    v16 = load.i64 notrap aligned v0+120
+    v17 = iadd v1, v2
+    v18 = iadd v17, v3
+    v19 = iadd v18, v4
+    v20 = iadd v19, v5
+    v21 = iadd v20, v6
+    v22 = iadd v21, v7
+    v23 = iadd v22, v8
+    v24 = iadd v23, v9
+    v25 = iadd v24, v10
+    v26 = iadd v25, v11
+    v27 = iadd v26, v12
+    v28 = iadd v27, v13
+    v29 = iadd v28, v14
+    v30 = iadd v29, v15
+    v31 = iadd v30, v16
+    v32 = stack_addr.i64 ss0
+    v33 = bxor v1, v31
+    store notrap aligned v33, v32+0
+    v34 = bxor v2, v31
+    store notrap aligned v34, v32+8
+    store notrap aligned v18, v0+96
+    v35 = bxor v3, v31
+    store notrap aligned v35, v32+16
+    v36 = bxor v4, v31
+    store notrap aligned v36, v32+24
+    v37 = bxor v5, v31
+    store notrap aligned v37, v32+32
+    v38 = bxor v6, v31
+    store notrap aligned v38, v32+40
+    v39 = bxor v7, v31
+    store notrap aligned v39, v32+48
+    v40 = bxor v8, v31
+    store notrap aligned v40, v32+56
+    v41 = bxor v9, v31
+    store notrap aligned v41, v32+64
+    v42 = bxor v10, v31
+    store notrap aligned v42, v32+72
+    v43 = bxor v11, v31
+    store notrap aligned v43, v32+80
+    v44 = bxor v12, v31
+    store notrap aligned v44, v32+88
+    v45 = bxor v13, v31
+    store notrap aligned v45, v32+96
+    v46 = bxor v14, v31
+    store notrap aligned v46, v32+104
+    v47 = bxor v15, v31
+    store notrap aligned v47, v32+112
+    v48 = bxor v16, v31
+    store notrap aligned v48, v32+120
+    v49 = load.i64 notrap aligned v32+8
+    return v49
+}
+
+; function %store_over_one_lane(i64) -> i64 fast {
+;     ss0 = explicit_slot 128
+;
+; block0(v0: i64):
+;     v1 = load.i64 notrap aligned v0
+;     v2 = load.i64 notrap aligned v0+8
+;     v17 = iadd v1, v2
+;     v3 = load.i64 notrap aligned v0+16
+;     v18 = iadd v17, v3
+;     v4 = load.i64 notrap aligned v0+24
+;     v19 = iadd v18, v4
+;     v5 = load.i64 notrap aligned v0+32
+;     v20 = iadd v19, v5
+;     v6 = load.i64 notrap aligned v0+40
+;     v21 = iadd v20, v6
+;     v7 = load.i64 notrap aligned v0+48
+;     v22 = iadd v21, v7
+;     v8 = load.i64 notrap aligned v0+56
+;     v23 = iadd v22, v8
+;     v9 = load.i64 notrap aligned v0+64
+;     v24 = iadd v23, v9
+;     v10 = load.i64 notrap aligned v0+72
+;     v25 = iadd v24, v10
+;     v11 = load.i64 notrap aligned v0+80
+;     v26 = iadd v25, v11
+;     v12 = load.i64 notrap aligned v0+88
+;     v27 = iadd v26, v12
+;     v13 = load.i64 notrap aligned v0+96
+;     v28 = iadd v27, v13
+;     v14 = load.i64 notrap aligned v0+104
+;     v29 = iadd v28, v14
+;     v15 = load.i64 notrap aligned v0+112
+;     v30 = iadd v29, v15
+;     v16 = load.i64 notrap aligned v0+120
+;     v31 = iadd v30, v16
+;     v33 = bxor v1, v31
+;     v32 = stack_addr.i64 ss0
+;     store notrap aligned v33, v32
+;     v34 = bxor v2, v31
+;     store notrap aligned v34, v32+8
+;     store notrap aligned v18, v0+96
+;     v35 = bxor v3, v31
+;     store notrap aligned v35, v32+16
+;     v36 = bxor v4, v31
+;     store notrap aligned v36, v32+24
+;     v37 = bxor v5, v31
+;     store notrap aligned v37, v32+32
+;     v38 = bxor v6, v31
+;     store notrap aligned v38, v32+40
+;     v39 = bxor v7, v31
+;     store notrap aligned v39, v32+48
+;     v40 = bxor v8, v31
+;     store notrap aligned v40, v32+56
+;     v41 = bxor v9, v31
+;     store notrap aligned v41, v32+64
+;     v55 = load.i64 notrap aligned v0+72
+;     v42 = bxor v55, v31
+;     store notrap aligned v42, v32+72
+;     v54 = load.i64 notrap aligned v0+80
+;     v43 = bxor v54, v31
+;     store notrap aligned v43, v32+80
+;     v53 = load.i64 notrap aligned v0+88
+;     v44 = bxor v53, v31
+;     store notrap aligned v44, v32+88
+;     v45 = bxor v13, v31
+;     store notrap aligned v45, v32+96
+;     v52 = load.i64 notrap aligned v0+104
+;     v46 = bxor v52, v31
+;     store notrap aligned v46, v32+104
+;     v51 = load.i64 notrap aligned v0+112
+;     v47 = bxor v51, v31
+;     store notrap aligned v47, v32+112
+;     v50 = load.i64 notrap aligned v0+120
+;     v48 = bxor v50, v31
+;     store notrap aligned v48, v32+120
+;     v49 = load.i64 notrap aligned v32+8
+;     return v49
+; }
+
+;; A store through another pointer may write any lane: nothing reloads.
+
+function %store_through_unknown_pointer(i64, i64) -> i64 {
+    ss0 = explicit_slot 128
+block0(v0: i64, v1: i64):
+    v2 = load.i64 notrap aligned v0+0
+    v3 = load.i64 notrap aligned v0+8
+    v4 = load.i64 notrap aligned v0+16
+    v5 = load.i64 notrap aligned v0+24
+    v6 = load.i64 notrap aligned v0+32
+    v7 = load.i64 notrap aligned v0+40
+    v8 = load.i64 notrap aligned v0+48
+    v9 = load.i64 notrap aligned v0+56
+    v10 = load.i64 notrap aligned v0+64
+    v11 = load.i64 notrap aligned v0+72
+    v12 = load.i64 notrap aligned v0+80
+    v13 = load.i64 notrap aligned v0+88
+    v14 = load.i64 notrap aligned v0+96
+    v15 = load.i64 notrap aligned v0+104
+    v16 = load.i64 notrap aligned v0+112
+    v17 = load.i64 notrap aligned v0+120
+    v18 = iadd v2, v3
+    v19 = iadd v18, v4
+    v20 = iadd v19, v5
+    v21 = iadd v20, v6
+    v22 = iadd v21, v7
+    v23 = iadd v22, v8
+    v24 = iadd v23, v9
+    v25 = iadd v24, v10
+    v26 = iadd v25, v11
+    v27 = iadd v26, v12
+    v28 = iadd v27, v13
+    v29 = iadd v28, v14
+    v30 = iadd v29, v15
+    v31 = iadd v30, v16
+    v32 = iadd v31, v17
+    v33 = stack_addr.i64 ss0
+    store notrap aligned v2, v1
+    v34 = bxor v2, v32
+    store notrap aligned v34, v33+0
+    v35 = bxor v3, v32
+    store notrap aligned v35, v33+8
+    v36 = bxor v4, v32
+    store notrap aligned v36, v33+16
+    v37 = bxor v5, v32
+    store notrap aligned v37, v33+24
+    v38 = bxor v6, v32
+    store notrap aligned v38, v33+32
+    v39 = bxor v7, v32
+    store notrap aligned v39, v33+40
+    v40 = bxor v8, v32
+    store notrap aligned v40, v33+48
+    v41 = bxor v9, v32
+    store notrap aligned v41, v33+56
+    v42 = bxor v10, v32
+    store notrap aligned v42, v33+64
+    v43 = bxor v11, v32
+    store notrap aligned v43, v33+72
+    v44 = bxor v12, v32
+    store notrap aligned v44, v33+80
+    v45 = bxor v13, v32
+    store notrap aligned v45, v33+88
+    v46 = bxor v14, v32
+    store notrap aligned v46, v33+96
+    v47 = bxor v15, v32
+    store notrap aligned v47, v33+104
+    v48 = bxor v16, v32
+    store notrap aligned v48, v33+112
+    v49 = bxor v17, v32
+    store notrap aligned v49, v33+120
+    v50 = load.i64 notrap aligned v33+8
+    return v50
+}
+
+; function %store_through_unknown_pointer(i64, i64) -> i64 fast {
+;     ss0 = explicit_slot 128
+;
+; block0(v0: i64, v1: i64):
+;     v3 = load.i64 notrap aligned v0+8
+;     v4 = load.i64 notrap aligned v0+16
+;     v5 = load.i64 notrap aligned v0+24
+;     v6 = load.i64 notrap aligned v0+32
+;     v7 = load.i64 notrap aligned v0+40
+;     v8 = load.i64 notrap aligned v0+48
+;     v9 = load.i64 notrap aligned v0+56
+;     v10 = load.i64 notrap aligned v0+64
+;     v11 = load.i64 notrap aligned v0+72
+;     v12 = load.i64 notrap aligned v0+80
+;     v13 = load.i64 notrap aligned v0+88
+;     v14 = load.i64 notrap aligned v0+96
+;     v15 = load.i64 notrap aligned v0+104
+;     v16 = load.i64 notrap aligned v0+112
+;     v17 = load.i64 notrap aligned v0+120
+;     v2 = load.i64 notrap aligned v0
+;     store notrap aligned v2, v1
+;     v18 = iadd v2, v3
+;     v19 = iadd v18, v4
+;     v20 = iadd v19, v5
+;     v21 = iadd v20, v6
+;     v22 = iadd v21, v7
+;     v23 = iadd v22, v8
+;     v24 = iadd v23, v9
+;     v25 = iadd v24, v10
+;     v26 = iadd v25, v11
+;     v27 = iadd v26, v12
+;     v28 = iadd v27, v13
+;     v29 = iadd v28, v14
+;     v30 = iadd v29, v15
+;     v31 = iadd v30, v16
+;     v32 = iadd v31, v17
+;     v34 = bxor v2, v32
+;     v33 = stack_addr.i64 ss0
+;     store notrap aligned v34, v33
+;     v35 = bxor v3, v32
+;     store notrap aligned v35, v33+8
+;     v36 = bxor v4, v32
+;     store notrap aligned v36, v33+16
+;     v37 = bxor v5, v32
+;     store notrap aligned v37, v33+24
+;     v38 = bxor v6, v32
+;     store notrap aligned v38, v33+32
+;     v39 = bxor v7, v32
+;     store notrap aligned v39, v33+40
+;     v40 = bxor v8, v32
+;     store notrap aligned v40, v33+48
+;     v41 = bxor v9, v32
+;     store notrap aligned v41, v33+56
+;     v42 = bxor v10, v32
+;     store notrap aligned v42, v33+64
+;     v43 = bxor v11, v32
+;     store notrap aligned v43, v33+72
+;     v44 = bxor v12, v32
+;     store notrap aligned v44, v33+80
+;     v45 = bxor v13, v32
+;     store notrap aligned v45, v33+88
+;     v46 = bxor v14, v32
+;     store notrap aligned v46, v33+96
+;     v47 = bxor v15, v32
+;     store notrap aligned v47, v33+104
+;     v48 = bxor v16, v32
+;     store notrap aligned v48, v33+112
+;     v49 = bxor v17, v32
+;     store notrap aligned v49, v33+120
+;     v50 = load.i64 notrap aligned v33+8
+;     return v50
+; }
+
