@@ -79,6 +79,10 @@ const BIT_LITTLE_ENDIAN: u16 = 1 << 2;
 /// Load multi-byte values from memory in a big-endian format.
 const BIT_BIG_ENDIAN: u16 = 1 << 3;
 
+/// A load that reads memory again instead of keeping an earlier load's value
+/// in a register: redundant-load elimination leaves it alone.
+const BIT_RELOAD: u16 = 1 << 4;
+
 /// Trap code, if any, for this memory operation.
 const MASK_TRAP_CODE: u16 = ((1 << TRAP_CODE_BITS) - 1) << TRAP_CODE_OFFSET;
 const TRAP_CODE_BITS: u16 = 8;
@@ -101,7 +105,8 @@ pub struct MachMemFlags {
     // - Bit 1: readonly
     // - Bit 2: little-endian
     // - Bit 3: big-endian
-    // - Bits 4..6: unused
+    // - Bit 4: reload
+    // - Bits 5..6: unused
     // - Bits 7..14: trap code
     // - Bit 15: can_move
     bits: u16,
@@ -199,6 +204,16 @@ impl MachMemFlags {
         self.with_bit(BIT_READONLY)
     }
 
+    /// Test if the `reload` flag is set.
+    pub const fn reload(self) -> bool {
+        self.read_bit(BIT_RELOAD)
+    }
+
+    /// Set the `reload` flag, returning new flags.
+    pub const fn with_reload(self) -> Self {
+        self.with_bit(BIT_RELOAD)
+    }
+
     /// Get the trap code to report if this memory access traps.
     pub const fn trap_code(self) -> Option<TrapCode> {
         let byte = ((self.bits & MASK_TRAP_CODE) >> TRAP_CODE_OFFSET) as u8;
@@ -235,6 +250,9 @@ impl fmt::Display for MachMemFlags {
         }
         if self.can_move() {
             write!(f, " can_move")?;
+        }
+        if self.reload() {
+            write!(f, " reload")?;
         }
         if self.read_bit(BIT_BIG_ENDIAN) {
             write!(f, " big")?;
