@@ -45,12 +45,33 @@ use smallvec::{SmallVec, smallvec};
 const MAX_BLOCK_INSTS: u32 = 1000;
 
 /// The fewest instructions between a value's uses for the later one to
-/// reload it. A value used again within a few instructions stays in its
-/// register, and loading it there again costs an instruction when the use
-/// cannot take it from memory, as `mulx`'s multiplier in `rdx` cannot; that
-/// load also comes between the use and any reload it could take as an
+/// reload it, unless the later use takes it from memory (see
+/// `takes_from_memory`). A value used again within a few instructions stays
+/// in its register, and loading it there again costs an instruction when the
+/// use cannot take it from memory, as `mulx`'s multiplier in `rdx` cannot;
+/// that load also comes between the use and any reload it could take as an
 /// operand.
 const MIN_REUSE_DISTANCE: u32 = 16;
+
+/// Whether x64 lowering takes `value` from memory as an operand of `user`
+/// when a load of it comes right before: either operand of an addition or
+/// a bitwise operation, or a subtraction's second.
+fn takes_from_memory(func: &Function, user: Inst, value: Value) -> bool {
+    let InstructionData::Binary {
+        opcode,
+        args: [x, y],
+    } = func.dfg.insts[user]
+    else {
+        return false;
+    };
+    let [x, y] = [x, y].map(|arg| func.dfg.resolve_aliases(arg));
+    (x == value) != (y == value)
+        && match opcode {
+            Opcode::Iadd | Opcode::Band | Opcode::Bor | Opcode::Bxor => true,
+            Opcode::Isub => y == value,
+            _ => false,
+        }
+}
 
 /// What an access's address is relative to.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -455,11 +476,10 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                     Base::Slot(_) => true,
                 };
                 let busy = (before + 1..=at).any(|gap| pressure[gap as usize] > registers as i32);
-                if !based
-                    || !busy
-                    || at - before < MIN_REUSE_DISTANCE
-                    || i32::try_from(home.place.start).is_err()
-                {
+                let near = at - before < MIN_REUSE_DISTANCE
+                    && !(home.extend.is_none()
+                        && takes_from_memory(func, insts[at as usize], value));
+                if !based || !busy || near || i32::try_from(home.place.start).is_err() {
                     break;
                 }
                 for gap in before + 1..=at {
