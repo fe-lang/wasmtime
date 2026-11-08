@@ -44,6 +44,14 @@ use smallvec::{SmallVec, smallvec};
 /// slowly (pipeline resyncs went up sevenfold). Keccak's round is 250.
 const MAX_BLOCK_INSTS: u32 = 1000;
 
+/// The fewest instructions between a value's uses for the later one to
+/// reload it. A value used again within a few instructions stays in its
+/// register, and loading it there again costs an instruction when the use
+/// cannot take it from memory, as `mulx`'s multiplier in `rdx` cannot; that
+/// load also comes between the use and any reload it could take as an
+/// operand.
+const MIN_REUSE_DISTANCE: u32 = 16;
+
 /// What an access's address is relative to.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Base {
@@ -447,7 +455,11 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                     Base::Slot(_) => true,
                 };
                 let busy = (before + 1..=at).any(|gap| pressure[gap as usize] > registers as i32);
-                if !based || !busy || i32::try_from(home.place.start).is_err() {
+                if !based
+                    || !busy
+                    || at - before < MIN_REUSE_DISTANCE
+                    || i32::try_from(home.place.start).is_err()
+                {
                     break;
                 }
                 for gap in before + 1..=at {
