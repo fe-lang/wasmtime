@@ -1,12 +1,15 @@
 //! Reloading values from memory where registers run out.
 //!
-//! A value that a load read, or that a store wrote, stays in memory until
-//! something may write over it. Where more values are live than the target
+//! A value that a load read stays in memory until something may write over
+//! it. Where more values are live than the target
 //! has registers, the register allocator spills some of them: a store to the
 //! stack and a load before each later use. A value still in memory needs
 //! neither. Loading it again from where it is, right before a later use, ends
 //! its live range at an earlier use, and lowering can merge the new load into
-//! its use.
+//! its use. A load's address is known early, so the new load runs ahead of the
+//! computation that needs it. A value a store wrote is in memory too, but
+//! loading it back puts the store's forwarding latency on the path from the
+//! value to its use, which slowed a latency-bound hash (BLAKE2) twofold.
 //!
 //! Each block is scanned in order, tracking where in memory each value is. An
 //! access's place is a base, a value or a stack slot, and a range of byte
@@ -26,6 +29,7 @@ use crate::ir::{
 };
 use crate::packed_option::PackedOption;
 use alloc::vec::Vec;
+use smallvec::{SmallVec, smallvec};
 
 /// What an access's address is relative to.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -144,36 +148,28 @@ fn escaped_slots(func: &Function) -> EntitySet<StackSlot> {
     let mut escaped = EntitySet::new();
     for block in func.layout.blocks() {
         for inst in func.layout.block_insts(block) {
-            let data = &func.dfg.insts[inst];
-            let address = match *data {
-                InstructionData::Load { arg, .. } => Some(arg),
+            let operands: SmallVec<[Value; 4]> = match func.dfg.insts[inst] {
+                InstructionData::Load { .. } => continue,
                 InstructionData::Store {
-                    args: [_, addr], ..
-                } => Some(addr),
-                _ => None,
-            };
-            let offsets = matches!(
-                *data,
+                    args: [value, _], ..
+                } => smallvec![value],
+                // A constant offset from a slot's address is an address in the
+                // slot, whose own uses count.
                 InstructionData::Binary {
                     opcode: Opcode::Iadd,
                     ..
-                }
-            );
-            for value in func.dfg.inst_values(inst) {
-                if Some(value) == address {
+                } if matches!(
+                    place(func, func.dfg.first_result(inst), Offset32::new(0), 0).base,
+                    Base::Slot(_)
+                ) =>
+                {
                     continue;
                 }
+                _ => func.dfg.inst_values(inst).collect(),
+            };
+            for value in operands {
                 if let Base::Slot(slot) = place(func, value, Offset32::new(0), 0).base {
-                    // A constant offset from the slot's address is an address in
-                    // it, whose own uses count.
-                    let constant_offset = offsets
-                        && matches!(
-                            place(func, func.dfg.first_result(inst), Offset32::new(0), 0).base,
-                            Base::Slot(_)
-                        );
-                    if !constant_offset {
-                        escaped.insert(slot);
-                    }
+                    escaped.insert(slot);
                 }
             }
         }
@@ -260,6 +256,7 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                 } => {
                     let result = func.dfg.first_result(inst);
                     let ty = func.dfg.value_type(result);
+                    let arg = func.dfg.resolve_aliases(arg);
                     if let Some(size) = load_size(opcode, ty) {
                         let place = place(func, arg, offset, size);
                         homes.insert(
@@ -278,10 +275,9 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                 InstructionData::Store {
                     opcode,
                     args: [value, addr],
-                    flags,
                     offset,
+                    ..
                 } => {
-                    let value = func.dfg.resolve_aliases(value);
                     let ty = func.dfg.value_type(value);
                     let size = match opcode {
                         Opcode::Store => ty.bytes(),
@@ -297,19 +293,6 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                     };
                     let place = place(func, addr, offset, size);
                     homes.retain(|_, home| !may_overlap(&home.place, &place, &escaped));
-                    if opcode == Opcode::Store && load_size(Opcode::Load, ty).is_some() {
-                        homes.insert(
-                            value,
-                            Home {
-                                place,
-                                opcode: Opcode::Load,
-                                addr,
-                                flags,
-                                offset,
-                                ty,
-                            },
-                        );
-                    }
                 }
                 ref data => {
                     let opcode = data.opcode();
