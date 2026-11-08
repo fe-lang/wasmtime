@@ -1,0 +1,43 @@
+test interpret
+test run
+set enable_llvm_abi_extensions=true
+target x86_64
+
+; Each carry in comes straight from the limb before, so the flags carry it.
+
+function %add_three_limbs(i64, i64, i64, i64, i64, i64) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v3
+    v8, v9 = uadd_overflow_cin v1, v4, v7
+    v10, v11 = uadd_overflow_cin v2, v5, v9
+    v12 = bxor v6, v8
+    v13 = bxor v12, v10
+    return v13, v11
+}
+; run: %add_three_limbs(-1, -1, -1, 1, 0, 0) == [0, 1]
+; run: %add_three_limbs(-1, 0, 5, 1, 0, 0) == [4, 0]
+; run: %add_three_limbs(-1, -1, 5, 1, 0, 0) == [6, 0]
+; run: %add_three_limbs(1, 2, 3, 4, 5, 6) == [11, 0]
+
+function %sub_three_limbs(i64, i64, i64, i64, i64, i64) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = usub_overflow v0, v3
+    v8, v9 = usub_overflow_bin v1, v4, v7
+    v10, v11 = usub_overflow_bin v2, v5, v9
+    v12 = bxor v6, v8
+    v13 = bxor v12, v10
+    return v13, v11
+}
+; run: %sub_three_limbs(0, 0, 0, 1, 0, 0) == [-1, 1]
+; run: %sub_three_limbs(0, 0, 5, 1, 0, 0) == [4, 0]
+; run: %sub_three_limbs(5, 6, 7, 1, 2, 3) == [4, 0]
+
+function %add_two_i128_limbs(i128, i128, i128, i128) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i128, v3: i128):
+    v4, v5 = uadd_overflow v0, v2
+    v6, v7 = uadd_overflow_cin v1, v3, v5
+    v8 = bxor v4, v6
+    return v8, v7
+}
+; run: %add_two_i128_limbs(-1, -1, 1, 0) == [0, 1]
+; run: %add_two_i128_limbs(-1, 0, 1, 0) == [1, 0]
