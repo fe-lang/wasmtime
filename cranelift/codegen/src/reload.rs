@@ -18,8 +18,9 @@
 //! access's place is a base, a value or a stack slot, and a range of byte
 //! offsets from it. Two places with one base and disjoint ranges never
 //! overlap, nor do two stack slots, nor a stack slot whose address only ever
-//! reaches the addresses of loads and stores and a place based on a value.
-//! Calls cannot reach such a stack slot either. Then each value's uses, from
+//! reaches the addresses of loads and stores (or the arguments of C memory
+//! routines) and a place based on a value. Other calls cannot reach such a
+//! stack slot either. Then each value's uses, from
 //! its last, load it again while more values are live between that use and
 //! the one before it than the target has registers, and the address to load
 //! from is live there anyway.
@@ -28,7 +29,8 @@ use crate::FxHashMap;
 use crate::entity::{EntitySet, SecondaryMap};
 use crate::ir::immediates::Offset32;
 use crate::ir::{
-    Block, Function, Inst, InstructionData, MemFlags, Opcode, StackSlot, Type, Value, ValueDef,
+    Block, ExternalName, Function, Inst, InstructionData, LibCall, MemFlags, Opcode, StackSlot,
+    Type, Value, ValueDef,
 };
 use crate::packed_option::PackedOption;
 use alloc::vec::Vec;
@@ -153,12 +155,30 @@ fn may_overlap(a: &Place, b: &Place, escaped: &EntitySet<StackSlot>) -> bool {
     }
 }
 
+/// Whether `inst` calls a C memory routine (`memcpy`, `memmove`, `memset`
+/// or `memcmp`), which accesses the memory its arguments point to during the
+/// call and keeps no pointer.
+fn memory_libcall(func: &Function, inst: Inst) -> bool {
+    let InstructionData::Call { func_ref, .. } = func.dfg.insts[inst] else {
+        return false;
+    };
+    matches!(
+        func.dfg.ext_funcs[func_ref].name,
+        ExternalName::LibCall(
+            LibCall::Memcpy | LibCall::Memmove | LibCall::Memset | LibCall::Memcmp
+        )
+    )
+}
+
 /// The stack slots whose address reaches anything but the address of a load
-/// or a store, through constant offsets.
+/// or a store, or an argument of a C memory routine, through constant offsets.
 fn escaped_slots(func: &Function) -> EntitySet<StackSlot> {
     let mut escaped = EntitySet::new();
     for block in func.layout.blocks() {
         for inst in func.layout.block_insts(block) {
+            if memory_libcall(func, inst) {
+                continue;
+            }
             let operands: SmallVec<[Value; 4]> = match func.dfg.insts[inst] {
                 InstructionData::Load { .. } => continue,
                 InstructionData::Store {
@@ -320,9 +340,25 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                     let opcode = data.opcode();
                     if opcode.can_store() || opcode.is_call() || opcode.other_side_effects() {
                         // Nothing else reaches a stack slot whose address only
-                        // loads and stores use.
+                        // loads and stores use, but a memory routine reaches
+                        // the slots its arguments point into.
+                        let reached: SmallVec<[StackSlot; 4]> = if memory_libcall(func, inst) {
+                            func.dfg
+                                .inst_args(inst)
+                                .iter()
+                                .filter_map(|&arg| {
+                                    match place(func, arg, Offset32::new(0), 0).base {
+                                        Base::Slot(slot) => Some(slot),
+                                        Base::Value(_) => None,
+                                    }
+                                })
+                                .collect()
+                        } else {
+                            SmallVec::new()
+                        };
                         homes.retain(|_, home| {
-                            matches!(home.place.base, Base::Slot(slot) if !escaped.contains(slot))
+                            matches!(home.place.base, Base::Slot(slot)
+                                if !escaped.contains(slot) && !reached.contains(&slot))
                         });
                     }
                 }
