@@ -2245,6 +2245,9 @@ impl CarryState {
 struct FlagFree {
     has_bmi2: bool,
     values: FxHashSet<Value>,
+    /// The carry ins of carry ops: a chain is in flight while its last
+    /// carry out is one.
+    carry_ins: FxHashSet<Value>,
 }
 
 impl FlagFree {
@@ -2297,7 +2300,20 @@ impl FlagFree {
                 }
             }
         }
-        Self { has_bmi2, values }
+        let carry_ins = insts()
+            .filter(|&inst| {
+                matches!(
+                    dfg.insts[inst].opcode(),
+                    Opcode::UaddOverflowCin | Opcode::UsubOverflowBin
+                )
+            })
+            .map(|inst| dfg.inst_args(inst)[2])
+            .collect();
+        Self {
+            has_bmi2,
+            values,
+            carry_ins,
+        }
     }
 }
 
@@ -2401,9 +2417,13 @@ fn carry_plans(
                     ..CarryPlan::default()
                 },
             );
+            let next = free
+                .carry_ins
+                .contains(&carry_out)
+                .then_some((carry_out, chain));
             match lane {
-                Lane::Cf => cf = Some((carry_out, chain)),
-                Lane::Of => of = Some((carry_out, chain)),
+                Lane::Cf => cf = next,
+                Lane::Of => of = next,
             }
             continue;
         }
@@ -2423,9 +2443,18 @@ fn carry_plans(
             {
                 chains[other].lane = Some(Lane::Cf);
                 chains[id].lane = Some(Lane::Of);
-                of = Some((carry_out, id));
+                of = free
+                    .carry_ins
+                    .contains(&carry_out)
+                    .then_some((carry_out, id));
             }
-            _ => (cf, of) = (Some((carry_out, id)), None),
+            _ => {
+                cf = free
+                    .carry_ins
+                    .contains(&carry_out)
+                    .then_some((carry_out, id));
+                of = None;
+            }
         }
     }
     for chain in &chains {
