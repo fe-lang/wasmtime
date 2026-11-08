@@ -26,8 +26,8 @@ use crate::trace;
 use crate::{LabelValueLoc, ValueLocRange};
 use crate::{machinst::*, trace_log_enabled};
 use regalloc2::{
-    Edit, Function as RegallocFunction, InstOrEdit, InstPosition, InstRange, Operand,
-    OperandConstraint, OperandKind, PRegSet, ProgPoint, RegClass,
+    Allocation, Edit, Function as RegallocFunction, InstOrEdit, InstPosition, InstRange, Operand,
+    OperandConstraint, OperandKind, PRegSet, ProgPoint, RegClass, SpillSlot,
 };
 
 use crate::HashMap;
@@ -724,6 +724,95 @@ impl<I: VCodeInst> VCode<I> {
             .collect();
 
         (clobbered_regs, function_calls)
+    }
+
+    /// Renumbers the spillslots in `regalloc`'s output by how many
+    /// instructions access them, the most-accessed highest, when the ABI
+    /// addresses higher spillslots in fewer bytes.
+    pub fn order_spillslots(&self, regalloc: &mut regalloc2::Output) {
+        if !I::ABIMachineSpec::prefers_high_spillslots() {
+            return;
+        }
+        // A value in a spillslot occupies it and the slots after it that its
+        // register class needs: each used slot starts a unit of that many
+        // slots, with a count of its accesses.
+        let mut units: Vec<Option<(usize, u32)>> = vec![None; regalloc.num_spillslots];
+        let mut access = |alloc: Allocation, class: RegClass| {
+            let Some(slot) = alloc.as_stack() else {
+                return true;
+            };
+            let size = self.spillslot_size(class);
+            let unit = units[slot.index()].get_or_insert((size, 0));
+            unit.1 += 1;
+            unit.0 == size
+        };
+        let consistent = self
+            .operands
+            .iter()
+            .zip(&regalloc.allocs)
+            .all(|(operand, alloc)| access(*alloc, operand.class()))
+            && regalloc.edits.iter().all(|(_, Edit::Move { from, to })| {
+                // regalloc2 moves no spillslot to another.
+                match (from.as_reg(), to.as_reg()) {
+                    (Some(reg), _) => access(*to, reg.class()),
+                    (None, Some(reg)) => access(*from, reg.class()),
+                    (None, None) => false,
+                }
+            })
+            && regalloc.debug_locations.iter().all(|(.., alloc)| {
+                alloc
+                    .as_stack()
+                    .is_none_or(|slot| units[slot.index()].is_some())
+            });
+        if !consistent {
+            return;
+        }
+
+        // Lay the units out down from the top in order of accesses (equal
+        // ones as regalloc2 placed them), each at the first free depth
+        // aligned to its size.
+        let mut order: Vec<usize> = (0..units.len())
+            .filter(|&slot| units[slot].is_some())
+            .collect();
+        order.sort_by_key(|&slot| core::cmp::Reverse((units[slot].unwrap().1, slot)));
+        let mut taken: Vec<bool> = vec![];
+        let mut first_free: FxHashMap<usize, usize> = FxHashMap::default();
+        let mut depths = vec![0; units.len()];
+        for &slot in &order {
+            let (size, _) = units[slot].unwrap();
+            let free = first_free.entry(size).or_default();
+            while taken.iter().skip(*free).take(size).any(|&taken| taken) {
+                *free += size;
+            }
+            depths[slot] = *free;
+            *free += size;
+            if taken.len() < *free {
+                taken.resize(*free, false);
+            }
+            taken[depths[slot]..*free].fill(true);
+        }
+        // A top aligned to every size keeps each unit aligned to its size.
+        let top = first_free
+            .keys()
+            .max()
+            .map_or(0, |&size| taken.len().next_multiple_of(size));
+
+        let renumber = |alloc: &mut Allocation| {
+            if let Some(slot) = alloc.as_stack() {
+                let (size, _) = units[slot.index()].unwrap();
+                let index = top - depths[slot.index()] - size;
+                *alloc = Allocation::stack(SpillSlot::new(index));
+            }
+        };
+        regalloc.allocs.iter_mut().for_each(renumber);
+        for (_, Edit::Move { from, to }) in &mut regalloc.edits {
+            renumber(from);
+            renumber(to);
+        }
+        for (.., alloc) in &mut regalloc.debug_locations {
+            renumber(alloc);
+        }
+        regalloc.num_spillslots = top;
     }
 
     /// Emit the instructions to a `MachBuffer`, containing fixed-up

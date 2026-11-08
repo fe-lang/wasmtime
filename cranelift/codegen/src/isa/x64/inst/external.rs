@@ -437,6 +437,8 @@ pub struct AsmCodeSink<'a> {
     pub incoming_arg_offset: i32,
     /// The value of `KEY_SLOT_OFFSET`.
     pub slot_offset: i32,
+    /// The distance from RSP up to RBP, when RBP is the frame pointer.
+    pub sp_to_fp: Option<i32>,
 }
 
 impl asm::CodeSink for AsmCodeSink<'_> {
@@ -481,6 +483,14 @@ impl asm::CodeSink for AsmCodeSink<'_> {
             offsets::KEY_INCOMING_ARG => self.incoming_arg_offset,
             offsets::KEY_SLOT_OFFSET => self.slot_offset,
             other => panic!("unknown \"known\" offset {other}"),
+        }
+    }
+
+    fn frame_pointer_offset(&self, offset: asm::KnownOffset) -> Option<i32> {
+        if offset == offsets::KEY_SLOT_OFFSET {
+            self.sp_to_fp
+        } else {
+            None
         }
     }
 }

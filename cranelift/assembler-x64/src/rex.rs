@@ -215,6 +215,15 @@ impl Disp {
         }
     }
 
+    /// The number of displacement bytes emitted.
+    pub fn bytes(self) -> u8 {
+        match self {
+            Disp::None => 0,
+            Disp::Imm8(_) => 1,
+            Disp::Imm32(_) => 4,
+        }
+    }
+
     /// Returns the two "mod" bits present at the upper bits of the mod/rm
     /// byte.
     pub fn m0d(self) -> u8 {

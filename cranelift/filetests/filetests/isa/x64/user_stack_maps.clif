@@ -42,9 +42,9 @@ block0:
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x30, %rsp
-;   movq %rbx, 0x10(%rsp)
-;   movq %r12, 0x18(%rsp)
-;   movq %r13, 0x20(%rsp)
+;   movq %rbx, -0x20(%rbp)
+;   movq %r12, -0x18(%rbp)
+;   movq %r13, -0x10(%rbp)
 ; block0:
 ;   uninit  %rdi
 ;   xorl %edi, %edi
@@ -67,9 +67,9 @@ block0:
 ;   ; UserStackMap { by_type: [(types::I32, CompoundBitSet {0})], sp_to_sized_stack_slots: None }
 ;   movq %r12, %rdi
 ;   call    User(userextname0)
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
+;   movq -0x20(%rbp), %rbx
+;   movq -0x18(%rbp), %r12
+;   movq -0x10(%rbp), %r13
 ;   addq $0x30, %rsp
 ;   popq %rbp
 ;   retq
@@ -79,30 +79,30 @@ block0:
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x30, %rsp
-;   movq %rbx, 0x10(%rsp)
-;   movq %r12, 0x18(%rsp)
-;   movq %r13, 0x20(%rsp)
-; block1: ; offset 0x17
+;   movq %rbx, -0x20(%rbp)
+;   movq %r12, -0x18(%rbp)
+;   movq %r13, -0x10(%rbp)
+; block1: ; offset 0x14
 ;   xorl %edi, %edi
 ;   movq %rdi, %r13
 ;   movl $1, %ebx
 ;   movl $2, %r12d
 ;   movl $0, (%rsp)
-;   movl $1, 4(%rsp)
-;   movl $2, 8(%rsp)
-;   callq 0x43 ; reloc_external CallPCRel4 u0:0 -4
+;   movl $1, -0x2c(%rbp)
+;   movl $2, -0x28(%rbp)
+;   callq 0x3e ; reloc_external CallPCRel4 u0:0 -4
 ;   movl $1, (%rsp)
-;   movl $2, 4(%rsp)
+;   movl $2, -0x2c(%rbp)
 ;   movq %r13, %rdi
-;   callq 0x5a ; reloc_external CallPCRel4 u0:0 -4
+;   callq 0x54 ; reloc_external CallPCRel4 u0:0 -4
 ;   movl $2, (%rsp)
 ;   movq %rbx, %rdi
-;   callq 0x69 ; reloc_external CallPCRel4 u0:0 -4
+;   callq 0x63 ; reloc_external CallPCRel4 u0:0 -4
 ;   movq %r12, %rdi
-;   callq 0x71 ; reloc_external CallPCRel4 u0:0 -4
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
+;   callq 0x6b ; reloc_external CallPCRel4 u0:0 -4
+;   movq -0x20(%rbp), %rbx
+;   movq -0x18(%rbp), %r12
+;   movq -0x10(%rbp), %r13
 ;   addq $0x30, %rsp
 ;   popq %rbp
 ;   retq
@@ -137,11 +137,11 @@ block0(v0: i8, v1: i16, v2: i32, v3: i64, v4: f32, v5: f64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0xb0, %rsp
-;   movq %rbx, 0x80(%rsp)
-;   movq %r12, 0x88(%rsp)
-;   movq %r13, 0x90(%rsp)
-;   movq %r14, 0x98(%rsp)
-;   movq %r15, 0xa0(%rsp)
+;   movq %rbx, -0x30(%rbp)
+;   movq %r12, -0x28(%rbp)
+;   movq %r13, -0x20(%rbp)
+;   movq %r14, -0x18(%rbp)
+;   movq %r15, -0x10(%rbp)
 ; block0:
 ;   movq %rdi, %r12
 ;   movb %sil, <offset:1>+(%rsp)
@@ -167,11 +167,11 @@ block0(v0: i8, v1: i16, v2: i32, v3: i64, v4: f32, v5: f64):
 ;   movq %r15, %rdx
 ;   movdqu <offset:1>+0x60(%rsp), %xmm0
 ;   movdqu <offset:1>+0x70(%rsp), %xmm1
-;   movq 0x80(%rsp), %rbx
-;   movq 0x88(%rsp), %r12
-;   movq 0x90(%rsp), %r13
-;   movq 0x98(%rsp), %r14
-;   movq 0xa0(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0xb0, %rsp
 ;   popq %rbp
 ;   retq
@@ -181,12 +181,12 @@ block0(v0: i8, v1: i16, v2: i32, v3: i64, v4: f32, v5: f64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0xb0, %rsp
-;   movq %rbx, 0x80(%rsp)
-;   movq %r12, 0x88(%rsp)
-;   movq %r13, 0x90(%rsp)
-;   movq %r14, 0x98(%rsp)
-;   movq %r15, 0xa0(%rsp)
-; block1: ; offset 0x33
+;   movq %rbx, -0x30(%rbp)
+;   movq %r12, -0x28(%rbp)
+;   movq %r13, -0x20(%rbp)
+;   movq %r14, -0x18(%rbp)
+;   movq %r15, -0x10(%rbp)
+; block1: ; offset 0x1f
 ;   movq %rdi, %r12
 ;   movb %sil, (%rsp)
 ;   movq %rsi, %rbx
@@ -195,12 +195,12 @@ block0(v0: i8, v1: i16, v2: i32, v3: i64, v4: f32, v5: f64):
 ;   movl %ecx, 0x10(%rsp)
 ;   movq %rcx, %r14
 ;   movss %xmm0, 0x14(%rsp)
-;   movdqu %xmm0, 0x60(%rsp)
+;   movdqu %xmm0, -0x50(%rbp)
 ;   movq %r8, 0x18(%rsp)
 ;   movq %r8, %r13
 ;   movsd %xmm1, 0x20(%rsp)
-;   movdqu %xmm1, 0x70(%rsp)
-;   callq 0x71 ; reloc_external CallPCRel4 u0:0 -4
+;   movdqu %xmm1, -0x40(%rbp)
+;   callq 0x5b ; reloc_external CallPCRel4 u0:0 -4
 ;   movq %r14, %rcx
 ;   movq %r12, %rdi
 ;   movl %ecx, (%rdi)
@@ -208,13 +208,13 @@ block0(v0: i8, v1: i16, v2: i32, v3: i64, v4: f32, v5: f64):
 ;   movq %r8, 8(%rdi)
 ;   movq %rbx, %rax
 ;   movq %r15, %rdx
-;   movdqu 0x60(%rsp), %xmm0
-;   movdqu 0x70(%rsp), %xmm1
-;   movq 0x80(%rsp), %rbx
-;   movq 0x88(%rsp), %r12
-;   movq 0x90(%rsp), %r13
-;   movq 0x98(%rsp), %r14
-;   movq 0xa0(%rsp), %r15
+;   movdqu -0x50(%rbp), %xmm0
+;   movdqu -0x40(%rbp), %xmm1
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0xb0, %rsp
 ;   popq %rbp
 ;   retq

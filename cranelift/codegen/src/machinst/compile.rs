@@ -75,6 +75,7 @@ pub fn compile<B: LowerBackend + TargetIsa>(
                 err
             })
             .expect("register allocation");
+        vcode.order_spillslots(&mut regalloc_ctx.output);
     }
 
     // Run the regalloc checker, if requested.
