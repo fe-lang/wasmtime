@@ -22,7 +22,9 @@ use crate::machinst::{
 use crate::settings::Flags;
 use crate::{CodegenError, CodegenResult, trace};
 use crate::{FxHashMap, FxHashSet};
+use alloc::boxed::Box;
 use alloc::vec::Vec;
+use core::any::Any;
 use core::fmt::Debug;
 use cranelift_control::ControlPlane;
 use smallvec::{SmallVec, smallvec};
@@ -190,6 +192,9 @@ pub struct Lower<'func, I: VCodeInst> {
 
     /// Current instruction as we scan during lowering.
     cur_inst: Option<Inst>,
+
+    /// Analysis a backend keeps across the instructions it lowers.
+    pub(crate) backend_state: Option<Box<dyn Any>>,
 
     /// Use-counts per SSA value, as counted in the input IR. These
     /// are "coarsened", in the abstract-interpretation sense: we only
@@ -500,6 +505,7 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
             inst_sunk: FxHashSet::default(),
             cur_scan_entry_color: None,
             cur_inst: None,
+            backend_state: None,
             ir_insts: vec![],
             try_call_rets,
             try_call_payloads,
