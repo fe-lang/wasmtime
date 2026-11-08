@@ -101,3 +101,57 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   popq %rbp
 ;   retq
 
+
+;; A chain whose last carry goes nowhere is over: the pair after it takes
+;; CF and OF afresh.
+function %pair_after_finished_chain(i64, i64, i64, i64, i64, i64) -> i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8, v9 = uadd_overflow_cin v2, v3, v7
+    v10, v11 = uadd_overflow v4, v6
+    v12, v13 = uadd_overflow v5, v8
+    v14, v15 = uadd_overflow_cin v12, v10, v11
+    v16, v17 = uadd_overflow_cin v14, v12, v13
+    return v10, v14, v16
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq <offset:0>+-0x10(%rbp), %r10
+;   addq %rdx, %rsi
+;   adcq %r8, %rcx
+;   uninit  %rax
+;   xorq %rax, %rax
+;   movq %r9, %rax
+;   adcxq %rsi, %rax
+;   adoxq %rcx, %r10
+;   movq %r10, %rdx
+;   adcxq %rax, %rdx
+;   movq %rdx, %rcx
+;   adoxq %r10, %rcx
+;   movq %rcx, (%rdi)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq 0x10(%rbp), %r10
+;   addq %rdx, %rsi
+;   adcq %r8, %rcx
+;   xorq %rax, %rax
+;   movq %r9, %rax
+;   adcxq %rsi, %rax
+;   adoxq %rcx, %r10
+;   movq %r10, %rdx
+;   adcxq %rax, %rdx
+;   movq %rdx, %rcx
+;   adoxq %r10, %rcx
+;   movq %rcx, (%rdi)
+;   popq %rbp
+;   retq
+
