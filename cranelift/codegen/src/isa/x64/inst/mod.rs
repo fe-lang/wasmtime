@@ -1601,6 +1601,10 @@ impl asm::AvailableFeatures for &EmitInfo {
     fn sha(&self) -> bool {
         self.isa_flags.has_sha()
     }
+
+    fn movbe(&self) -> bool {
+        self.isa_flags.has_movbe()
+    }
 }
 
 impl MachInstEmit for Inst {
