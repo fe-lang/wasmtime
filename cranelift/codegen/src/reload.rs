@@ -34,6 +34,14 @@ use crate::packed_option::PackedOption;
 use alloc::vec::Vec;
 use smallvec::{SmallVec, smallvec};
 
+/// The most instructions of a block whose values reload. BLAKE2's
+/// compression unrolls ten rounds into one block of 1,230 instructions, each
+/// message word used once a round; reloading the words there gained nothing
+/// but moved the register allocation of the whole function, and the
+/// function's single-round loop, whose own code barely changed, ran twice as
+/// slowly (pipeline resyncs went up sevenfold). Keccak's round is 250.
+const MAX_BLOCK_INSTS: u32 = 1000;
+
 /// What an access's address is relative to.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Base {
@@ -233,6 +241,9 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
         insts.clear();
         insts.extend(func.layout.block_insts(block));
         let count = insts.len() as u32;
+        if count > MAX_BLOCK_INSTS {
+            continue;
+        }
         uses.clear();
         homes.clear();
         stored.clear();
