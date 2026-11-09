@@ -61,9 +61,8 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq %rsp, %rbp
 ;   subq $0x10, %rsp
 ; block0:
-;   leaq <offset:1>+(%rsp), %r8
 ;   movq %rdi, <offset:1>+(%rsp)
-;   return_call_unknown 0(%r8) (0) tmp=%r11 %rdi=%rdi %rsi=%rsi %rdx=%rdx
+;   return_call_unknown rsp(0 + virtual offset) (0) tmp=%r11 %rdi=%rdi %rsi=%rsi %rdx=%rdx
 ;
 ; Disassembled:
 ; block0: ; offset 0x0
@@ -71,9 +70,8 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   movq %rsp, %rbp
 ;   subq $0x10, %rsp
 ; block1: ; offset 0x8
-;   leaq (%rsp), %r8
 ;   movq %rdi, (%rsp)
-;   movq (%r8), %r10 ; trap: heap_oob
+;   movq (%rsp), %r10
 ;   addq $0x10, %rsp
 ;   popq %rbp
 ;   jmpq *%r10
