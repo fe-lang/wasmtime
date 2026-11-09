@@ -1,0 +1,117 @@
+test compile precise-output
+set opt_level=speed
+target x86_64
+
+;; `v0` is used again after the `bxor`, `v4` is not: the `xor` writes `v4`'s
+;; register instead of a copy of `v0`.
+function %xor_into_dying_operand(i64, i64, i64, i64) {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+  v4 = band v1, v2
+  v5 = bxor v0, v4
+  store v5, v3
+  v6 = bor v0, v1
+  store v6, v3+8
+  return
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rsi, %r8
+;   andq %rdx, %r8
+;   xorq %rdi, %r8
+;   movq %r8, (%rcx)
+;   orq %rsi, %rdi
+;   movq %rdi, 8(%rcx)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rsi, %r8
+;   andq %rdx, %r8
+;   xorq %rdi, %r8
+;   movq %r8, (%rcx) ; trap: heap_oob
+;   orq %rsi, %rdi
+;   movq %rdi, 8(%rcx) ; trap: heap_oob
+;   popq %rbp
+;   retq
+
+;; The same for `imul`.
+function %imul_into_dying_operand(i64, i64, i64, i64) {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+  v4 = band v1, v2
+  v5 = imul v0, v4
+  store v5, v3
+  v6 = bor v0, v1
+  store v6, v3+8
+  return
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rsi, %r8
+;   andq %rdx, %r8
+;   imulq %rdi, %r8
+;   movq %r8, (%rcx)
+;   orq %rsi, %rdi
+;   movq %rdi, 8(%rcx)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rsi, %r8
+;   andq %rdx, %r8
+;   imulq %rdi, %r8
+;   movq %r8, (%rcx) ; trap: heap_oob
+;   orq %rsi, %rdi
+;   movq %rdi, 8(%rcx) ; trap: heap_oob
+;   popq %rbp
+;   retq
+
+;; A constant stays the immediate operand.
+function %xor_with_constant(i64, i64) {
+block0(v0: i64, v1: i64):
+  v2 = iconst.i64 0x1234
+  v3 = bxor v0, v2
+  store v3, v1
+  v4 = bor v0, v1
+  store v4, v1+8
+  return
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rdi, %r8
+;   xorq $0x1234, %r8
+;   movq %r8, (%rsi)
+;   orq %rsi, %rdi
+;   movq %rdi, 8(%rsi)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rdi, %r8
+;   xorq $0x1234, %r8
+;   movq %r8, (%rsi) ; trap: heap_oob
+;   orq %rsi, %rdi
+;   movq %rdi, 8(%rsi) ; trap: heap_oob
+;   popq %rbp
+;   retq
+
