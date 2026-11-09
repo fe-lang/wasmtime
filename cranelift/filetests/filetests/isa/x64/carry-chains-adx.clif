@@ -38,7 +38,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   movq %rsi, %rdx
 ;   mulxq %rcx, %r10, %rsi ;; implicit: %rdx
 ;   uninit  %rax
-;   xorq %rax, %rax
+;   xorl %eax, %eax
 ;   movq %r8, %rax
 ;   adcxq %r10, %rax
 ;   adoxq %rsi, %r9
@@ -71,7 +71,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   movq 0x10(%rbp), %r11
 ;   movq %rsi, %rdx
 ;   mulxq %rcx, %r10, %rsi
-;   xorq %rax, %rax
+;   xorl %eax, %eax
 ;   movq %r8, %rax
 ;   adcxq %r10, %rax
 ;   adoxq %rsi, %r9
@@ -114,7 +114,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   addq %rdx, %rsi
 ;   adcq %r8, %rcx
 ;   uninit  %rax
-;   xorq %rax, %rax
+;   xorl %eax, %eax
 ;   movq %r9, %rax
 ;   adcxq %rsi, %rax
 ;   adoxq %rcx, %r10
@@ -134,7 +134,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   movq 0x10(%rbp), %r10
 ;   addq %rdx, %rsi
 ;   adcq %r8, %rcx
-;   xorq %rax, %rax
+;   xorl %eax, %eax
 ;   movq %r9, %rax
 ;   adcxq %rsi, %rax
 ;   adoxq %rcx, %r10
@@ -145,7 +145,6 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   movq %rcx, (%rdi)
 ;   popq %rbp
 ;   retq
-
 
 ;; The address of the second word's load is a sum the load folds into its
 ;; addressing mode, so it leaves the first chain's carry in CF, and the two
@@ -175,7 +174,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ;   movq %rcx, %r8
 ;   movq (%rdi), %rax
 ;   uninit  %rcx
-;   xorq %rcx, %rcx
+;   xorl %ecx, %ecx
 ;   adcxq %rsi, %rax
 ;   movq 8(%rdi), %rcx
 ;   adoxq %rdx, %rcx
@@ -198,7 +197,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ; block1: ; offset 0x4
 ;   movq %rcx, %r8
 ;   movq (%rdi), %rax
-;   xorq %rcx, %rcx
+;   xorl %ecx, %ecx
 ;   adcxq %rsi, %rax
 ;   movq 8(%rdi), %rcx
 ;   adoxq %rdx, %rcx
@@ -211,6 +210,93 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ;   movzbq %sil, %rsi
 ;   addq %rsi, %rdx
 ;   addq %rcx, %rax
+;   popq %rbp
+;   retq
+
+
+;; A zero addend while both chains are in flight takes the pair's zero
+;; register, which the `xor` clearing the flags set: here the CF chain ends
+;; on the second product's high word before the OF chain adds it.
+function %zero_addend_in_pair(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6 = uextend.i128 v0
+    v7 = uextend.i128 v2
+    v8 = imul v6, v7
+    v9, v10 = isplit v8
+    v11, v12 = uadd_overflow v3, v9
+    v13, v14 = uadd_overflow v4, v10
+    v15 = uextend.i128 v1
+    v16 = imul v15, v7
+    v17, v18 = isplit v16
+    v19, v20 = uadd_overflow_cin v13, v17, v12
+    v21 = iconst.i64 0
+    v22, v23 = uadd_overflow_cin v18, v21, v20
+    v24, v25 = uadd_overflow_cin v5, v22, v14
+    v26 = uextend.i64 v25
+    return v11, v19, v24, v26
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %rbx, (%rsp)
+; block0:
+;   movq %rdx, %rbx
+;   movq <offset:0>+-0x10(%rbp), %r10
+;   movq %rsi, %rdx
+;   mulxq %rcx, %r11, %rsi ;; implicit: %rdx
+;   movq %rcx, %rdx
+;   uninit  %rcx
+;   xorl %ecx, %ecx
+;   movq %r8, %rax
+;   adcxq %r11, %rax
+;   adoxq %rsi, %r9
+;   movq %rdx, %rsi
+;   movq %rbx, %rdx
+;   mulxq %rsi, %r8, %rsi ;; implicit: %rdx
+;   movq %r9, %rdx
+;   adcxq %r8, %rdx
+;   adcxq %rcx, %rsi
+;   adoxq %rsi, %r10
+;   seto %cl
+;   movzbq %cl, %rcx
+;   movq %r10, (%rdi)
+;   movq %rcx, 8(%rdi)
+;   movq (%rsp), %rbx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %rbx, (%rsp)
+; block1: ; offset 0xc
+;   movq %rdx, %rbx
+;   movq 0x10(%rbp), %r10
+;   movq %rsi, %rdx
+;   mulxq %rcx, %r11, %rsi
+;   movq %rcx, %rdx
+;   xorl %ecx, %ecx
+;   movq %r8, %rax
+;   adcxq %r11, %rax
+;   adoxq %rsi, %r9
+;   movq %rdx, %rsi
+;   movq %rbx, %rdx
+;   mulxq %rsi, %r8, %rsi
+;   movq %r9, %rdx
+;   adcxq %r8, %rdx
+;   adcxq %rcx, %rsi
+;   adoxq %rsi, %r10
+;   seto %cl
+;   movzbq %cl, %rcx
+;   movq %r10, (%rdi)
+;   movq %rcx, 8(%rdi)
+;   movq (%rsp), %rbx
+;   addq $0x10, %rsp
 ;   popq %rbp
 ;   retq
 

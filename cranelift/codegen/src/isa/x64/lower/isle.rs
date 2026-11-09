@@ -651,6 +651,45 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         self.carry_plan(inst).clear.then_some(())
     }
 
+    fn lane_zero(&mut self, inst: Inst) -> Option<Gpr> {
+        let pair = self.carry_plan(inst).pair?;
+        let mut state = self
+            .lower_ctx
+            .backend_state
+            .take()
+            .and_then(|state| state.downcast::<CarryState>().ok())
+            .expect("carry_plan left the carry state");
+        let zero = match state.zeros.get(&pair) {
+            Some(&zero) => zero,
+            None => {
+                let zero = self.lower_ctx.alloc_tmp(types::I64).only_reg().unwrap();
+                let zero = WritableGpr::from_writable_reg(zero).unwrap();
+                state.zeros.insert(pair, zero);
+                zero
+            }
+        };
+        self.lower_ctx.backend_state = Some(state);
+        Some(zero.to_reg())
+    }
+
+    fn define_lane_zero(&mut self, zero: Gpr) {
+        let uninit = self.lower_ctx.alloc_tmp(types::I64).only_reg().unwrap();
+        let uninit = WritableGpr::from_writable_reg(uninit).unwrap();
+        self.lower_ctx
+            .emit(MInst::GprUninitializedValue { dst: uninit });
+        let write = Writable::from_reg(zero);
+        self.lower_ctx.emit(MInst::External {
+            inst: asm::inst::xorl_rm::new(
+                asm::Gpr::new(PairedGpr {
+                    read: uninit.to_reg(),
+                    write,
+                }),
+                uninit.to_reg(),
+            )
+            .into(),
+        });
+    }
+
     fn sinkable_load(&mut self, val: Value) -> Option<SinkableLoad> {
         if let Some(inst) = self.is_sinkable_inst(val) {
             if let Some((addr_input, offset)) =
@@ -2303,6 +2342,7 @@ impl IsleContext<'_, '_, MInst, X64Backend> {
             (state.plans, state.branch, state.carry_selects) =
                 carry_plans(self.lower_ctx, &state.free, &state.uses, has_adx, block);
             state.selects = select_reuse(self.lower_ctx, &state.free, block);
+            state.zeros.clear();
             state.block = Some(block);
         }
         let result = query(&state);
@@ -2327,6 +2367,8 @@ struct CarryState {
     carry_selects: FxHashMap<Inst, (Value, CC)>,
     /// The number of instructions using each value.
     uses: SecondaryMap<Value, u32>,
+    /// The zero registers of the block's interleaved pairs, by pair.
+    zeros: FxHashMap<usize, WritableGpr>,
 }
 
 impl CarryState {
@@ -2347,6 +2389,7 @@ impl CarryState {
             selects: FxHashSet::default(),
             carry_selects: FxHashMap::default(),
             uses,
+            zeros: FxHashMap::default(),
         }
     }
 }
@@ -2485,6 +2528,9 @@ struct CarryPlan {
     lane: Option<Lane>,
     /// The first op of an interleaved pair clears CF and OF first.
     clear: bool,
+    /// The interleaved pair of chains the op belongs to, whose zero register
+    /// the first op sets (`lane_zero`).
+    pair: Option<usize>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -2588,6 +2634,8 @@ fn carry_plans(
 ) {
     struct Chain {
         ops: Vec<Inst>,
+        /// The interleaved pair: the index of its CF chain.
+        pair: Option<usize>,
         /// Every op so far can be an `adcx` or `adox`, and the first takes
         /// no carry in.
         lane_ready: bool,
@@ -2652,6 +2700,7 @@ fn carry_plans(
         let id = chains.len();
         chains.push(Chain {
             ops: vec![inst],
+            pair: None,
             lane_ready: lane_op && carry_in.is_none(),
             lane: None,
         });
@@ -2665,6 +2714,8 @@ fn carry_plans(
             {
                 chains[other].lane = Some(Lane::Cf);
                 chains[id].lane = Some(Lane::Of);
+                chains[other].pair = Some(other);
+                chains[id].pair = Some(other);
                 of = free
                     .carry_ins
                     .contains(&carry_out)
@@ -2685,6 +2736,7 @@ fn carry_plans(
                 let plan = plans.get_mut(op).unwrap();
                 plan.lane = (!plain.contains(op)).then_some(lane);
                 plan.clear = index == 0 && lane == Lane::Cf;
+                plan.pair = chain.pair;
             }
         }
     }
