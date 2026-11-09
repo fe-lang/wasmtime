@@ -194,6 +194,8 @@ impl Context {
         if opt_level != OptLevel::None {
             self.egraph_pass(isa, ctrl_plane)?;
             if isa.triple().architecture == Architecture::X86_64 {
+                let moved = crate::chain_selects::hoist_chain_selects(&mut self.func);
+                log::debug!("hoisted {moved} instructions out of carry chains");
                 self.reload_values(isa)?;
             }
         }

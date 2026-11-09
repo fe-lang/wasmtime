@@ -83,6 +83,7 @@ pub use crate::machinst::{
 
 mod alias_analysis;
 mod branch_to_trap;
+mod chain_selects;
 mod constant_hash;
 mod context;
 mod ctxhash;
