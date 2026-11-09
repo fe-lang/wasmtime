@@ -178,20 +178,44 @@
 ;; set<cc> r8
 (decl construct_overflow_op_alu_128 (CC ProduceFlagsOp ChainFlagsOp Value Value) InstOutput)
 (rule (construct_overflow_op_alu_128 cc op1 op2 x y)
-      ;; Get the high/low registers for `x`.
       (let ((x_regs ValueRegs x)
             (x_lo Gpr (value_regs_get_gpr x_regs 0))
-            (x_hi Gpr (value_regs_get_gpr x_regs 1)))
-        ;; Get the high/low registers for `y`.
-        (let ((y_regs ValueRegs y)
-              (y_lo Gpr (value_regs_get_gpr y_regs 0))
-              (y_hi Gpr (value_regs_get_gpr y_regs 1)))
-          (let    ((lo_inst ProducesFlags (x64_produce_flags op1 $I64 x_lo y_lo))
-                   (hi_inst ConsumesAndProducesFlags (x64_chain_flags op2 $I64 x_hi y_hi))
-                   (of_inst ConsumesFlags (x64_setcc_paired cc))
+            (x_hi Gpr (value_regs_get_gpr x_regs 1))
+            (y_halves I128Halves (i128_halves y))
+            (y_lo GprMemImm (i128_lo y_halves))
+            (y_hi GprMemImm (i128_hi y_halves))
+            (lo_inst ProducesFlags (x64_produce_flags op1 $I64 x_lo y_lo))
+            (hi_inst ConsumesAndProducesFlags (x64_chain_flags op2 $I64 x_hi y_hi))
+            (of_inst ConsumesFlags (x64_setcc_paired cc))
+            (result MultiReg (with_flags_chained lo_inst hi_inst of_inst)))
+        (multi_reg_to_pair_and_single result)))
 
-                   (result MultiReg (with_flags_chained lo_inst hi_inst of_inst)))
-                  (multi_reg_to_pair_and_single result)))))
+;; The low and high halves of the i128 operand `y`, as second operands of
+;; 64-bit ops: the halves of an `iconcat` each, which may be loads that sink
+;; into the ops, a load of it that sinks into them read from memory, and
+;; anything else a register pair.
+(type I128Halves (enum (Operands (lo GprMemImm) (hi GprMemImm))
+                       (Regs (lo Gpr) (hi Gpr))))
+(decl i128_halves (Value) I128Halves)
+;; The high half first: a load sinks only while no other unsunk load comes
+;; between it and its use, and the high half's load comes after the low's.
+(rule 2 (i128_halves (iconcat _ lo hi))
+      (let ((hi_op GprMemImm hi)
+            (lo_op GprMemImm lo))
+        (I128Halves.Operands lo_op hi_op)))
+(rule 1 (i128_halves (sinkable_load_exact load))
+      (let ((lo SyntheticAmode (sink_load load))
+            (hi SyntheticAmode (amode_offset lo (mem_flags_trusted_data) 8)))
+        (I128Halves.Operands (RegMemImm.Mem lo) (RegMemImm.Mem hi))))
+(rule 0 (i128_halves y)
+      (let ((regs ValueRegs y))
+        (I128Halves.Regs (value_regs_get_gpr regs 0) (value_regs_get_gpr regs 1))))
+(decl i128_lo (I128Halves) GprMemImm)
+(rule (i128_lo (I128Halves.Operands lo _)) lo)
+(rule (i128_lo (I128Halves.Regs lo _)) lo)
+(decl i128_hi (I128Halves) GprMemImm)
+(rule (i128_hi (I128Halves.Operands _ hi)) hi)
+(rule (i128_hi (I128Halves.Regs _ hi)) hi)
 
 ;;;; Rules for `uadd_overflow` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -244,10 +268,12 @@
 (decl carry_op_128 (Inst Value ChainFlagsOp Value Value) InstOutput)
 (rule (carry_op_128 i carry op x y)
       (let ((x_regs ValueRegs x)
-            (y_regs ValueRegs y)
+            (y_halves I128Halves (i128_halves y))
+            (y_lo GprMemImm (i128_lo y_halves))
+            (y_hi GprMemImm (i128_hi y_halves))
             (_ Unit (carry_in i carry))
-            (lo Reg (emit_chained (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 0) (value_regs_get_gpr y_regs 0))))
-            (hi Reg (emit_chained (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 1) (value_regs_get_gpr y_regs 1)))))
+            (lo Reg (emit_chained (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 0) y_lo)))
+            (hi Reg (emit_chained (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 1) y_hi))))
         (output_pair (value_regs lo hi) (carry_out i))))
 
 ;; Two interleaved 64-bit addition chains run as `adcx` through CF and
@@ -376,9 +402,11 @@
 (decl flags_only_overflow_op_128 (ProduceFlagsOp ChainFlagsOp Value Value) InstOutput)
 (rule (flags_only_overflow_op_128 lo_op hi_op x y)
       (let ((x_regs ValueRegs x)
-            (y_regs ValueRegs y)
-            (lo Reg (emit_producer (x64_produce_flags lo_op $I64 (value_regs_get_gpr x_regs 0) (value_regs_get_gpr y_regs 0))))
-            (hi Reg (emit_chained (x64_chain_flags hi_op $I64 (value_regs_get_gpr x_regs 1) (value_regs_get_gpr y_regs 1)))))
+            (y_halves I128Halves (i128_halves y))
+            (y_lo GprMemImm (i128_lo y_halves))
+            (y_hi GprMemImm (i128_hi y_halves))
+            (lo Reg (emit_producer (x64_produce_flags lo_op $I64 (value_regs_get_gpr x_regs 0) y_lo)))
+            (hi Reg (emit_chained (x64_chain_flags hi_op $I64 (value_regs_get_gpr x_regs 1) y_hi))))
         (output_pair (value_regs lo hi) (value_reg (invalid_reg)))))
 
 ;; The 128-bit forms carry through both halves:
@@ -408,11 +436,11 @@
 (decl lower_carry_chain_128 (ChainFlagsOp CC Value Value Value) InstOutput)
 (rule (lower_carry_chain_128 op cc x y carry)
       (let ((x_regs ValueRegs x)
-            (y_regs ValueRegs y)
-            (lo ConsumesAndProducesFlags
-                (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 0) (value_regs_get_gpr y_regs 0)))
-            (hi ConsumesAndProducesFlags
-                (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 1) (value_regs_get_gpr y_regs 1))))
+            (y_halves I128Halves (i128_halves y))
+            (y_lo GprMemImm (i128_lo y_halves))
+            (y_hi GprMemImm (i128_hi y_halves))
+            (lo ConsumesAndProducesFlags (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 0) y_lo))
+            (hi ConsumesAndProducesFlags (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 1) y_hi)))
         (carry_chain_outputs
           (with_flags_chained (x64_neg_paired $I8 carry) lo (chain_then_consume hi (x64_setcc cc))))))
 
