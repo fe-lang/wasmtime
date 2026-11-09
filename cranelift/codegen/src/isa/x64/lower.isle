@@ -256,21 +256,21 @@
 
 (rule 6 (lower i @ (uadd_overflow _ x y @ (value_type $I64)))
       (if-let _ (carry_lane_cf i))
-      (lane_add i (CC.B) (x64_adcxq_rm (lane_clear i x) (lane_operand y))))
+      (lane_add i (CC.B) (x64_adcxq_rm (lane_clear i x) (lane_operand i y))))
 
 (rule 7 (lower i @ (uadd_overflow _ x y @ (value_type $I64)))
       (if-let _ (carry_lane_of i))
-      (lane_add i (CC.O) (x64_adoxq_rm x (lane_operand y))))
+      (lane_add i (CC.O) (x64_adoxq_rm x (lane_operand i y))))
 
 (rule 6 (lower i @ (uadd_overflow_cin _ x y @ (value_type $I64) c_in))
       (if-let _ (carry_lane_cf i))
       (let ((_ Unit (carry_in i c_in)))
-        (lane_add i (CC.B) (x64_adcxq_rm x (lane_operand y)))))
+        (lane_add i (CC.B) (x64_adcxq_rm x (lane_operand i y)))))
 
 (rule 7 (lower i @ (uadd_overflow_cin _ x y @ (value_type $I64) c_in))
       (if-let _ (carry_lane_of i))
       (let ((_ Unit (carry_in i c_in)))
-        (lane_add i (CC.O) (x64_adoxq_rm x (lane_operand y)))))
+        (lane_add i (CC.O) (x64_adoxq_rm x (lane_operand i y)))))
 
 ;; The sum of a lane op, with its carry out (`setb` or `seto`) when wanted.
 (decl lane_add (Inst CC Gpr) InstOutput)
@@ -284,24 +284,36 @@
 (rule 0 (lane_carry_out _ cc)
       (value_reg (emit_consumer (x64_setcc cc))))
 
-;; `x`, after clearing CF and OF when `inst` starts an interleaved pair.
+;; `x`, after clearing CF and OF when `inst` starts an interleaved pair. The
+;; `xor` that clears them zeroes the pair's zero register.
 (decl lane_clear (Inst Value) Gpr)
 (rule 1 (lane_clear i x)
       (if-let _ (carry_lane_clears i))
-      (let ((zero Gpr (gpr_uninit_value))
-            (_ Gpr (x64_xor $I64 zero zero)))
+      (if-let zero (lane_zero i))
+      (let ((_ Unit (define_lane_zero zero)))
         x))
 (rule 0 (lane_clear _ x) x)
 
-;; The addend of a lane op. A constant moves into a register with `mov`,
-;; which leaves the flags alone, where `imm` zeroes with `xor`; below 2^32
-;; a `movl`, which zero-extends, is half the size.
-(decl lane_operand (Value) GprMem64)
-(rule 2 (lane_operand (u64_from_iconst (u32_from_u64 c)))
+;; The addend of lane op `inst`. Zero is the pair's zero register. Another
+;; constant moves into a register with `mov`, which leaves the flags alone,
+;; where `imm` zeroes with `xor`; below 2^32 a `movl`, which zero-extends, is
+;; half the size.
+(decl lane_operand (Inst Value) GprMem64)
+(rule 3 (lane_operand i (u64_from_iconst 0))
+      (if-let zero (lane_zero i))
+      zero)
+(rule 2 (lane_operand _ (u64_from_iconst (u32_from_u64 c)))
       (x64_movl_oi c))
-(rule 1 (lane_operand (u64_from_iconst c))
+(rule 1 (lane_operand _ (u64_from_iconst c))
       (x64_movabsq_oi c))
-(rule 0 (lane_operand y) y)
+(rule 0 (lane_operand _ y) y)
+
+;; The zero register of the interleaved pair of chains `inst` belongs to:
+;; the pair's first op sets it with `define_lane_zero`, before every use.
+(decl pure partial lane_zero (Inst) Gpr)
+(extern constructor lane_zero lane_zero)
+(decl define_lane_zero (Gpr) Unit)
+(extern constructor define_lane_zero define_lane_zero)
 
 (decl pure partial carry_lane_cf (Inst) Unit)
 (extern constructor carry_lane_cf carry_lane_cf)
