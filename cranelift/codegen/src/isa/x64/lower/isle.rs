@@ -28,6 +28,7 @@ use crate::{FxHashMap, FxHashSet};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use cranelift_assembler_x64 as asm;
+use cranelift_entity::EntitySet;
 use regalloc2::PReg;
 
 /// Type representing out-of-line data for calls. This type optional because the
@@ -2145,7 +2146,7 @@ const I8X16_USHR_MASKS: [u8; 128] = [
 fn leaves_flags_alone(ctx: &Lower<MInst>, free: &FlagFree, inst: Inst) -> bool {
     let f = ctx.f;
     let dfg = &f.dfg;
-    if is_unlowered(ctx, inst)
+    if is_unlowered(free, inst)
         || dfg
             .inst_results(inst)
             .first()
@@ -2187,16 +2188,9 @@ fn leaves_flags_alone(ctx: &Lower<MInst>, free: &FlagFree, inst: Inst) -> bool {
     }
 }
 
-/// Whether lowering skips `inst`: it has no side effects and its results
-/// are unused.
-fn is_unlowered(ctx: &Lower<MInst>, inst: Inst) -> bool {
-    !has_lowering_side_effect(ctx.f, inst)
-        && ctx
-            .f
-            .dfg
-            .inst_results(inst)
-            .iter()
-            .all(|&result| ctx.value_is_unused(result))
+/// Whether lowering skips `inst` (see `FlagFree::lowered`).
+fn is_unlowered(free: &FlagFree, inst: Inst) -> bool {
+    !free.lowered.contains(inst)
 }
 
 /// Whether `inst` multiplies two 64-bit values zero-extended to 128 bits,
@@ -2279,6 +2273,14 @@ impl CarryState {
 struct FlagFree {
     has_bmi2: bool,
     values: FxHashSet<Value>,
+    /// The instructions lowering emits: those with a lowering side effect
+    /// and, transitively, the definitions of their operands. Lowering skips
+    /// the rest, which without the egraph pass include pure instructions
+    /// whose only users are themselves skipped. An operand that its user
+    /// folds into its own code, as a `band` into a `test`, still counts, so
+    /// this can include an instruction lowering skips; a select is never
+    /// folded into another instruction.
+    lowered: EntitySet<Inst>,
     /// The carry ins of carry ops: a chain is in flight while its last
     /// carry out is one.
     carry_ins: FxHashSet<Value>,
@@ -2359,9 +2361,26 @@ impl FlagFree {
             })
             .map(|inst| dfg.inst_args(inst)[2])
             .collect();
+        let mut lowered = EntitySet::with_capacity(dfg.num_insts());
+        let mut work: Vec<Inst> = insts()
+            .filter(|&inst| has_lowering_side_effect(f, inst))
+            .collect();
+        for &inst in &work {
+            lowered.insert(inst);
+        }
+        while let Some(inst) = work.pop() {
+            for arg in dfg.inst_values(inst) {
+                if let Some(def) = dfg.value_def(arg).inst()
+                    && lowered.insert(def)
+                {
+                    work.push(def);
+                }
+            }
+        }
         Self {
             has_bmi2,
             values,
+            lowered,
             carry_ins,
         }
     }
@@ -2425,7 +2444,7 @@ fn select_reuse(ctx: &Lower<MInst>, free: &FlagFree, block: Block) -> FxHashSet<
         if dfg.insts[inst].opcode() == Opcode::Select
             && dfg.ctrl_typevar(inst).is_int()
             && dfg.ctrl_typevar(inst).bits() <= 64
-            && !is_unlowered(ctx, inst)
+            && !is_unlowered(free, inst)
         {
             let cond = dfg.inst_args(inst)[0];
             if last == Some(cond) && one_test(cond) {
@@ -2495,7 +2514,7 @@ fn carry_plans(
     // as plain `adc`s they take an immediate, where `adcx` needs a register.
     let mut plain = FxHashSet::default();
     for inst in f.layout.block_insts(block) {
-        if !is_carry_op(f, inst) || is_unlowered(ctx, inst) {
+        if !is_carry_op(f, inst) || is_unlowered(free, inst) {
             if !leaves_flags_alone(ctx, free, inst) {
                 (cf, of) = (None, None);
             }
