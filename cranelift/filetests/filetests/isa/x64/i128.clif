@@ -1146,19 +1146,11 @@ block0(v0: i128, v1: i128, v2: i64, v3: i128, v4: i128, v5: i128):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x10, %rsp
-<<<<<<< HEAD
 ;   movq %rbx, -0x10(%rbp)
 ;   movq %r12, -8(%rbp)
 ; block1: ; offset 0x10
-;   movq %rdx, %rbx
-;   movq %rcx, %r12
-=======
-;   movq %rbx, (%rsp)
-;   movq %r12, 8(%rsp)
-; block1: ; offset 0x11
 ;   movq %rcx, %rbx
 ;   movq %rdx, %r12
->>>>>>> perf/spill-operands
 ;   movq 0x10(%rbp), %rcx
 ;   movq 0x18(%rbp), %rax
 ;   movq 0x20(%rbp), %rdx
