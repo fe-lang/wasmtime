@@ -14,12 +14,12 @@ block0(v0: i32, v1: i128, v2: i128):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ; block0:
-;   movq %rdx, %r9
 ;   cmpl $0x2a, %edi
 ;   movq %rcx, %rax
 ;   cmoveq %rsi, %rax
+;   movq %rdx, %r10
 ;   movq %r8, %rdx
-;   cmoveq %r9, %rdx
+;   cmoveq %r10, %rdx
 ;   popq %rbp
 ;   retq
 ;
@@ -28,12 +28,12 @@ block0(v0: i32, v1: i128, v2: i128):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
-;   movq %rdx, %r9
 ;   cmpl $0x2a, %edi
 ;   movq %rcx, %rax
 ;   cmoveq %rsi, %rax
+;   movq %rdx, %r10
 ;   movq %r8, %rdx
-;   cmoveq %r9, %rdx
+;   cmoveq %r10, %rdx
 ;   popq %rbp
 ;   retq
 

@@ -4,7 +4,6 @@ use super::{
     Amode, Gpr, Inst, LabelUse, MachBuffer, MachLabel, OperandVisitor, OperandVisitorImpl,
     SyntheticAmode, VCodeConstant, WritableGpr, WritableXmm, Xmm, args::FromWritableReg,
 };
-use crate::machinst::{FrameLayout, StackAMode};
 use crate::{Reg, Writable, ir::TrapCode};
 use alloc::string::String;
 use cranelift_assembler_x64 as asm;
@@ -262,10 +261,6 @@ where
     T: OperandVisitorImpl,
 {
     pub collector: &'a mut T,
-    /// Whether a read-only `GprMem` register can stay in its spillslot,
-    /// which the instruction then reads as a memory operand
-    /// (`SpillslotOperands`).
-    pub stack_sources: bool,
 }
 
 impl<'a, T: OperandVisitor> asm::RegisterVisitor<CraneliftRegisters> for RegallocVisitor<'a, T> {
@@ -331,49 +326,6 @@ impl<'a, T: OperandVisitor> asm::RegisterVisitor<CraneliftRegisters> for Regallo
     fn fixed_write_xmm(&mut self, reg: &mut WritableXmm, enc: u8) {
         self.collector
             .reg_fixed_def(reg, fixed_reg(enc, RegClass::Float));
-    }
-
-    fn read_gpr_mem(&mut self, op: &mut asm::GprMem<Gpr, Gpr>) {
-        match op {
-            asm::GprMem::Gpr(reg) if self.stack_sources => self.collector.reg_or_stack_use(reg),
-            asm::GprMem::Gpr(reg) => self.read_gpr(reg),
-            asm::GprMem::Mem(amode) => self.read_amode(amode),
-        }
-    }
-}
-
-/// Rewrites each read-only `GprMem` register that register allocation left
-/// in a spillslot (see `RegallocVisitor::stack_sources`) into the slot's
-/// address, after allocation and before encoding.
-pub(crate) struct SpillslotOperands<'a> {
-    pub frame: &'a FrameLayout,
-    /// Whether any operand was rewritten.
-    pub rewritten: bool,
-}
-
-impl asm::RegisterVisitor<CraneliftRegisters> for SpillslotOperands<'_> {
-    fn read_gpr(&mut self, _: &mut Gpr) {}
-    fn read_write_gpr(&mut self, _: &mut PairedGpr) {}
-    fn write_gpr(&mut self, _: &mut WritableGpr) {}
-    fn fixed_read_gpr(&mut self, _: &mut Gpr, _: u8) {}
-    fn fixed_read_write_gpr(&mut self, _: &mut PairedGpr, _: u8) {}
-    fn fixed_write_gpr(&mut self, _: &mut WritableGpr, _: u8) {}
-    fn read_xmm(&mut self, _: &mut Xmm) {}
-    fn read_write_xmm(&mut self, _: &mut PairedXmm) {}
-    fn write_xmm(&mut self, _: &mut WritableXmm) {}
-    fn fixed_read_xmm(&mut self, _: &mut Xmm, _: u8) {}
-    fn fixed_read_write_xmm(&mut self, _: &mut PairedXmm, _: u8) {}
-    fn fixed_write_xmm(&mut self, _: &mut WritableXmm, _: u8) {}
-    fn read_amode(&mut self, _: &mut asm::Amode<Gpr>) {}
-
-    fn read_gpr_mem(&mut self, op: &mut asm::GprMem<Gpr, Gpr>) {
-        if let asm::GprMem::Gpr(reg) = op
-            && let Some(slot) = reg.to_reg().to_spillslot()
-        {
-            let amode: SyntheticAmode = StackAMode::Slot(self.frame.spillslot_offset(slot)).into();
-            *op = asm::GprMem::Mem(amode.into());
-            self.rewritten = true;
-        }
     }
 }
 

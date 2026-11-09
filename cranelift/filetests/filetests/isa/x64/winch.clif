@@ -290,7 +290,8 @@ block0(v0:i64):
 ;   load_ext_name %g+0, %r10
 ;   call    *%r10
 ;   movq <offset:1>+(%rsp), %rax
-;   andl %stack1, %eax
+;   movq <offset:1>+8(%rsp), %rsi
+;   andl %esi, %eax
 ;   movq -0x30(%rbp), %rbx
 ;   movq -0x28(%rbp), %r12
 ;   movq -0x20(%rbp), %r13
@@ -319,7 +320,8 @@ block0(v0:i64):
 ;   movq (%rsp), %r11
 ;   movq %r11, -0x38(%rbp)
 ;   movq -0x40(%rbp), %rax
-;   andl -0x38(%rbp), %eax
+;   movq -0x38(%rbp), %rsi
+;   andl %esi, %eax
 ;   movq -0x30(%rbp), %rbx
 ;   movq -0x28(%rbp), %r12
 ;   movq -0x20(%rbp), %r13
