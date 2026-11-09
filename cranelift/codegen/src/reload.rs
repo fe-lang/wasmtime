@@ -13,6 +13,8 @@
 //! the same reason a load of a place its block stored to earlier is no home:
 //! the new load's address is ready long before the store, so the core runs
 //! the load first and must flush when the store turns out to write its bytes.
+//! A `readonly` load's memory does not change while the function runs, so
+//! no store or call moves its value out of it.
 //!
 //! Each block is scanned in order, tracking where in memory each value is. An
 //! access's place is a base, a value or a stack slot, and a range of byte
@@ -358,13 +360,17 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                         Opcode::Istore32 => 4,
                         _ => {
                             homes.retain(|_, home| {
-                                matches!(home.place.base, Base::Slot(slot) if !escaped.contains(slot))
+                                func.dfg.mem_flags[home.flags].readonly()
+                                    || matches!(home.place.base, Base::Slot(slot) if !escaped.contains(slot))
                             });
                             continue;
                         }
                     };
                     let place = place(func, addr, offset, size);
-                    homes.retain(|_, home| !may_overlap(&home.place, &place, &escaped));
+                    homes.retain(|_, home| {
+                        func.dfg.mem_flags[home.flags].readonly()
+                            || !may_overlap(&home.place, &place, &escaped)
+                    });
                     stored.push(place);
                 }
                 // A loaded value widened to the width of a multiply, say, is in
@@ -402,8 +408,9 @@ pub(crate) fn reload_values(func: &mut Function, registers: u32) -> usize {
                             SmallVec::new()
                         };
                         homes.retain(|_, home| {
-                            matches!(home.place.base, Base::Slot(slot)
-                                if !escaped.contains(slot) && !reached.contains(&slot))
+                            func.dfg.mem_flags[home.flags].readonly()
+                                || matches!(home.place.base, Base::Slot(slot)
+                                    if !escaped.contains(slot) && !reached.contains(&slot))
                         });
                     }
                 }
