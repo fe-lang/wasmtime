@@ -7,7 +7,9 @@ use generated_code::{AssemblerOutputs, Context, MInst, RegisterClass};
 
 // Types that the generated ISLE code uses via `use super::*`.
 use super::external::{CraneliftRegisters, PairedGpr, PairedXmm, isle_assembler_methods};
-use super::{MergeableLoadSize, is_int_or_ref_ty, is_mergeable_load, lower_to_amode};
+use super::{
+    MergeableLoadSize, is_int_or_ref_ty, is_mergeable_load, lower_to_amode, matches_input,
+};
 use crate::entity::SecondaryMap;
 use crate::inst_predicates::has_lowering_side_effect;
 use crate::ir::condcodes::{FloatCC, IntCC};
@@ -825,8 +827,25 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
 
     fn sink_load(&mut self, load: &SinkableLoad) -> SyntheticAmode {
         self.lower_ctx.sink_inst(load.inst);
-        let addr = lower_to_amode(self.lower_ctx, load.addr_input, load.offset);
-        SyntheticAmode::Real(addr)
+        // Like `to_amode`, address a stack slot from the stack pointer
+        // rather than materializing its `stack_addr`. A slot amode counts
+        // as aligned, which packed SSE operands need, so a wider load
+        // takes one only when its flags promise alignment.
+        let flags = self.lower_ctx.memflags(load.inst).unwrap();
+        if (self.lower_ctx.output_ty(load.inst, 0).bytes() <= 8 || flags.aligned())
+            && let Some(addr) = matches_input(self.lower_ctx, load.addr_input, Opcode::StackAddr)
+            && let InstructionData::StackAddr {
+                stack_slot, offset, ..
+            } = *self.lower_ctx.data(addr)
+        {
+            let simm32 = self.abi_stackslot_offset_into_slot_region(
+                stack_slot,
+                offset,
+                Offset32::new(load.offset),
+            );
+            return SyntheticAmode::SlotOffset { simm32 };
+        }
+        SyntheticAmode::Real(lower_to_amode(self.lower_ctx, load.addr_input, load.offset))
     }
 
     #[inline]
