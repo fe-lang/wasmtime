@@ -2117,7 +2117,10 @@ fn emit_maybe_shrink(inst: &AsmInst, sink: &mut impl asm::CodeSink) {
             m32,
             sink,
             |dst, amode, s| leal_rm::<R>::new(dst, amode).encode(s),
-            |dst, simm32, s| addl_mi::<R>::new(dst, simm32.cast_unsigned()).encode(s),
+            |dst, simm32, s| match i8::try_from(simm32) {
+                Ok(simm8) => addl_mi_sxb::<R>::new(dst, simm8).encode(s),
+                Err(_) => addl_mi::<R>::new(dst, simm32.cast_unsigned()).encode(s),
+            },
             |dst, reg, s| addl_rm::<R>::new(dst, reg).encode(s),
         ),
         Inst::leaq_rm(leaq_rm { r64, m64 }) => emit_lea(
@@ -2125,7 +2128,10 @@ fn emit_maybe_shrink(inst: &AsmInst, sink: &mut impl asm::CodeSink) {
             m64,
             sink,
             |dst, amode, s| leaq_rm::<R>::new(dst, amode).encode(s),
-            |dst, simm32, s| addq_mi_sxl::<R>::new(dst, simm32).encode(s),
+            |dst, simm32, s| match i8::try_from(simm32) {
+                Ok(simm8) => addq_mi_sxb::<R>::new(dst, simm8).encode(s),
+                Err(_) => addq_mi_sxl::<R>::new(dst, simm32).encode(s),
+            },
             |dst, reg, s| addq_rm::<R>::new(dst, reg).encode(s),
         ),
 
