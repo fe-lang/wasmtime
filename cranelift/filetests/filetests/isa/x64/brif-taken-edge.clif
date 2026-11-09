@@ -1,0 +1,72 @@
+test compile precise-output
+target x86_64
+
+;; Each early exit passes a value to the shared exit over a critical edge. The
+;; edge blocks to the branches' first targets go after the hot blocks, so the
+;; path through the last targets falls through without a taken branch.
+function %early_exits(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2 = iconst.i64 0
+    v3 = icmp eq v0, v2
+    brif v3, block3(v1), block1
+
+block1:
+    v4 = iadd v0, v1
+    v5 = iconst.i64 7
+    v6 = icmp eq v4, v5
+    brif v6, block3(v0), block2
+
+block2:
+    v7 = imul v4, v1
+    jump block3(v7)
+
+block3(v8: i64):
+    return v8
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   testq %rdi, %rdi
+;   jz      label1; j label2
+; block2:
+;   leaq (%rdi, %rsi), %rax
+;   cmpq $0x7, %rax
+;   jz      label3; j label4
+; block4:
+;   imulq %rsi, %rax
+;   jmp     label5
+; block5:
+;   popq %rbp
+;   retq
+; block1:
+;   movq %rsi, %rax
+;   jmp     label5
+; block3:
+;   movq %rdi, %rax
+;   jmp     label5
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   testq %rdi, %rdi
+;   je 0x21
+; block2: ; offset 0xd
+;   leaq (%rdi, %rsi), %rax
+;   cmpq $7, %rax
+;   je 0x29
+; block3: ; offset 0x1b
+;   imulq %rsi, %rax
+; block4: ; offset 0x1f
+;   popq %rbp
+;   retq
+; block5: ; offset 0x21
+;   movq %rsi, %rax
+;   jmp 0x1f
+; block6: ; offset 0x29
+;   movq %rdi, %rax
+;   jmp 0x1f
+
