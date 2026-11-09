@@ -281,11 +281,10 @@ block0(v0: i64):
 ;   subq $0x10, %rsp
 ; block1: ; offset 0x8
 ;   movq %rdi, %rax
-;   addq 8(%rsp), %rax
+;   addq -8(%rbp), %rax
 ;   addq $0x10, %rsp
 ;   popq %rbp
 ;   retq
-
 
 function %unaligned_vector_from_stack_slot() -> f64 {
   ss0 = explicit_slot 24
@@ -314,7 +313,7 @@ block0:
 ;   movq %rsp, %rbp
 ;   subq $0x20, %rsp
 ; block1: ; offset 0x8
-;   leaq 1(%rsp), %rdx
+;   leaq -0x1f(%rbp), %rdx
 ;   movdqu (%rdx), %xmm1
 ;   pshufd $0xee, %xmm1, %xmm0
 ;   addq $0x20, %rsp

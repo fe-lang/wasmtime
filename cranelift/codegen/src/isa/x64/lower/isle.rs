@@ -650,6 +650,19 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         None
     }
 
+    fn commutes_to_tie(&mut self, x: Value, y: Value) -> bool {
+        // An operand that would be an immediate or a sunk load stays second.
+        x != y
+            && self.lower_ctx.value_dies_here(y)
+            && !self.lower_ctx.value_dies_here(x)
+            && self
+                .lower_ctx
+                .get_value_as_source_or_const(y)
+                .constant
+                .is_none()
+            && self.sinkable_load_exact(y).is_none()
+    }
+
     fn sinkable_load_exact(&mut self, val: Value) -> Option<SinkableLoad> {
         if let Some(inst) = self.is_sinkable_inst(val) {
             if let Some((addr_input, offset)) =
