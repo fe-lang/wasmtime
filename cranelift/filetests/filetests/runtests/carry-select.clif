@@ -27,6 +27,32 @@ block0(v0: i64, v1: i64):
 ; run: %reduce(3, 1) == -4
 ; run: %reduce(0, 0) == 0
 
+;; The last borrow comes from an op whose difference nothing uses: the op
+;; still runs for its borrow.
+function %reduce_with_top(i64, i64, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64):
+    v3 = iconst.i64 7
+    v4 = iconst.i64 0
+    v5, v6 = usub_overflow v0, v3
+    v7, v8 = usub_overflow_bin v1, v4, v6
+    v9, v10 = usub_overflow_bin v2, v4, v8
+    v11 = uextend.i64 v10
+    v12 = iconst.i64 1
+    v13 = icmp eq v11, v12
+    v14 = select v13, v0, v5
+    v15 = select v13, v1, v7
+    v16 = bxor v14, v15
+    return v16
+}
+
+; run: %reduce_with_top(10, 0, 0) == 3
+; run: %reduce_with_top(3, 0, 0) == 3
+; run: %reduce_with_top(3, 0, 1) == 3
+; run: %reduce_with_top(3, 1, 0) == -4
+; run: %reduce_with_top(3, 0, -1) == 3
+; run: %reduce_with_top(5, 0, 1) == 1
+; run: %reduce_with_top(5, 0, 0) == 5
+
 ;; `== 0` and `!= 0` test the carry's absence and presence.
 function %no_carry(i64, i64) -> i64 {
 block0(v0: i64, v1: i64):

@@ -613,9 +613,18 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         self.with_carry_state(block, |state| state.selects.contains(&inst).then_some(()))
     }
 
+    fn select_carry(&mut self, inst: Inst) -> Option<Value> {
+        let block = self.lower_ctx.f.layout.inst_block(inst)?;
+        self.with_carry_state(block, |state| {
+            state.carry_selects.get(&inst).map(|&(carry, _)| carry)
+        })
+    }
+
     fn select_carry_flag(&mut self, inst: Inst) -> Option<CC> {
         let block = self.lower_ctx.f.layout.inst_block(inst)?;
-        self.with_carry_state(block, |state| state.carry_selects.get(&inst).copied())
+        self.with_carry_state(block, |state| {
+            state.carry_selects.get(&inst).map(|&(_, cc)| cc)
+        })
     }
 
     fn carry_branch(&mut self, cond: Value) -> Option<(Value, CC)> {
@@ -2319,8 +2328,9 @@ struct CarryState {
     branch: Option<(Value, Value, CC)>,
     /// The selects that take the flags of the select before them.
     selects: FxHashSet<Inst>,
-    /// The selects that test the flag holding a carry, with the flag test.
-    carry_selects: FxHashMap<Inst, CC>,
+    /// The selects that test the flag holding a carry, with the carry and
+    /// the flag test.
+    carry_selects: FxHashMap<Inst, (Value, CC)>,
     /// The number of instructions using each value.
     uses: SecondaryMap<Value, u32>,
 }
@@ -2555,7 +2565,7 @@ fn carry_plans(
 ) -> (
     FxHashMap<Inst, CarryPlan>,
     Option<(Value, Value, CC)>,
-    FxHashMap<Inst, CC>,
+    FxHashMap<Inst, (Value, CC)>,
 ) {
     struct Chain {
         ops: Vec<Inst>,
@@ -2674,7 +2684,7 @@ fn carry_plans(
 }
 
 /// The integer selects of `block` that test a carry left in the flags,
-/// with their flag test, and the carries they consume. A select's
+/// with the carry and their flag test, and the carries they consume. A select's
 /// condition is the carry out of a carry op of the block, possibly
 /// extended, masked to its low bit or compared with 0 or 1, each used only
 /// on the way, with only instructions that leave the flags alone after the
@@ -2687,7 +2697,7 @@ fn carry_selects(
     uses: &SecondaryMap<Value, u32>,
     block: Block,
     plans: &FxHashMap<Inst, CarryPlan>,
-) -> (FxHashMap<Inst, CC>, Vec<Value>) {
+) -> (FxHashMap<Inst, (Value, CC)>, Vec<Value>) {
     let f = ctx.f;
     let dfg = &f.dfg;
     let is_select = |inst: Inst| {
@@ -2746,7 +2756,7 @@ fn carry_selects(
             (false, true) => CC::B,
             (false, false) => CC::NB,
         };
-        selects.extend(group.into_iter().map(|select| (select, cc)));
+        selects.extend(group.into_iter().map(|select| (select, (carry, cc))));
         carries.push(carry);
     }
     (selects, carries)
