@@ -1,0 +1,95 @@
+test interpret
+test run
+set enable_llvm_abi_extensions=true
+target x86_64
+target x86_64 has_adx has_bmi2
+
+;; Selects on a borrow or carry still in the flags take the flag.
+
+;; A two-limb modular reduction: the difference unless it borrowed.
+function %reduce(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2 = iconst.i64 7
+    v3 = iconst.i64 0
+    v4, v5 = usub_overflow v0, v2
+    v6, v7 = usub_overflow_bin v1, v3, v5
+    v8 = uextend.i64 v7
+    v9 = iconst.i64 1
+    v10 = icmp eq v8, v9
+    v11 = select v10, v0, v4
+    v12 = select v10, v1, v6
+    v13 = bxor v11, v12
+    return v13
+}
+
+; run: %reduce(10, 0) == 3
+; run: %reduce(3, 0) == 3
+; run: %reduce(3, 1) == -4
+; run: %reduce(0, 0) == 0
+
+;; `== 0` and `!= 0` test the carry's absence and presence.
+function %no_carry(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = uadd_overflow v0, v1
+    v4 = iconst.i8 0
+    v5 = icmp eq v3, v4
+    v6 = iconst.i64 -1
+    v7 = select v5, v2, v6
+    return v7
+}
+
+; run: %no_carry(1, 2) == 3
+; run: %no_carry(-1, 1) == -1
+; run: %no_carry(-1, 0) == -1
+; run: %no_carry(-2, 1) == -1
+
+function %carry_masked(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = uadd_overflow v0, v1
+    v4 = iconst.i8 1
+    v5 = band v3, v4
+    v6 = iconst.i8 0
+    v7 = icmp ne v5, v6
+    v8 = iconst.i64 99
+    v9 = select v7, v8, v2
+    return v9
+}
+
+; run: %carry_masked(1, 2) == 3
+; run: %carry_masked(-1, 1) == 99
+; run: %carry_masked(-1, 2) == 99
+
+;; The carry itself as the condition.
+function %carry_direct(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    v4 = iconst.i64 0
+    v5 = select v3, v4, v2
+    return v5
+}
+
+; run: %carry_direct(5, 3) == 2
+; run: %carry_direct(3, 5) == 0
+; run: %carry_direct(3, 3) == 0
+
+;; A store between the selects leaves the flags alone; a compare after the
+;; first select's group needs the carry again.
+function %reused_after(i64, i64, i64) -> i64 {
+    ss0 = explicit_slot 8
+block0(v0: i64, v1: i64, v2: i64):
+    v3, v4 = usub_overflow v0, v1
+    v5 = uextend.i64 v4
+    v6 = select v5, v0, v3
+    v7 = stack_addr.i64 ss0
+    store notrap v6, v7
+    v8 = icmp ult v0, v2
+    v9 = select v8, v2, v0
+    v10 = select v5, v9, v1
+    v11 = load.i64 notrap v7
+    v12 = iadd v10, v11
+    return v12
+}
+
+; run: %reused_after(5, 3, 1) == 5
+; run: %reused_after(3, 5, 1) == 6
+; run: %reused_after(3, 5, 9) == 12

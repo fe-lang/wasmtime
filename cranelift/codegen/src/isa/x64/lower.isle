@@ -2431,6 +2431,16 @@
 (decl pure partial select_flags_live (Inst) Unit)
 (extern constructor select_flags_live select_flags_live)
 
+;; A select on a carry left in the flags, possibly extended or compared with
+;; 0 or 1, tests its flag instead of materializing the carry and comparing
+;; it (see `carry_selects`).
+(rule 2 (lower i @ (select _ _ x y))
+      (if-let cc (select_carry_flag i))
+      (lower_select (CondResult.CC (ProducesFlags.AlreadyExistingFlags) cc) x y))
+
+(decl pure partial select_carry_flag (Inst) CC)
+(extern constructor select_carry_flag select_carry_flag)
+
 ;; A condition's flag test without its compare; a condition testing more than
 ;; one flag, which `select_reuse` leaves out, keeps its compare.
 (decl reuse_flags (CondResult) CondResult)
