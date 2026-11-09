@@ -63,7 +63,7 @@
 use crate::dominator_tree::DominatorTree;
 use crate::entity::SecondaryMap;
 use crate::inst_predicates::visit_block_succs;
-use crate::ir::{Block, Function, Inst, Opcode};
+use crate::ir::{Block, Function, Inst, InstructionData, Opcode};
 use crate::{FxHashMap, FxHashSet};
 use crate::{machinst::*, trace};
 
@@ -88,6 +88,12 @@ pub struct BlockLoweringOrder {
     /// which is used by VCode emission to sink the blocks at the last
     /// moment (when we actually emit bytes into the MachBuffer).
     cold_blocks: FxHashSet<BlockIndex>,
+    /// Hot edge blocks to a conditional branch's first target, where its last
+    /// target is hot. Like cold blocks, they keep their place in
+    /// `lowered_order`, and VCode emission moves those with moves in them
+    /// after the other hot blocks: the branch's last target is its likely
+    /// side and falls through, rather than jumping past the edge.
+    out_of_line_blocks: FxHashSet<BlockIndex>,
     /// Lowered blocks that are indirect branch targets.
     indirect_branch_targets: FxHashSet<BlockIndex>,
 }
@@ -275,6 +281,7 @@ impl BlockLoweringOrder {
         // first.
         let mut lowered_succ_indices = Vec::new();
         let mut cold_blocks = FxHashSet::default();
+        let mut out_of_line_blocks = FxHashSet::default();
         let mut indirect_branch_targets = FxHashSet::default();
         let lowered_succ_ranges =
             Vec::from_iter(lowered_order.iter().enumerate().map(|(ix, lb)| {
@@ -306,7 +313,11 @@ impl BlockLoweringOrder {
 
                     // Critical edges won't have successor information in block_succ_range, but
                     // they only have a single known successor to record anyway.
-                    &LoweredBlock::CriticalEdge { pred, succ, .. } => {
+                    &LoweredBlock::CriticalEdge {
+                        pred,
+                        succ,
+                        succ_idx,
+                    } => {
                         let succ_index = lb_to_bindex[&LoweredBlock::Orig { block: succ }];
                         lowered_succ_indices.push(succ_index);
 
@@ -315,6 +326,16 @@ impl BlockLoweringOrder {
 
                         if cold_clif_blocks[pred] || cold_clif_blocks[succ] {
                             cold_blocks.insert(bindex);
+                        } else if succ_idx == 0
+                            && let Some(inst) = f.layout.last_inst(pred)
+                            && let InstructionData::Brif {
+                                blocks: [_, last], ..
+                            } = f.dfg.insts[inst]
+                            && !cold_clif_blocks[last.block(&f.dfg.value_lists)]
+                        {
+                            // With a cold last target, the first is the
+                            // likely side and its edge stays in line.
+                            out_of_line_blocks.insert(bindex);
                         }
 
                         if indirect_branch_target_clif_blocks.contains(&succ) {
@@ -334,6 +355,7 @@ impl BlockLoweringOrder {
             lowered_succ_ranges,
             blockindex_by_block,
             cold_blocks,
+            out_of_line_blocks,
             indirect_branch_targets,
         };
 
@@ -364,6 +386,13 @@ impl BlockLoweringOrder {
     /// Determine whether the given lowered-block index is cold.
     pub fn is_cold(&self, block: BlockIndex) -> bool {
         self.cold_blocks.contains(&block)
+    }
+
+    /// Determine whether the given lowered-block index is a hot edge block
+    /// to a conditional branch's first target, which emission places after
+    /// the other hot blocks unless it is empty.
+    pub fn is_out_of_line(&self, block: BlockIndex) -> bool {
+        self.out_of_line_blocks.contains(&block)
     }
 
     /// Determine whether the given lowered block index is an indirect branch
@@ -485,6 +514,43 @@ mod test {
             {
                 assert!(order.is_cold(BlockIndex::new(index)));
             }
+        }
+    }
+
+    /// The indices of the critical-edge blocks in the lowered order.
+    fn edges(order: &BlockLoweringOrder) -> Vec<BlockIndex> {
+        order
+            .lowered_order
+            .iter()
+            .enumerate()
+            .filter(|(_, lb)| lb.out_edge().is_some())
+            .map(|(index, _)| BlockIndex::new(index))
+            .collect()
+    }
+
+    #[test]
+    fn test_blockorder_edge_to_first_target_is_out_of_line() {
+        // Blocks 0 and 1 branch first to the shared exit 3, over critical
+        // edges, and otherwise go on to the next block.
+        let order = build_test_func(4, &[(0, 3), (0, 1), (1, 3), (1, 2), (2, 3)]);
+        assert_eq!(edges(&order).len(), 2);
+        for edge in edges(&order) {
+            assert!(order.is_out_of_line(edge));
+            assert!(!order.is_cold(edge));
+        }
+
+        // With the exit as their last targets, the edges stay in line.
+        let order = build_test_func(4, &[(0, 1), (0, 3), (1, 2), (1, 3), (2, 3)]);
+        assert_eq!(edges(&order).len(), 2);
+        for edge in edges(&order) {
+            assert!(!order.is_out_of_line(edge));
+        }
+
+        // With a cold last target, the first is the likely side.
+        let order = build_test_func_with_cold(4, &[(0, 3), (0, 1), (1, 3), (1, 2), (2, 3)], &[1]);
+        assert_eq!(edges(&order).len(), 2);
+        for edge in edges(&order) {
+            assert!(!order.is_out_of_line(edge));
         }
     }
 

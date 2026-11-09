@@ -756,18 +756,46 @@ impl<I: VCodeInst> VCode<I> {
         // correctly.
         buffer.register_constants(&self.constants);
 
-        // Construct the final order we emit code in: cold blocks at the end.
-        let mut final_order: SmallVec<[BlockIndex; 16]> = smallvec![];
-        let mut cold_blocks: SmallVec<[BlockIndex; 16]> = smallvec![];
+        // Count edits per block ahead of time; this is needed for
+        // lookahead island emission. (We could derive it per-block
+        // with binary search in the edit list, but it's more
+        // efficient to do it in one pass here.)
+        let mut ra_edits_per_block: SmallVec<[u32; 64]> = smallvec![];
+        let mut edit_idx = 0;
         for block in 0..self.num_blocks() {
-            let block = BlockIndex::new(block);
+            let end_inst = InsnIndex::new(self.block_ranges.get(block).end);
+            let start_edit_idx = edit_idx;
+            while edit_idx < regalloc.edits.len() && regalloc.edits[edit_idx].0.inst() < end_inst {
+                edit_idx += 1;
+            }
+            let end_edit_idx = edit_idx;
+            ra_edits_per_block.push((end_edit_idx - start_edit_idx) as u32);
+        }
+
+        // Construct the final order we emit code in: out-of-line edge blocks
+        // after the other hot blocks, and cold blocks at the end. An edge
+        // block that register allocation left without moves is just a jump,
+        // which branches to it bypass, so it stays in place.
+        let mut final_order: SmallVec<[BlockIndex; 16]> = smallvec![];
+        let mut out_of_line_blocks: SmallVec<[BlockIndex; 16]> = smallvec![];
+        let mut cold_blocks: SmallVec<[BlockIndex; 16]> = smallvec![];
+        let mut out_of_order = vec![false; self.num_blocks()];
+        for (index, &edits) in ra_edits_per_block.iter().enumerate() {
+            let block = BlockIndex::new(index);
             if self.block_order.is_cold(block) {
                 cold_blocks.push(block);
+                out_of_order[index] = true;
+            } else if self.block_order.is_out_of_line(block)
+                && (edits > 0 || self.block_ranges.get(index).len() > 1)
+            {
+                out_of_line_blocks.push(block);
+                out_of_order[index] = true;
             } else {
                 final_order.push(block);
             }
         }
-        final_order.extend(cold_blocks.clone());
+        final_order.extend(out_of_line_blocks);
+        final_order.extend(cold_blocks);
 
         // Compute/save info we need for the prologue: clobbers and
         // number of spillslots.
@@ -795,22 +823,6 @@ impl<I: VCodeInst> VCode<I> {
 
         if !self.debug_value_labels.is_empty() {
             inst_offsets.resize(self.insts.len(), NO_INST_OFFSET);
-        }
-
-        // Count edits per block ahead of time; this is needed for
-        // lookahead island emission. (We could derive it per-block
-        // with binary search in the edit list, but it's more
-        // efficient to do it in one pass here.)
-        let mut ra_edits_per_block: SmallVec<[u32; 64]> = smallvec![];
-        let mut edit_idx = 0;
-        for block in 0..self.num_blocks() {
-            let end_inst = InsnIndex::new(self.block_ranges.get(block).end);
-            let start_edit_idx = edit_idx;
-            while edit_idx < regalloc.edits.len() && regalloc.edits[edit_idx].0.inst() < end_inst {
-                edit_idx += 1;
-            }
-            let end_edit_idx = edit_idx;
-            ra_edits_per_block.push((end_edit_idx - start_edit_idx) as u32);
         }
 
         let is_forward_edge_cfi_enabled = self.abi.is_forward_edge_cfi_enabled();
@@ -907,14 +919,14 @@ impl<I: VCodeInst> VCode<I> {
                             // so that we can translate value-label
                             // ranges to machine-code offsets.
 
-                            // Cold blocks violate monotonicity
-                            // assumptions elsewhere (that
+                            // Cold and out-of-line blocks violate
+                            // monotonicity assumptions elsewhere (that
                             // instructions in inst-index order are in
                             // order in machine code), so we omit
                             // their offsets here. Value-label range
                             // generation below will skip empty ranges
                             // and ranges with to-offsets of zero.
-                            if !self.block_order.is_cold(block) {
+                            if !out_of_order[block.index()] {
                                 inst_offsets[iix.index()] = buffer.cur_offset();
                             }
                         }
