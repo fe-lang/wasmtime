@@ -27,7 +27,6 @@ block2:
 ;     region0 = 0 "R0"
 ;
 ; block0(v0: i64, v1: i32):
-;     v3 = iconst.i32 7
 ;     jump block1
 ;
 ; block1:
@@ -41,3 +40,4 @@ block2:
 ;     store notrap region0 v4, v0  ; v4 = 0
 ;     return v2
 ; }
+
