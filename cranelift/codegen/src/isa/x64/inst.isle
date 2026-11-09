@@ -1303,6 +1303,22 @@
 (decl pure has_bmi1 () bool)
 (extern constructor has_bmi1 has_bmi1)
 
+;; x64 ties a two-address operation's result to its first operand. A
+;; commutative operation whose second operand's register is free afterwards,
+;; and whose first operand's is not, takes them the other way round, so that
+;; no copy keeps the first operand.
+(decl pure commutes_to_tie (Value Value) bool)
+(extern constructor commutes_to_tie commutes_to_tie)
+
+;; The operand of a commutative operation to tie its result to, and the
+;; other one, given `commutes_to_tie`.
+(decl tied_operand (Value Value bool) Value)
+(rule (tied_operand x _ false) x)
+(rule (tied_operand _ y true) y)
+(decl untied_operand (Value Value bool) Value)
+(rule (untied_operand _ y false) y)
+(rule (untied_operand x _ true) x)
+
 (decl pure has_bmi2 () bool)
 (extern constructor has_bmi2 has_bmi2)
 
