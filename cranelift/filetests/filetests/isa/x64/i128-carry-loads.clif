@@ -1,0 +1,115 @@
+test compile precise-output
+target x86_64
+
+;; An i256 addition of two words in memory: each half of the second operand's
+;; `iconcat` is a load that sinks into its `add` or `adc`.
+function %add_words(i64) {
+block0(v0: i64):
+    v1 = load.i64 notrap v0
+    v2 = load.i64 notrap v0+8
+    v3 = load.i64 notrap v0+16
+    v4 = load.i64 notrap v0+24
+    v5 = load.i64 notrap v0+32
+    v6 = load.i64 notrap v0+40
+    v7 = load.i64 notrap v0+48
+    v8 = load.i64 notrap v0+56
+    v9 = iconcat v1, v2
+    v10 = iconcat v3, v4
+    v11 = iconcat v5, v6
+    v12 = iconcat v7, v8
+    v13, v14 = uadd_overflow v9, v11
+    v15, v16 = uadd_overflow_cin v10, v12, v14
+    v17, v18 = isplit v13
+    v19, v20 = isplit v15
+    store v17, v0
+    store v18, v0+8
+    store v19, v0+16
+    store v20, v0+24
+    return
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq (%rdi), %r8
+;   movq 8(%rdi), %rsi
+;   movq 0x10(%rdi), %r10
+;   movq 0x18(%rdi), %r9
+;   addq 0x20(%rdi), %r8
+;   adcq 0x28(%rdi), %rsi
+;   adcq 0x30(%rdi), %r10
+;   adcq 0x38(%rdi), %r9
+;   movq %r8, (%rdi)
+;   movq %rsi, 8(%rdi)
+;   movq %r10, 0x10(%rdi)
+;   movq %r9, 0x18(%rdi)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq (%rdi), %r8
+;   movq 8(%rdi), %rsi
+;   movq 0x10(%rdi), %r10
+;   movq 0x18(%rdi), %r9
+;   addq 0x20(%rdi), %r8
+;   adcq 0x28(%rdi), %rsi
+;   adcq 0x30(%rdi), %r10
+;   adcq 0x38(%rdi), %r9
+;   movq %r8, (%rdi) ; trap: heap_oob
+;   movq %rsi, 8(%rdi) ; trap: heap_oob
+;   movq %r10, 0x10(%rdi) ; trap: heap_oob
+;   movq %r9, 0x18(%rdi) ; trap: heap_oob
+;   popq %rbp
+;   retq
+
+;; An i128 subtraction whose second operand is a load of its own: the load's
+;; halves are the `sbb`s' operands.
+function %sub_loaded(i64, i64, i8) -> i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3 = load.i128 notrap v0
+    v4 = load.i128 notrap v1
+    v5, v6 = usub_overflow_bin v3, v4, v2
+    store v5, v0
+    return v6
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rsi, %r10
+;   movq (%rdi), %rsi
+;   movq 8(%rdi), %r8
+;   negb %dl
+;   movq %r10, %rax
+;   sbbq (%rax), %rsi
+;   sbbq 8(%rax), %r8
+;   setb %al
+;   movq %rsi, (%rdi)
+;   movq %r8, 8(%rdi)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rsi, %r10
+;   movq (%rdi), %rsi
+;   movq 8(%rdi), %r8
+;   negb %dl
+;   movq %r10, %rax
+;   sbbq (%rax), %rsi
+;   sbbq 8(%rax), %r8
+;   setb %al
+;   movq %rsi, (%rdi) ; trap: heap_oob
+;   movq %r8, 8(%rdi) ; trap: heap_oob
+;   popq %rbp
+;   retq
+
