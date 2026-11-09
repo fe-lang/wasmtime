@@ -311,6 +311,24 @@ fn test_x64_emit() {
     ));
 
     // ========================================================
+    // LoadEffectiveAddress: `dst + imm` into `dst` shrinks to an `add`, with
+    // an 8-bit immediate when the offset fits.
+    fn lea(dst: Writable<Reg>, base: Reg, simm32: i32) -> Inst {
+        let mem: SyntheticAmode = Amode::imm_reg(simm32, base).into();
+        Inst::External {
+            inst: asm::inst::leaq_rm::new(dst, mem).into(),
+        }
+    }
+    insns.push((lea(w_rdx, rdx, 1), "4883C201", "leaq 1(%rdx), %rdx"));
+    insns.push((lea(w_rcx, rcx, -64), "4883C1C0", "leaq -0x40(%rcx), %rcx"));
+    insns.push((
+        lea(w_rdx, rdx, 128),
+        "4881C280000000",
+        "leaq 0x80(%rdx), %rdx",
+    ));
+    insns.push((lea(w_rax, rbx, 1), "488D4301", "leaq 1(%rbx), %rax"));
+
+    // ========================================================
     // Misc instructions.
 
     insns.push((
