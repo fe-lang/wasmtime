@@ -431,6 +431,23 @@ pub trait OperandVisitorImpl: OperandVisitor {
         self.reg_maybe_fixed(reg.as_mut(), OperandKind::Use, OperandPos::Early);
     }
 
+    /// Add a use, at the start of the instruction (`Before` position), that
+    /// can read a value from its spillslot as well as from a register.
+    fn reg_or_stack_use(&mut self, reg: &mut impl AsMut<Reg>) {
+        let reg = reg.as_mut();
+        if let Some(rreg) = reg.to_real_reg() {
+            self.reg_fixed_nonallocatable(rreg.into());
+        } else {
+            debug_assert!(reg.is_virtual());
+            self.add_operand(
+                reg,
+                OperandConstraint::Any,
+                OperandKind::Use,
+                OperandPos::Early,
+            );
+        }
+    }
+
     /// Add a register use, at the end of the instruction (`After` position).
     fn reg_late_use(&mut self, reg: &mut impl AsMut<Reg>) {
         self.reg_maybe_fixed(reg.as_mut(), OperandKind::Use, OperandPos::Late);
