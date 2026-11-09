@@ -8,7 +8,9 @@ use crate::cursor::{Cursor, CursorPosition, FuncCursor};
 use crate::dominator_tree::DominatorTree;
 use crate::egraph::elaborate::Elaborator;
 use crate::flowgraph::ControlFlowGraph;
-use crate::inst_predicates::{is_mergeable_for_egraph, is_pure_for_egraph};
+use crate::inst_predicates::{
+    has_lowering_side_effect, is_mergeable_for_egraph, is_pure_for_egraph,
+};
 use crate::ir::{
     Block, DataFlowGraph, Function, Inst, InstructionData, Type, Value, ValueDef, ValueListPool,
 };
@@ -827,8 +829,61 @@ impl<'a> EgraphPass<'a> {
         }
 
         self.elaborate();
+        self.remove_unused_insts();
 
         log::trace!("stats: {:#?}", self.stats);
+    }
+
+    /// Remove instructions whose results are all unused and which lowering
+    /// would skip. Elaboration places only the pure values something uses,
+    /// but the skeleton stays as it was, including multi-result instructions
+    /// it treats as opaque: an unused `uadd_overflow` beside the
+    /// `uadd_overflow_cin` that replaced it still counted as a use of its
+    /// operands, so lowering merged neither operand's load into its one real
+    /// use.
+    fn remove_unused_insts(&mut self) {
+        let func = &mut *self.func;
+        let mut uses = SecondaryMap::<Value, u32>::with_default(0);
+        for block in func.layout.blocks() {
+            for inst in func.layout.block_insts(block) {
+                for arg in func.dfg.inst_values(inst) {
+                    uses[func.dfg.resolve_aliases(arg)] += 1;
+                }
+            }
+        }
+        let unused = |func: &Function, uses: &SecondaryMap<Value, u32>, inst: Inst| {
+            let results = func.dfg.inst_results(inst);
+            !results.is_empty()
+                && results.iter().all(|&result| uses[result] == 0)
+                && !has_lowering_side_effect(func, inst)
+        };
+        let mut worklist: Vec<Inst> = func
+            .layout
+            .blocks()
+            .flat_map(|block| func.layout.block_insts(block))
+            .filter(|&inst| unused(func, &uses, inst))
+            .collect();
+        while let Some(inst) = worklist.pop() {
+            if func.layout.inst_block(inst).is_none() {
+                continue;
+            }
+            let args: SmallVec<[Value; 8]> = func
+                .dfg
+                .inst_values(inst)
+                .map(|arg| func.dfg.resolve_aliases(arg))
+                .collect();
+            func.layout.remove_inst(inst);
+            for arg in args {
+                uses[arg] -= 1;
+                if uses[arg] == 0
+                    && let ValueDef::Result(def, _) = func.dfg.value_def(arg)
+                    && func.layout.inst_block(def).is_some()
+                    && unused(func, &uses, def)
+                {
+                    worklist.push(def);
+                }
+            }
+        }
     }
 
     /// Remove pure nodes from the `Layout` of the function, ensuring

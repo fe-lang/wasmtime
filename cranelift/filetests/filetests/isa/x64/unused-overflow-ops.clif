@@ -1,0 +1,34 @@
+test compile precise-output
+set opt_level=speed
+target x86_64
+
+;; The unused `uadd_overflow` of the operands the `iadd` adds is removed, so
+;; the second load folds into the `add` instead of taking a register.
+function %add_unused_overflow(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+  v2 = load.i64 notrap v0
+  v3 = load.i64 notrap v1
+  v4, v5 = uadd_overflow v2, v3
+  v6 = iadd v2, v3
+  return v6
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq (%rdi), %rax
+;   addq (%rsi), %rax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq (%rdi), %rax
+;   addq (%rsi), %rax
+;   popq %rbp
+;   retq
+
