@@ -2429,11 +2429,17 @@
 
 ;; A select on a carry left in the flags, possibly extended or compared with
 ;; 0 or 1, tests its flag instead of materializing the carry and comparing
-;; it (see `carry_selects`).
+;; it (see `carry_selects`). Taking the carry from the flags counts as a use
+;; of it, so that its producer is lowered even when nothing else uses its
+;; results.
 (rule 2 (lower i @ (select _ _ x y))
+      (if-let carry (select_carry i))
       (if-let cc (select_carry_flag i))
-      (lower_select (CondResult.CC (ProducesFlags.AlreadyExistingFlags) cc) x y))
+      (let ((_ ValueRegs (put_in_regs carry)))
+        (lower_select (CondResult.CC (ProducesFlags.AlreadyExistingFlags) cc) x y)))
 
+(decl pure partial select_carry (Inst) Value)
+(extern constructor select_carry select_carry)
 (decl pure partial select_carry_flag (Inst) CC)
 (extern constructor select_carry_flag select_carry_flag)
 
