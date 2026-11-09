@@ -1848,6 +1848,17 @@ pub(crate) fn emit(
 
         Inst::External { inst } => {
             let frame = state.frame_layout();
+            let mut in_slots = inst.clone();
+            let mut spillslots = external::SpillslotOperands {
+                frame,
+                rewritten: false,
+            };
+            in_slots.visit(&mut spillslots);
+            let inst = if spillslots.rewritten {
+                &in_slots
+            } else {
+                inst
+            };
             emit_maybe_shrink(
                 inst,
                 &mut external::AsmCodeSink {

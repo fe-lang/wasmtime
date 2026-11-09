@@ -178,8 +178,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ;   adcxq %rsi, %rax
 ;   movq 8(%rdi), %rcx
 ;   adoxq %rdx, %rcx
-;   movq %r8, %rdx
-;   adcxq %rdx, %rcx
+;   adcxq %r8, %rcx
 ;   setb %dl
 ;   adoxq %rsi, %rcx
 ;   seto %sil
@@ -201,8 +200,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ;   adcxq %rsi, %rax
 ;   movq 8(%rdi), %rcx
 ;   adoxq %rdx, %rcx
-;   movq %r8, %rdx
-;   adcxq %rdx, %rcx
+;   adcxq %r8, %rcx
 ;   setb %dl
 ;   adoxq %rsi, %rcx
 ;   seto %sil
@@ -212,7 +210,6 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ;   addq %rcx, %rax
 ;   popq %rbp
 ;   retq
-
 
 ;; A zero addend while both chains are in flight takes the pair's zero
 ;; register, which the `xor` clearing the flags set: here the CF chain ends
@@ -240,21 +237,21 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x10, %rsp
-;   movq %rbx, (%rsp)
+;   movq %rbx, -0x10(%rbp)
+;   movq %r12, -8(%rbp)
 ; block0:
-;   movq %rdx, %rbx
+;   movq %rdx, %r12
 ;   movq <offset:0>+-0x10(%rbp), %r10
 ;   movq %rsi, %rdx
 ;   mulxq %rcx, %r11, %rsi ;; implicit: %rdx
-;   movq %rcx, %rdx
+;   movq %rcx, %rbx
 ;   uninit  %rcx
 ;   xorl %ecx, %ecx
 ;   movq %r8, %rax
 ;   adcxq %r11, %rax
 ;   adoxq %rsi, %r9
-;   movq %rdx, %rsi
-;   movq %rbx, %rdx
-;   mulxq %rsi, %r8, %rsi ;; implicit: %rdx
+;   movq %r12, %rdx
+;   mulxq %rbx, %r8, %rsi ;; implicit: %rdx
 ;   movq %r9, %rdx
 ;   adcxq %r8, %rdx
 ;   adcxq %rcx, %rsi
@@ -263,7 +260,8 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   movzbq %cl, %rcx
 ;   movq %r10, (%rdi)
 ;   movq %rcx, 8(%rdi)
-;   movq (%rsp), %rbx
+;   movq -0x10(%rbp), %rbx
+;   movq -8(%rbp), %r12
 ;   addq $0x10, %rsp
 ;   popq %rbp
 ;   retq
@@ -273,20 +271,20 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x10, %rsp
-;   movq %rbx, (%rsp)
-; block1: ; offset 0xc
-;   movq %rdx, %rbx
+;   movq %rbx, -0x10(%rbp)
+;   movq %r12, -8(%rbp)
+; block1: ; offset 0x10
+;   movq %rdx, %r12
 ;   movq 0x10(%rbp), %r10
 ;   movq %rsi, %rdx
 ;   mulxq %rcx, %r11, %rsi
-;   movq %rcx, %rdx
+;   movq %rcx, %rbx
 ;   xorl %ecx, %ecx
 ;   movq %r8, %rax
 ;   adcxq %r11, %rax
 ;   adoxq %rsi, %r9
-;   movq %rdx, %rsi
-;   movq %rbx, %rdx
-;   mulxq %rsi, %r8, %rsi
+;   movq %r12, %rdx
+;   mulxq %rbx, %r8, %rsi
 ;   movq %r9, %rdx
 ;   adcxq %r8, %rdx
 ;   adcxq %rcx, %rsi
@@ -295,7 +293,8 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   movzbq %cl, %rcx
 ;   movq %r10, (%rdi)
 ;   movq %rcx, 8(%rdi)
-;   movq (%rsp), %rbx
+;   movq -0x10(%rbp), %rbx
+;   movq -8(%rbp), %r12
 ;   addq $0x10, %rsp
 ;   popq %rbp
 ;   retq

@@ -419,11 +419,10 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   imulq %rdx, %rdx
 ;   negb %r8b
 ;   adcq %rsi, %rdx
-;   movq %rdx, %rax
+;   movq %rdx, %r11
 ;   setb %dl
-;   movq %rdi, %r10
-;   xorq %rax, %r10
-;   movq %r10, %rax
+;   movq %rdi, %rax
+;   xorq %r11, %rax
 ;   popq %rbp
 ;   retq
 ;
@@ -437,11 +436,10 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   imulq %rdx, %rdx
 ;   negb %r8b
 ;   adcq %rsi, %rdx
-;   movq %rdx, %rax
+;   movq %rdx, %r11
 ;   setb %dl
-;   movq %rdi, %r10
-;   xorq %rax, %r10
-;   movq %r10, %rax
+;   movq %rdi, %rax
+;   xorq %r11, %rax
 ;   popq %rbp
 ;   retq
 

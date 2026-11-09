@@ -1221,7 +1221,18 @@ fn x64_get_operands(inst: &mut Inst, collector: &mut impl OperandVisitor) {
         Inst::SequencePoint { .. } => {}
 
         Inst::External { inst } => {
-            inst.visit(&mut external::RegallocVisitor { collector });
+            // `bt` with a register bit index addresses past its base in
+            // memory, where a register base takes the index modulo its width.
+            let stack_sources = !matches!(
+                inst,
+                asm::inst::Inst::btw_mr(_)
+                    | asm::inst::Inst::btl_mr(_)
+                    | asm::inst::Inst::btq_mr(_)
+            );
+            inst.visit(&mut external::RegallocVisitor {
+                collector,
+                stack_sources,
+            });
         }
     }
 }

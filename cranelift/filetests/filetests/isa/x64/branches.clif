@@ -290,9 +290,9 @@ block2:
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ; block0:
-;   movq %rdi, %r11
+;   movq %rdi, %r10
 ;   movl $0x2, %edi
-;   movl %r11d, %r8d
+;   movl %r10d, %r8d
 ;   cmpl %edi, %r8d
 ;   cmovbl %r8d, %edi
 ;   br_table %rdi, %rcx, %rax
@@ -315,9 +315,9 @@ block2:
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
-;   movq %rdi, %r11
+;   movq %rdi, %r10
 ;   movl $2, %edi
-;   movl %r11d, %r8d
+;   movl %r10d, %r8d
 ;   cmpl %edi, %r8d
 ;   cmovbl %r8d, %edi
 ;   leaq 9(%rip), %rcx

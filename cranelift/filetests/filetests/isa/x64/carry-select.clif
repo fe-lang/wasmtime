@@ -25,10 +25,10 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ; block0:
 ;   movq %rsi, %r8
 ;   subq $0x1234, %r8
-;   movq %rsi, %r10
+;   movq %rsi, %r9
 ;   movq %rdx, %rsi
 ;   sbbq $0x5678, %rsi
-;   cmovbq %r10, %r8
+;   cmovbq %r9, %r8
 ;   movq %r8, (%rdi)
 ;   cmovbq %rdx, %rsi
 ;   movq %rsi, 8(%rdi)
@@ -42,10 +42,10 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ; block1: ; offset 0x4
 ;   movq %rsi, %r8
 ;   subq $0x1234, %r8
-;   movq %rsi, %r10
+;   movq %rsi, %r9
 ;   movq %rdx, %rsi
 ;   sbbq $0x5678, %rsi
-;   cmovbq %r10, %r8
+;   cmovbq %r9, %r8
 ;   movq %r8, (%rdi) ; trap: heap_oob
 ;   cmovbq %rdx, %rsi
 ;   movq %rsi, 8(%rdi) ; trap: heap_oob
