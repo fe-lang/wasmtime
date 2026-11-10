@@ -36,7 +36,6 @@
 ;;       vptest  %xmm5, %xmm5
 ;;       sete    %r8b
 ;;       movzbl  %r8b, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -47,7 +46,6 @@
 ;;       vptest  %xmm5, %xmm5
 ;;       sete    %r8b
 ;;       movzbl  %r8b, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -57,7 +55,6 @@
 ;;       vptest  %xmm1, %xmm0
 ;;       setne   %sil
 ;;       movzbl  %sil, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -67,6 +64,5 @@
 ;;       vptest  %xmm0, %xmm1
 ;;       setae   %sil
 ;;       movzbl  %sil, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

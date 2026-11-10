@@ -1597,8 +1597,14 @@
 (rule 1 (extend_to_gpr (and (sinkable_load_exact val) (value_type from_ty)) to_ty kind)
       (extend_to_gpr_types val from_ty to_ty kind))
 
+;; I8/I16 -> I32/I64 with a value that its register holds zero-extended
+;; already, when no load sinks into the extend.
+(rule (extend_to_gpr src @ (value_type (fits_in_16 _)) _ (ExtendKind.Zero))
+      (if-let true (value16_zeros_upper src))
+      src)
+
 ;; Otherwise emit the extend from a Gpr to a Gpr.
-(rule (extend_to_gpr (and val (value_type from_ty)) to_ty kind)
+(rule -1 (extend_to_gpr (and val (value_type from_ty)) to_ty kind)
       (extend_to_gpr_types val from_ty to_ty kind))
 
 ;; Calculates the correct extension mode for an extend between `from_ty` and `to_ty`.
@@ -1637,7 +1643,18 @@
 (rule (value32_zeros_upper32 (ishl _ _ _)) true)
 (rule (value32_zeros_upper32 (ushr _ _ _)) true)
 (rule (value32_zeros_upper32 (uload32 _ _ _ _)) true)
+(rule (value32_zeros_upper32 (load _ (little_or_native_endian _) _ _)) true)
+(rule (value32_zeros_upper32 (bswap _ _)) true)
 (rule -1 (value32_zeros_upper32 _) false)
+
+;; Tests whether the lowering of the input `Value`, which must be an 8- or
+;; 16-bit integer, zeroes the rest of its register. Narrow loads zero-extend
+;; into the whole register (`load_sub64_x64_movzx`), and a 16-bit byte swap
+;; rotates only the low 16 bits of one.
+(decl pure value16_zeros_upper (Value) bool)
+(rule (value16_zeros_upper (load _ (little_or_native_endian _) _ _)) true)
+(rule (value16_zeros_upper (bswap $I16 (load _ (little_or_native_endian _) _ _))) true)
+(rule -1 (value16_zeros_upper _) false)
 
 ;;;; Helpers for Working SSE tidbits ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1689,7 +1706,7 @@
 (decl gen_return_call_info (Sig ExternalName CallArgList) BoxReturnCallInfo)
 (extern constructor gen_return_call_info gen_return_call_info)
 
-(decl gen_return_call_ind_info (Sig Reg CallArgList) BoxReturnCallIndInfo)
+(decl gen_return_call_ind_info (Sig RegMem CallArgList) BoxReturnCallIndInfo)
 (extern constructor gen_return_call_ind_info gen_return_call_ind_info)
 
 ;; Helper for creating `CallKnown` instructions.
@@ -3874,6 +3891,19 @@
 (rule 2 (is_nonzero (uextend _ (vany_true _ vec))) (is_vany_true vec))
 (rule 2 (is_nonzero (band _ a @ (value_type (ty_int (fits_in_64 ty))) b))
       (is_nonzero_band ty a b))
+;; `or` sets the flags from its result, as `test` of the result would. Not
+;; when the `bor` could sink a load, though: a branch, which tests the flags
+;; where it ends the block, can sink none, and a load left unsunk keeps the
+;; loads above it from sinking into their own `bor`s.
+(rule 2 (is_nonzero val @ (bor _ a @ (value_type (ty_int (fits_in_64 ty))) b))
+      (if-let false (load_sinks_into val a))
+      (if-let false (load_sinks_into val b))
+      (CondResult.CC (x64_produce_flags_side_effect (ProduceFlagsSideEffectOp.Or) ty a b) (CC.NZ)))
+
+;; Whether the instruction defining the first value could sink the load that
+;; defines the second: they share a block and no side effect lies between.
+(decl pure load_sinks_into (Value Value) bool)
+(extern constructor load_sinks_into load_sinks_into)
 
 ;; Like `is_nonzero` but with additional specializations for compare
 ;; operators. We break this out from `is_nonzero` because we want to
@@ -3896,6 +3926,19 @@
 ;; manually used.
 (rule 1 (is_nonzero_band (ty_32_or_64 ty) a (ishl _ (u64_from_iconst 1) b))
   (CondResult.CC (x64_bt ty (put_in_gpr a) b) (CC.B)))
+
+;; A narrow one is a 32-bit `bt` of a bit index wrapped at the type's width,
+;; as the shift wraps its count, so that it stays among the type's bits.
+(rule 3 (is_nonzero_band (fits_in_16 ty) a (ishl _ (u64_from_iconst 1) b))
+  (CondResult.CC (x64_bt $I32 (put_in_gpr a) (bit_index ty b)) (CC.B)))
+
+;; A shift count wrapped at the width of `ty`, as `ishl` wraps it, in a
+;; register. A count masked already, as a bitmap's `index & 7` is, is used as
+;; it is.
+(decl bit_index (Type Value) Gpr)
+(rule 1 (bit_index $I8 b @ (band _ _ (u64_from_iconst 7))) b)
+(rule 1 (bit_index $I16 b @ (band _ _ (u64_from_iconst 15))) b)
+(rule (bit_index ty b) (x64_and $I32 b (RegMemImm.Imm (shift_mask ty))))
 
 ;; If a value is and'd one shifted by a variable value that matches `bt` as
 ;; well.

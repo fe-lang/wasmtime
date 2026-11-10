@@ -63,7 +63,6 @@
 ;;   17: movl    $0xc8, %eax
 ;;       jmp     0x26
 ;;   21: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -77,7 +76,6 @@
 ;;   57: movl    $0xc8, %eax
 ;;       jmp     0x66
 ;;   61: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -91,7 +89,6 @@
 ;;   97: movl    $0xc8, %eax
 ;;       jmp     0xa6
 ;;   a1: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -105,7 +102,6 @@
 ;;   d8: movl    $0xc8, %eax
 ;;       jmp     0xe7
 ;;   e2: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -117,6 +113,5 @@
 ;;  10f: movl    $0xc8, %eax
 ;;       jmp     0x11e
 ;;  119: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

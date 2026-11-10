@@ -14,6 +14,5 @@
 ;;       movq    %rsp, %rbp
 ;;       imulw   $0xe0ff, %dx, %si
 ;;       movswl  %si, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

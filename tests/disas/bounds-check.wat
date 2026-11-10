@@ -37,8 +37,8 @@
 ;;
 ;;                                 block0(v0: i64, v1: i64, v2: i32):
 ;; @002a                               v3 = iconst.i32 0
-;; @002c                               v5 = load.i64 notrap aligned readonly can_move region2 v0+56
 ;; @002c                               v4 = uextend.i64 v2
+;; @002c                               v5 = load.i64 notrap aligned readonly can_move region2 v0+56
 ;; @002c                               v6 = iadd v5, v4
 ;; @002c                               istore8 little region4 v3, v6  ; v3 = 0
 ;; @0033                               v11 = iconst.i64 0x07ff_ffff

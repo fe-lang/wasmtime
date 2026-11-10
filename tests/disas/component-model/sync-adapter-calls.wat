@@ -118,9 +118,9 @@
 ;;                                     brif v10, block9, block10
 ;;
 ;;                                 block10:
+;;                                     v51 = iconst.i32 23
 ;;                                     v53 = load.i64 notrap aligned readonly can_move region14 v3+88
 ;;                                     v52 = load.i64 notrap aligned readonly can_move region2 v3+104
-;;                                     v51 = iconst.i32 23
 ;;                                     try_call_indirect v53(v52, v3, v51), sig1, block11, [ context v3, default: block8(exn0) ]  ; v51 = 23
 ;;
 ;;                                 block11:
@@ -132,8 +132,8 @@
 ;;                                     v8 = iconst.i32 0
 ;;                                     store notrap aligned region4 v8, v11  ; v8 = 0
 ;;                                     v20 = load.i64 notrap aligned readonly can_move region0 v3+8
-;;                                     v21 = load.i64 notrap aligned region5 v20+136
 ;;                                     v19 = stack_addr.i64 ss0
+;;                                     v21 = load.i64 notrap aligned region5 v20+136
 ;;                                     store notrap aligned region6 v21, v19
 ;;                                     v15 = iconst.i32 2
 ;;                                     store notrap aligned region7 v15, v19+8  ; v15 = 2
@@ -175,9 +175,9 @@
 ;;                                     jump block4
 ;;
 ;;                                 block5:
+;;                                     v48 = iconst.i32 49
 ;;                                     v61 = load.i64 notrap aligned readonly can_move region14 v3+88
 ;;                                     v62 = load.i64 notrap aligned readonly can_move region2 v3+104
-;;                                     v48 = iconst.i32 49
 ;;                                     call_indirect sig1, v61(v62, v3, v48)  ; v48 = 49
 ;;                                     trap user12
 ;;
@@ -237,9 +237,9 @@
 ;; @00da                               brif v7, block7, block8
 ;;
 ;;                                 block8:
+;; @00dc                               v8 = iconst.i32 23
 ;; @00de                               v10 = load.i64 notrap aligned readonly can_move region5 v0+88
 ;; @00de                               v9 = load.i64 notrap aligned readonly can_move region4 v0+104
-;; @00dc                               v8 = iconst.i32 23
 ;; @00de                               try_call_indirect v10(v9, v0, v8), sig0, block9, [ context v0, default: block6(exn0) ]  ; v8 = 23
 ;;
 ;;                                 block9:
@@ -251,8 +251,8 @@
 ;; @00c9                               v3 = iconst.i32 0
 ;; @00e8                               store notrap aligned region3 v3, v11  ; v3 = 0
 ;; @00f0                               v20 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @00f0                               v21 = load.i64 notrap aligned region6 v20+136
 ;; @00f0                               v19 = stack_addr.i64 ss0
+;; @00f0                               v21 = load.i64 notrap aligned region6 v20+136
 ;; @00f0                               store notrap aligned region7 v21, v19
 ;; @00ea                               v15 = iconst.i32 2
 ;; @00f0                               store notrap aligned region8 v15, v19+8  ; v15 = 2
@@ -294,9 +294,9 @@
 ;; @0115                               jump block2
 ;;
 ;;                                 block3:
+;; @0118                               v49 = iconst.i32 49
 ;;                                     v55 = load.i64 notrap aligned readonly can_move region5 v0+88
 ;;                                     v56 = load.i64 notrap aligned readonly can_move region4 v0+104
-;; @0118                               v49 = iconst.i32 49
 ;; @011a                               call_indirect sig0, v55(v56, v0, v49)  ; v49 = 49
 ;; @011c                               trap user12
 ;;

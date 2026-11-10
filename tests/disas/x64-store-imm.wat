@@ -29,7 +29,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       movl    $0, 0x30(%rdi)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -37,7 +36,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       movl    $1, 0x30(%rdi)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -45,7 +43,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       movl    $0xffffffff, 0x30(%rdi)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -53,7 +50,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       movl    $0xfffffff6, 0x30(%rdi)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -61,7 +57,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       movl    $0x186a0, 0x30(%rdi)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -69,6 +64,5 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       movl    $0x8fffffff, 0x30(%rdi)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

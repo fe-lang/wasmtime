@@ -56,10 +56,10 @@
 ;;     stack_limit = gv2
 ;;
 ;;                                 block0(v0: i64, v1: i64, v2: i32, v3: i32):
-;; @003c                               v5 = load.i64 notrap aligned region3 v0+96
 ;; @003c                               v6 = uextend.i64 v2
 ;; @003c                               v7 = uextend.i64 v3
 ;; @003c                               v10 = iadd v6, v7
+;; @003c                               v5 = load.i64 notrap aligned region3 v0+96
 ;; @003c                               v11 = icmp ugt v10, v5
 ;; @003c                               trapnz v11, heap_oob
 ;; @003c                               v12 = load.i64 notrap aligned readonly can_move region2 v0+88
@@ -112,10 +112,10 @@
 ;;     stack_limit = gv2
 ;;
 ;;                                 block0(v0: i64, v1: i64, v2: i32, v3: i32):
-;; @0054                               v5 = load.i64 notrap aligned region3 v0+128
 ;; @0054                               v6 = uextend.i64 v2
 ;; @0054                               v7 = uextend.i64 v3
 ;; @0054                               v10 = iadd v6, v7
+;; @0054                               v5 = load.i64 notrap aligned region3 v0+128
 ;; @0054                               v11 = icmp ugt v10, v5
 ;; @0054                               trapnz v11, heap_oob
 ;; @0054                               v12 = load.i64 notrap aligned readonly can_move region2 v0+120
@@ -168,10 +168,10 @@
 ;;     stack_limit = gv2
 ;;
 ;;                                 block0(v0: i64, v1: i64, v2: i32, v3: i32):
-;; @006c                               v5 = load.i64 notrap aligned region3 v0+160
 ;; @006c                               v6 = uextend.i64 v2
 ;; @006c                               v7 = uextend.i64 v3
 ;; @006c                               v10 = iadd v6, v7
+;; @006c                               v5 = load.i64 notrap aligned region3 v0+160
 ;; @006c                               v11 = icmp ugt v10, v5
 ;; @006c                               trapnz v11, heap_oob
 ;; @006c                               v12 = load.i64 notrap aligned readonly can_move region2 v0+152

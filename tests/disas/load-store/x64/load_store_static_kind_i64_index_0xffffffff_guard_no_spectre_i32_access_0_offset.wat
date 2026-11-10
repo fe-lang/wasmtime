@@ -22,24 +22,26 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       cmpq    0x15(%rip), %rdx
-;;       ja      0x1d
+;;       ja      0x1a
 ;;   11: movq    0x38(%rdi), %rsi
 ;;       movl    %ecx, (%rsi, %rdx)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;   1d: ud2
-;;   1f: addb    %bh, %ah
+;;   1a: ud2
+;;   1c: addb    %al, (%rax)
+;;   1e: addb    %al, (%rax)
+;;   20: cld
 ;;
 ;; wasm[0]::function[1]:
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       cmpq    0x15(%rip), %rdx
-;;       ja      0x5d
+;;       ja      0x5a
 ;;   51: movq    0x38(%rdi), %rsi
 ;;       movl    (%rsi, %rdx), %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;   5d: ud2
-;;   5f: addb    %bh, %ah
+;;   5a: ud2
+;;   5c: addb    %al, (%rax)
+;;   5e: addb    %al, (%rax)
+;;   60: cld

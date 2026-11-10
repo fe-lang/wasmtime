@@ -43,11 +43,11 @@
 ;;     stack_limit = gv2
 ;;
 ;;                                 block0(v0: i64, v1: i64, v2: i32):
-;; @0047                               v4 = load.i64 notrap aligned region3 v0+64
-;; @0047                               v6 = load.i64 notrap aligned can_move region2 v0+56
 ;; @0047                               v3 = uextend.i64 v2
+;; @0047                               v4 = load.i64 notrap aligned region3 v0+64
 ;; @0047                               v5 = icmp ugt v3, v4
 ;; @0047                               v8 = iconst.i64 0
+;; @0047                               v6 = load.i64 notrap aligned can_move region2 v0+56
 ;; @0047                               v7 = iadd v6, v3
 ;; @0047                               v9 = select_spectre_guard v5, v8, v7  ; v8 = 0
 ;; @0047                               v10 = load.i32 little region4 v9
@@ -80,11 +80,11 @@
 ;;     stack_limit = gv2
 ;;
 ;;                                 block0(v0: i64, v1: i64, v2: i32, v3: i32, v4: i32, v5: i32):
-;; @005d                               v7 = load.i64 notrap aligned region3 v0+64
-;; @005d                               v9 = load.i64 notrap aligned can_move region2 v0+56
 ;; @005d                               v6 = uextend.i64 v2
+;; @005d                               v7 = load.i64 notrap aligned region3 v0+64
 ;; @005d                               v8 = icmp ugt v6, v7
 ;; @005d                               v11 = iconst.i64 0
+;; @005d                               v9 = load.i64 notrap aligned can_move region2 v0+56
 ;; @005d                               v10 = iadd v9, v6
 ;; @005d                               v12 = select_spectre_guard v8, v11, v10  ; v11 = 0
 ;; @005d                               store little region4 v3, v12

@@ -24,8 +24,8 @@
 ;;       sd      s0, 0(sp)
 ;;       mv      s0, sp
 ;;       ld      a4, 0x40(a0)
-;;       ld      a5, 0x38(a0)
 ;;       sltu    a4, a4, a2
+;;       ld      a5, 0x38(a0)
 ;;       add     a2, a5, a2
 ;;       lui     a5, 1
 ;;       add     a2, a2, a5
@@ -44,8 +44,8 @@
 ;;       sd      s0, 0(sp)
 ;;       mv      s0, sp
 ;;       ld      a3, 0x40(a0)
-;;       ld      a4, 0x38(a0)
 ;;       sltu    a3, a3, a2
+;;       ld      a4, 0x38(a0)
 ;;       add     a2, a4, a2
 ;;       lui     a4, 1
 ;;       add     a2, a2, a4

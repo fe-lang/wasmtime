@@ -1,0 +1,56 @@
+test compile precise-output
+set opt_level=speed
+target x86_64
+
+;; Each load runs next to its `bxor`: the first chain's loads move down to it,
+;; and the second chain, whose loads cannot pass the first store, moves up to
+;; them. So both chains fold loads into memory operands, and the second
+;; chain's loads are not live across the first store.
+function %xor_chains(i64, i64) {
+block0(v0: i64, v1: i64):
+    v2 = load.i64 notrap v0
+    v3 = load.i64 notrap v0+8
+    v4 = load.i64 notrap v0+16
+    v5 = load.i64 notrap v0+24
+    v6 = load.i64 notrap v0+32
+    v7 = load.i64 notrap v0+40
+    v8 = bxor v2, v3
+    v9 = bxor v8, v4
+    v10 = bxor v5, v6
+    v11 = bxor v10, v7
+    store notrap v9, v1
+    store notrap v11, v1+8
+    return
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq 0x18(%rdi), %r8
+;   xorq 0x20(%rdi), %r8
+;   xorq 0x28(%rdi), %r8
+;   movq (%rdi), %r9
+;   xorq 8(%rdi), %r9
+;   xorq 0x10(%rdi), %r9
+;   movq %r9, (%rsi)
+;   movq %r8, 8(%rsi)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq 0x18(%rdi), %r8
+;   xorq 0x20(%rdi), %r8
+;   xorq 0x28(%rdi), %r8
+;   movq (%rdi), %r9
+;   xorq 8(%rdi), %r9
+;   xorq 0x10(%rdi), %r9
+;   movq %r9, (%rsi)
+;   movq %r8, 8(%rsi)
+;   popq %rbp
+;   retq
+

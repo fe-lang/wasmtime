@@ -39,8 +39,8 @@
 ;; @0019                               v6 = stack_addr.i64 ss0+16
 ;; @0019                               store notrap region2 v4, v6  ; v4 = 0
 ;; @0019                               v7 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @0019                               v8 = load.i64 notrap aligned region1 v7+24
 ;; @0019                               v9 = get_stack_pointer.i64 
+;; @0019                               v8 = load.i64 notrap aligned region1 v7+24
 ;; @0019                               v10 = icmp ult v9, v8
 ;; @0019                               brif v10, block2, block3
 ;;

@@ -1,0 +1,51 @@
+test interpret
+test run
+
+target x86_64
+
+function %callee_i64(i64) -> i64 tail {
+block0(v0: i64):
+    v2 = iconst.i64 10
+    v1 = iadd v0, v2
+    return v1
+}
+
+;;;; Test calling through a loaded address ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+function %call_i64_from_frame(i64) -> i64 tail {
+    ss0 = explicit_slot 8
+    fn0 = %callee_i64(i64) -> i64 tail
+    ; sig0 = (i64) -> i64 tail
+
+block0(v0: i64):
+    v1 = func_addr.i64 fn0
+    v2 = stack_addr.i64 ss0
+    store.i64 v1, v2
+    v3 = load.i64 v2
+    return_call_indirect sig0, v3(v0)
+}
+; run: %call_i64_from_frame(10) == 20
+
+function %call_i64_from_frame_with_stack_args(i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 tail {
+    ss0 = explicit_slot 8
+    fn0 = %callee_i64(i64) -> i64 tail
+    ; sig0 = (i64) -> i64 tail
+
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: i64, v9: i64, v10: i64, v11: i64, v12: i64, v13: i64, v14: i64, v15: i64, v16: i64, v17: i64, v18: i64, v19: i64, v20: i64, v21: i64, v22: i64, v23: i64, v24: i64, v25: i64):
+    v26 = func_addr.i64 fn0
+    v27 = stack_addr.i64 ss0
+    store.i64 v26, v27
+    v28 = load.i64 v27
+    return_call_indirect sig0, v28(v25)
+}
+
+function %call_from_frame_with_stack_args() -> i64 tail {
+    fn0 = %call_i64_from_frame_with_stack_args(i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 tail
+
+block0:
+    v0 = iconst.i64 0
+    v1 = iconst.i64 125
+    v2 = call fn0(v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v0, v1)
+    return v2
+}
+; run: %call_from_frame_with_stack_args() == 135

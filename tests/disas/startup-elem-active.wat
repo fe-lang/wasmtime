@@ -57,11 +57,11 @@
 ;;     v78 = iconst.i64 4
 ;;     v84 = icmp ult v6, v78  ; v78 = 4
 ;;     trapnz v84, user6
-;;     v13 = load.i64 notrap aligned region0 v0+48
 ;;     v95 = iconst.i32 21
 ;;     v2 = iconst.i32 1
 ;;     v106 = icmp ule v5, v2  ; v2 = 1
 ;;     v71 = iconst.i64 0
+;;     v13 = load.i64 notrap aligned region0 v0+48
 ;;     v17 = iadd v13, v78  ; v78 = 4
 ;;     v34 = select_spectre_guard v106, v71, v17  ; v71 = 0
 ;;     store user6 aligned region2 v95, v34  ; v95 = 21

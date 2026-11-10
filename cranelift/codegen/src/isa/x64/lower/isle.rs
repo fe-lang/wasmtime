@@ -8,6 +8,7 @@ use generated_code::{AssemblerOutputs, Context, MInst, RegisterClass};
 // Types that the generated ISLE code uses via `use super::*`.
 use super::external::{CraneliftRegisters, PairedGpr, PairedXmm, isle_assembler_methods};
 use super::{MergeableLoadSize, is_int_or_ref_ty, is_mergeable_load, lower_to_amode};
+use crate::inst_predicates::has_lowering_side_effect;
 use crate::ir::condcodes::{FloatCC, IntCC};
 use crate::ir::immediates::*;
 use crate::ir::types::*;
@@ -32,7 +33,7 @@ use regalloc2::PReg;
 type BoxCallInfo = Box<CallInfo<ExternalName>>;
 type BoxCallIndInfo = Box<CallInfo<RegMem>>;
 type BoxReturnCallInfo = Box<ReturnCallInfo<ExternalName>>;
-type BoxReturnCallIndInfo = Box<ReturnCallInfo<Reg>>;
+type BoxReturnCallIndInfo = Box<ReturnCallInfo<RegMem>>;
 type VecArgPair = Vec<ArgPair>;
 type BoxAtomic128RmwSeqArgs = Box<Atomic128RmwSeqArgs>;
 type BoxAtomic128XchgSeqArgs = Box<Atomic128XchgSeqArgs>;
@@ -352,7 +353,7 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
     fn gen_return_call_ind_info(
         &mut self,
         sig: Sig,
-        dest: Reg,
+        dest: &RegMem,
         uses: CallArgList,
     ) -> BoxReturnCallIndInfo {
         let new_stack_arg_size = self.lower_ctx.sigs()[sig].sized_stack_arg_space();
@@ -361,7 +362,7 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
             .accumulate_tail_args_size(new_stack_arg_size);
 
         Box::new(ReturnCallInfo {
-            dest,
+            dest: dest.clone(),
             uses,
             tmp: self.lower_ctx.temp_writable_gpr(),
             new_stack_arg_size,
@@ -567,6 +568,21 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         Some(GprMemImm::unwrap_new(RegMemImm::Imm {
             simm32: i32::try_from(imm).ok()?.cast_unsigned(),
         }))
+    }
+
+    fn load_sinks_into(&mut self, user: Value, operand: Value) -> bool {
+        let f = self.lower_ctx.f;
+        let (Some(user), Some(load)) = (
+            f.dfg.value_def(user).inst(),
+            f.dfg.value_def(operand).inst(),
+        ) else {
+            return false;
+        };
+        f.dfg.insts[load].opcode() == Opcode::Load
+            && f.layout.inst_block(load) == f.layout.inst_block(user)
+            && core::iter::successors(f.layout.next_inst(load), |&inst| f.layout.next_inst(inst))
+                .take_while(|&inst| inst != user)
+                .all(|inst| !has_lowering_side_effect(f, inst))
     }
 
     fn sinkable_load(&mut self, val: Value) -> Option<SinkableLoad> {

@@ -1333,6 +1333,8 @@ pub(crate) struct Stats {
     pub(crate) elaborate_memoize_miss: u64,
     pub(crate) elaborate_remat: u64,
     pub(crate) elaborate_licm_hoist: u64,
+    pub(crate) elaborate_move_up: u64,
+    pub(crate) elaborate_sink_load: u64,
     pub(crate) elaborate_func: u64,
     pub(crate) elaborate_func_pre_insts: u64,
     pub(crate) elaborate_func_post_insts: u64,

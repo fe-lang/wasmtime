@@ -47,7 +47,6 @@
 ;;       vpand   %xmm7, %xmm0, %xmm1
 ;;       vpsrad  $0x1f, %xmm1, %xmm1
 ;;       vpxor   %xmm0, %xmm1, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -67,7 +66,6 @@
 ;;       vpxor   %xmm2, %xmm2, %xmm2
 ;;       vpmaxsd %xmm2, %xmm1, %xmm1
 ;;       vpaddd  %xmm0, %xmm1, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -78,12 +76,12 @@
 ;;       vandps  0xf(%rip), %xmm3, %xmm5
 ;;       vminpd  %xmm5, %xmm0, %xmm7
 ;;       vcvttpd2dq %xmm7, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;   9e: addb    %al, (%rax)
-;;   a0: addb    %al, (%rax)
-;;   a2: sarb    $0xff, %bh
+;;   9b: addb    %al, (%rax)
+;;   9d: addb    %al, (%rax)
+;;   9f: addb    %al, (%rax)
+;;   a1: addb    %al, %al
 ;;
 ;; wasm[0]::function[3]:
 ;;       pushq   %rbp
@@ -94,13 +92,13 @@
 ;;       vroundpd $3, %xmm0, %xmm0
 ;;       vaddpd  0x1e(%rip), %xmm0, %xmm0
 ;;       vshufps $0x88, %xmm5, %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;   ec: addb    %al, (%rax)
-;;   ee: addb    %al, (%rax)
-;;   f0: addb    %al, (%rax)
-;;   f2: loopne  0xf3
+;;   e9: addb    %al, (%rax)
+;;   eb: addb    %al, (%rax)
+;;   ed: addb    %al, (%rax)
+;;   ef: addb    %al, (%rax)
+;;   f1: addb    %ah, %al
 ;;
 ;; wasm[0]::function[4]:
 ;;       pushq   %rbp
@@ -114,7 +112,6 @@
 ;;       vpmovsxbw %xmm1, %xmm1
 ;;       vpmullw %xmm1, %xmm0, %xmm0
 ;;       vphaddw %xmm0, %xmm2, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -133,25 +130,25 @@
 ;;       vpmaddwd 0x24(%rip), %xmm0, %xmm0
 ;;       vphaddd %xmm0, %xmm3, %xmm0
 ;;       vpaddd  %xmm2, %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;  1aa: addb    %al, (%rax)
-;;  1ac: addb    %al, (%rax)
-;;  1ae: addb    %al, (%rax)
-;;  1b0: addl    %eax, (%rax)
-;;  1b2: addl    %eax, (%rax)
-;;  1b4: addl    %eax, (%rax)
-;;  1b6: addl    %eax, (%rax)
-;;  1b8: addl    %eax, (%rax)
-;;  1ba: addl    %eax, (%rax)
-;;  1bc: addl    %eax, (%rax)
-;;  1be: addl    %eax, (%rax)
-;;  1c0: addl    %eax, (%rax)
-;;  1c2: addl    %eax, (%rax)
-;;  1c4: addl    %eax, (%rax)
-;;  1c6: addl    %eax, (%rax)
-;;  1c8: addl    %eax, (%rax)
-;;  1ca: addl    %eax, (%rax)
-;;  1cc: addl    %eax, (%rax)
-;;  1ce: addl    %eax, (%rax)
+;;  1a7: addb    %al, (%rax)
+;;  1a9: addb    %al, (%rax)
+;;  1ab: addb    %al, (%rax)
+;;  1ad: addb    %al, (%rax)
+;;  1af: addb    %al, (%rcx)
+;;  1b1: addb    %al, (%rcx)
+;;  1b3: addb    %al, (%rcx)
+;;  1b5: addb    %al, (%rcx)
+;;  1b7: addb    %al, (%rcx)
+;;  1b9: addb    %al, (%rcx)
+;;  1bb: addb    %al, (%rcx)
+;;  1bd: addb    %al, (%rcx)
+;;  1bf: addb    %al, (%rcx)
+;;  1c1: addb    %al, (%rcx)
+;;  1c3: addb    %al, (%rcx)
+;;  1c5: addb    %al, (%rcx)
+;;  1c7: addb    %al, (%rcx)
+;;  1c9: addb    %al, (%rcx)
+;;  1cb: addb    %al, (%rcx)
+;;  1cd: addb    %al, (%rcx)

@@ -23,9 +23,9 @@
 ;;       sd      ra, 8(sp)
 ;;       sd      s0, 0(sp)
 ;;       mv      s0, sp
+;;       slli    a1, a2, 0x20
+;;       srli    a2, a1, 0x20
 ;;       ld      a1, 0x40(a0)
-;;       slli    a2, a2, 0x20
-;;       srli    a2, a2, 0x20
 ;;       bgeu    a1, a2, 8
 ;;       .byte   0x00, 0x00, 0x00, 0x00
 ;;       ld      a4, 0x38(a0)
@@ -44,9 +44,9 @@
 ;;       sd      ra, 8(sp)
 ;;       sd      s0, 0(sp)
 ;;       mv      s0, sp
+;;       slli    a1, a2, 0x20
+;;       srli    a2, a1, 0x20
 ;;       ld      a1, 0x40(a0)
-;;       slli    a2, a2, 0x20
-;;       srli    a2, a2, 0x20
 ;;       bgeu    a1, a2, 8
 ;;       .byte   0x00, 0x00, 0x00, 0x00
 ;;       ld      a3, 0x38(a0)

@@ -27,8 +27,8 @@
 ;;
 ;;                                 block0(v0: i64, v1: i64, v2: i32, v3: i32, v4: i32):
 ;; @001e                               v5 = load.i64 notrap aligned region2 v0+24
-;; @001e                               v6 = load.i64 notrap aligned region3 v5
 ;; @001e                               v7 = load.i64 notrap aligned readonly can_move region0 v0+8
+;; @001e                               v6 = load.i64 notrap aligned region3 v5
 ;; @001e                               v8 = load.i64 notrap aligned region4 v7+8
 ;; @001e                               v9 = icmp uge v6, v8
 ;; @001e                               brif v9, block3, block2(v8)
@@ -52,10 +52,10 @@
 ;; @0025                               jump block4
 ;;
 ;;                                 block4:
-;; @0025                               v22 = load.i64 notrap aligned region6 v0+64
 ;; @0025                               v23 = uextend.i64 v2
 ;; @0025                               v24 = uextend.i64 v4
 ;; @0025                               v27 = iadd v23, v24
+;; @0025                               v22 = load.i64 notrap aligned region6 v0+64
 ;; @0025                               v28 = icmp ugt v27, v22
 ;; @0025                               trapnz v28, heap_oob
 ;; @0025                               v35 = uextend.i64 v3

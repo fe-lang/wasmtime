@@ -24,13 +24,12 @@
 ;;       movq    0x40(%rdi), %rsi
 ;;       subq    $0x1001, %rsi
 ;;       cmpq    %rsi, %rdx
-;;       ja      0x29
+;;       ja      0x26
 ;;   18: movq    0x38(%rdi), %r8
 ;;       movb    %cl, 0x1000(%r8, %rdx)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;   29: ud2
+;;   26: ud2
 ;;
 ;; wasm[0]::function[1]:
 ;;       pushq   %rbp
@@ -38,10 +37,9 @@
 ;;       movq    0x40(%rdi), %rsi
 ;;       subq    $0x1001, %rsi
 ;;       cmpq    %rsi, %rdx
-;;       ja      0x6a
+;;       ja      0x67
 ;;   58: movq    0x38(%rdi), %r8
 ;;       movzbq  0x1000(%r8, %rdx), %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;   6a: ud2
+;;   67: ud2

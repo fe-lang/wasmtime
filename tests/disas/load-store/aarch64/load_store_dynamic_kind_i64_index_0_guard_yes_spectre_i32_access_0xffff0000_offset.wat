@@ -25,8 +25,8 @@
 ;;       adds    x12, x4, x12
 ;;       b.hs    #0x40
 ;;   14: ldr     x13, [x2, #0x40]
-;;       ldr     x15, [x2, #0x38]
 ;;       mov     x14, #0
+;;       ldr     x15, [x2, #0x38]
 ;;       add     x15, x15, x4
 ;;       mov     x0, #0xffff0000
 ;;       add     x15, x15, x0
@@ -44,8 +44,8 @@
 ;;       adds    x12, x4, x12
 ;;       b.hs    #0xa0
 ;;   74: ldr     x13, [x2, #0x40]
-;;       ldr     x15, [x2, #0x38]
 ;;       mov     x14, #0
+;;       ldr     x15, [x2, #0x38]
 ;;       add     x15, x15, x4
 ;;       mov     x0, #0xffff0000
 ;;       add     x15, x15, x0

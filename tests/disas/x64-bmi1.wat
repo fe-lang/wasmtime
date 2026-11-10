@@ -49,7 +49,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       blsil   %edx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -57,7 +56,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       blsiq   %rdx, %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -65,7 +63,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       blsrl   %edx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -73,7 +70,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       blsrq   %rdx, %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -81,7 +77,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       blsmskl %edx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -89,7 +84,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       blsmskq %rdx, %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -97,7 +91,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       tzcntl  %edx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -105,7 +98,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       tzcntq  %rdx, %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -113,7 +105,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       andnl   %edx, %ecx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -121,6 +112,5 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       andnq   %rdx, %rcx, %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

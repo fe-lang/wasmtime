@@ -1,0 +1,108 @@
+test optimize precise-output
+set opt_level=speed
+target x86_64
+
+;; Elaboration places each `bxor` just before its store, after all four loads.
+;; The first `bxor`'s loads move down to it. The second `bxor`'s loads cannot
+;; pass the first store, so that `bxor` moves up to them instead.
+function %ops_follow_their_loads(i64, i64) {
+block0(v0: i64, v1: i64):
+    v2 = load.i64 notrap v0
+    v3 = load.i64 notrap v0+8
+    v4 = load.i64 notrap v0+16
+    v5 = load.i64 notrap v0+24
+    v6 = bxor v2, v3
+    v7 = bxor v4, v5
+    store notrap v6, v1
+    store notrap v7, v1+8
+    return
+}
+
+; function %ops_follow_their_loads(i64, i64) fast {
+; block0(v0: i64, v1: i64):
+;     v4 = load.i64 notrap v0+16
+;     v5 = load.i64 notrap v0+24
+;     v7 = bxor v4, v5
+;     v2 = load.i64 notrap v0
+;     v3 = load.i64 notrap v0+8
+;     v6 = bxor v2, v3
+;     store notrap v6, v1
+;     store notrap v7, v1+8
+;     return
+; }
+
+;; Each load is used twice, so no `imul` moves up. The loads move down to
+;; their first uses instead: `v2` cannot trap and passes the trapping `v3`,
+;; while the trapping `v1` stays before `v3`.
+function %loads_sink_in_trap_order(i64) -> i64 {
+block0(v0: i64):
+    v1 = load.i64 v0
+    v2 = load.i64 notrap v0+8
+    v3 = load.i64 v0+16
+    v4 = imul v3, v3
+    v5 = imul v2, v2
+    v6 = imul v1, v1
+    v7 = iadd v4, v5
+    v8 = iadd v7, v6
+    return v8
+}
+
+; function %loads_sink_in_trap_order(i64) -> i64 fast {
+; block0(v0: i64):
+;     v1 = load.i64 v0
+;     v3 = load.i64 v0+16
+;     v4 = imul v3, v3
+;     v2 = load.i64 notrap v0+8
+;     v5 = imul v2, v2
+;     v7 = iadd v4, v5
+;     v6 = imul v1, v1
+;     v8 = iadd v7, v6
+;     return v8
+; }
+
+;; Loads move in block order: `v1` moves down to its first use, the load
+;; `v3`, before `v3` moves down to `v5`, so `v1` stays before its other use
+;; `v4`.
+function %load_feeding_a_load(i64) -> i64 {
+block0(v0: i64):
+    v1 = load.i64 notrap v0
+    v2 = load.i64 notrap v0+8
+    v3 = load.i64 notrap v1
+    v4 = iadd v1, v2
+    v5 = iadd v4, v3
+    return v5
+}
+
+; function %load_feeding_a_load(i64) -> i64 fast {
+; block0(v0: i64):
+;     v1 = load.i64 notrap v0
+;     v2 = load.i64 notrap v0+8
+;     v4 = iadd v1, v2
+;     v3 = load.i64 notrap v1
+;     v5 = iadd v4, v3
+;     return v5
+; }
+
+;; A load does not move past a store.
+function %loads_stay_before_stores(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2 = load.i64 notrap v0
+    v3 = load.i64 notrap v0+8
+    store notrap v1, v0+16
+    v4 = imul v2, v2
+    v5 = imul v3, v3
+    v6 = iadd v4, v5
+    return v6
+}
+
+; function %loads_stay_before_stores(i64, i64) -> i64 fast {
+; block0(v0: i64, v1: i64):
+;     v2 = load.i64 notrap v0
+;     v3 = load.i64 notrap v0+8
+;     store notrap v1, v0+16
+;     v4 = imul v2, v2
+;     v5 = imul v3, v3
+;     v6 = iadd v4, v5
+;     return v6
+; }
+

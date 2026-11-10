@@ -624,7 +624,7 @@ impl PrettyPrint for Inst {
                     tmp,
                     dest,
                 } = &**info;
-                let callee = pretty_print_reg(*dest, 8);
+                let callee = dest.pretty_print(8);
                 let tmp = pretty_print_reg(tmp.to_reg().to_reg(), 8);
                 let mut s =
                     format!("return_call_unknown {callee} ({new_stack_arg_size}) tmp={tmp}");
@@ -1068,12 +1068,19 @@ fn x64_get_operands(inst: &mut Inst, collector: &mut impl OperandVisitor) {
                 dest, uses, tmp, ..
             } = &mut **info;
 
-            // TODO(https://github.com/bytecodealliance/regalloc2/issues/145):
-            // This shouldn't be a fixed register constraint, but it's not clear how to
-            // pick a register that won't be clobbered by the callee-save restore code
-            // emitted with a return_call_indirect. r10 is caller-saved, so this should be
-            // safe to use.
-            collector.reg_fixed_use(dest, regs::r10());
+            match dest {
+                // TODO(https://github.com/bytecodealliance/regalloc2/issues/145):
+                // This shouldn't be a fixed register constraint, but it's not clear how to
+                // pick a register that won't be clobbered by the callee-save restore code
+                // emitted with a return_call_indirect. r10 is caller-saved, so this should be
+                // safe to use.
+                RegMem::Reg { reg } => collector.reg_fixed_use(reg, regs::r10()),
+                // The address is read before `tmp` is written: by the jump itself
+                // where there is no epilogue, and so no move of the return address
+                // either, and otherwise into r10, which no argument takes, before
+                // the epilogue.
+                RegMem::Mem { addr } => addr.get_operands(collector),
+            }
 
             collector.reg_fixed_def(tmp, regs::r11());
             for CallArgPair { vreg, preg } in uses {

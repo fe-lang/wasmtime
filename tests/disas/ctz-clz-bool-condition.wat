@@ -92,7 +92,6 @@
 ;;   10: movl    $0xc8, %eax
 ;;       jmp     0x1f
 ;;   1a: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -104,7 +103,6 @@
 ;;   50: movl    $0xc8, %eax
 ;;       jmp     0x5f
 ;;   5a: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -116,7 +114,6 @@
 ;;   90: movl    $0xc8, %eax
 ;;       jmp     0x9f
 ;;   9a: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -126,7 +123,6 @@
 ;;       testl   $1, %edx
 ;;       movq    %r8, %rax
 ;;       cmovnel %ecx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -136,7 +132,6 @@
 ;;       testl   $1, %edx
 ;;       sete    %sil
 ;;       movzbl  %sil, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -148,7 +143,6 @@
 ;;  111: movl    $0xc8, %eax
 ;;       jmp     0x120
 ;;  11b: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -160,7 +154,6 @@
 ;;  151: movl    $0xc8, %eax
 ;;       jmp     0x160
 ;;  15b: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -172,7 +165,6 @@
 ;;  191: movl    $0xc8, %eax
 ;;       jmp     0x1a0
 ;;  19b: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -182,7 +174,6 @@
 ;;       testq   $1, %rdx
 ;;       movq    %r8, %rax
 ;;       cmovnel %ecx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -194,7 +185,6 @@
 ;;  1ec: movl    $0xc8, %eax
 ;;       jmp     0x1fb
 ;;  1f6: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -206,7 +196,6 @@
 ;;  20c: movl    $0xc8, %eax
 ;;       jmp     0x21b
 ;;  216: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -218,7 +207,6 @@
 ;;  22c: movl    $0xc8, %eax
 ;;       jmp     0x23b
 ;;  236: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -228,7 +216,6 @@
 ;;       testl   %edx, %edx
 ;;       movq    %r8, %rax
 ;;       cmovll  %ecx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -240,7 +227,6 @@
 ;;  26d: movl    $0xc8, %eax
 ;;       jmp     0x27c
 ;;  277: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -248,11 +234,10 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       testq   %rdx, %rdx
-;;       jge     0x2b7
-;;  2ad: movl    $0xc8, %eax
-;;       jmp     0x2bc
-;;  2b7: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
+;;       jge     0x297
+;;  28d: movl    $0xc8, %eax
+;;       jmp     0x29c
+;;  297: movl    $0x64, %eax
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -260,11 +245,10 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       testq   %rdx, %rdx
-;;       jge     0x2f7
-;;  2ed: movl    $0xc8, %eax
-;;       jmp     0x2fc
-;;  2f7: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
+;;       jge     0x2b7
+;;  2ad: movl    $0xc8, %eax
+;;       jmp     0x2bc
+;;  2b7: movl    $0x64, %eax
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -275,10 +259,9 @@
 ;;       bsfl    %edx, %r8d
 ;;       cmovel  %esi, %r8d
 ;;       cmpl    $4, %r8d
-;;       je      0x345
-;;  33b: movl    $0xc8, %eax
-;;       jmp     0x34a
-;;  345: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
+;;       je      0x2e5
+;;  2db: movl    $0xc8, %eax
+;;       jmp     0x2ea
+;;  2e5: movl    $0x64, %eax
 ;;       popq    %rbp
 ;;       retq

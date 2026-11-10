@@ -86,9 +86,9 @@
 ;; @005c                               v7 = load.i64 notrap aligned readonly can_move region3 v0+88
 ;; @005c                               v6 = load.i64 notrap aligned readonly can_move region2 v0+104
 ;; @005c                               call_indirect sig0, v7(v6, v0)
+;; @0059                               v5 = select v4, v2, v3
 ;; @005e                               v9 = load.i64 notrap aligned readonly can_move region3 v0+56
 ;; @005e                               v8 = load.i64 notrap aligned readonly can_move region2 v0+72
-;; @0059                               v5 = select v4, v2, v3
 ;; @005e                               call_indirect sig1, v9(v8, v0, v5)
 ;; @0060                               jump block1
 ;;

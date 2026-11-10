@@ -62,8 +62,8 @@
 ;;                                 block0(v0: i64, v1: i64):
 ;; @0153                               v4 = load.i64 notrap aligned readonly can_move region0 v0+8
 ;; @0153                               v5 = load.i64 notrap aligned readonly can_move region3 v4+104
-;; @0155                               v7 = load.i8 notrap aligned region4 v5
 ;;                                     v18 = iconst.i8 1
+;; @0155                               v7 = load.i8 notrap aligned region4 v5
 ;;                                     v19 = iadd v7, v18  ; v18 = 1
 ;; @0160                               store notrap aligned region4 v19, v5
 ;; @0162                               jump block1

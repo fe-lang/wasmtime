@@ -22,8 +22,8 @@
 ;;       stp     x29, x30, [sp, #-0x10]!
 ;;       mov     x29, sp
 ;;       ldr     x8, [x2, #0x40]
-;;       ldr     x10, [x2, #0x38]
 ;;       mov     x9, #0
+;;       ldr     x10, [x2, #0x38]
 ;;       add     x10, x10, x4
 ;;       cmp     x4, x8
 ;;       csel    x9, x9, x10, hi
@@ -35,8 +35,8 @@
 ;;       stp     x29, x30, [sp, #-0x10]!
 ;;       mov     x29, sp
 ;;       ldr     x8, [x2, #0x40]
-;;       ldr     x10, [x2, #0x38]
 ;;       mov     x9, #0
+;;       ldr     x10, [x2, #0x38]
 ;;       add     x10, x10, x4
 ;;       cmp     x4, x8
 ;;       csel    x9, x9, x10, hi

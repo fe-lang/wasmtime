@@ -35,7 +35,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       vminss  %xmm0, %xmm1, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -43,7 +42,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       vmaxss  %xmm0, %xmm1, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -51,7 +49,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       vminsd  %xmm0, %xmm1, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -59,7 +56,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       vmaxsd  %xmm0, %xmm1, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -67,7 +63,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       vminps  %xmm0, %xmm1, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -75,7 +70,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       vmaxps  %xmm0, %xmm1, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -83,7 +77,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       vminpd  %xmm0, %xmm1, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -91,6 +84,5 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       vmaxpd  %xmm0, %xmm1, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

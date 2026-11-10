@@ -37,21 +37,21 @@
 ;; @0022                               v11 = uadd_overflow_trap v4, v73, user18  ; v4 = 32
 ;; @0022                               v12 = iconst.i32 -1476395008
 ;; @0022                               v13 = load.i64 notrap aligned readonly can_move region2 v0+40
-;; @0022                               v14 = load.i32 notrap aligned readonly can_move region3 v13
 ;;                                     v70 = iconst.i32 8
+;; @0022                               v14 = load.i32 notrap aligned readonly can_move region3 v13
 ;; @0022                               v16 = call fn0(v0, v12, v14, v11, v70)  ; v12 = -1476395008, v70 = 8
 ;; @0022                               v17 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @0022                               v18 = load.i64 notrap aligned readonly can_move region4 v17+32
 ;; @0022                               v19 = uextend.i64 v16
+;; @0022                               v18 = load.i64 notrap aligned readonly can_move region4 v17+32
 ;; @0022                               v20 = iadd v18, v19
 ;; @0022                               v21 = iconst.i64 24
 ;; @0022                               v22 = iadd v20, v21  ; v21 = 24
 ;; @0022                               store user2 region5 v3, v22
 ;; @0022                               trapz v16, user16
 ;; @0022                               v54 = load.i64 notrap aligned region6 v17+40
+;; @0022                               v55 = iadd v18, v54
 ;; @0022                               v43 = iadd v20, v8  ; v8 = 32
 ;; @0022                               v56 = uadd_overflow_trap v43, v66, user2
-;; @0022                               v55 = iadd v18, v54
 ;; @0022                               v57 = icmp ugt v56, v55
 ;; @0022                               trapnz v57, user2
 ;;                                     v76 = iconst.i64 0

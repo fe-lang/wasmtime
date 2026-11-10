@@ -24,18 +24,19 @@
 ;;       movl    %edx, %esi
 ;;       movq    %rsi, %r8
 ;;       addq    0x28(%rip), %r8
-;;       jb      0x33
+;;       jb      0x30
 ;;   16: cmpq    0x40(%rdi), %r8
-;;       ja      0x35
+;;       ja      0x32
 ;;   20: addq    0x38(%rdi), %rsi
 ;;       movl    $0xffff0000, %r10d
 ;;       movl    %ecx, (%rsi, %r10)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;   33: ud2
-;;   35: ud2
-;;   37: addb    %al, (%rax, %rax)
+;;   30: ud2
+;;   32: ud2
+;;   34: addb    %al, (%rax)
+;;   36: addb    %al, (%rax)
+;;   38: addb    $0, %al
 ;;
 ;; wasm[0]::function[1]:
 ;;       pushq   %rbp
@@ -43,15 +44,16 @@
 ;;       movl    %edx, %esi
 ;;       movq    %rsi, %r8
 ;;       addq    0x28(%rip), %r8
-;;       jb      0x73
+;;       jb      0x70
 ;;   56: cmpq    0x40(%rdi), %r8
-;;       ja      0x75
+;;       ja      0x72
 ;;   60: addq    0x38(%rdi), %rsi
 ;;       movl    $0xffff0000, %r10d
 ;;       movl    (%rsi, %r10), %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;   73: ud2
-;;   75: ud2
-;;   77: addb    %al, (%rax, %rax)
+;;   70: ud2
+;;   72: ud2
+;;   74: addb    %al, (%rax)
+;;   76: addb    %al, (%rax)
+;;   78: addb    $0, %al
