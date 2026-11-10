@@ -38,9 +38,6 @@
 ;;
 ;;                                 block0(v0: i64, v1: i64):
 ;; @003b                               v4 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @003b                               v9 = iconst.i64 1
-;; @003b                               v13 = iconst.i64 40
-;; @003b                               v17 = iconst.i32 0
 ;; @003b                               v5 = load.i64 notrap aligned region2 v4+88
 ;; @003b                               v6 = load.i64 notrap aligned region2 v4+96
 ;; @003b                               jump block2(v5, v6)
@@ -59,10 +56,7 @@
 ;; @003b                               v15 = load.i64 notrap aligned region3 v76+8
 ;; @003b                               v16 = load.i32 notrap aligned region3 v12+56
 ;;                                     v77 = iconst.i32 0
-;;                                     v67 = iconst.i32 3
 ;; @003b                               v2 = iconst.i64 48
-;; @003b                               v3 = iadd.i64 v0, v2  ; v2 = 48
-;; @003b                               v26 = iconst.i32 1
 ;; @003b                               jump block4(v77)  ; v77 = 0
 ;;
 ;;                                 block4(v18: i32):

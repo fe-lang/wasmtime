@@ -105,7 +105,6 @@
 ;; @0022                               trapnz v79, user2
 ;;                                     v112 = iconst.i64 0
 ;; @0022                               v82 = icmp.i64 eq v5, v112  ; v112 = 0
-;; @0022                               v6 = iconst.i64 8
 ;; @0022                               v80 = iadd v65, v88
 ;; @0022                               brif v82, block6, block5(v65)
 ;;

@@ -113,8 +113,6 @@
 ;; @002b                               v107 = iadd.i64 v58, v170
 ;; @002b                               v108 = iadd.i64 v82, v170
 ;; @002b                               v110 = iadd.i32 v5, v6
-;; @002b                               v56 = iconst.i64 4
-;; @002b                               v133 = iconst.i32 1
 ;; @002b                               brif v102, block7(v58, v82, v5), block8(v107, v108, v110)
 ;;
 ;;                                 block7(v111: i64, v112: i64, v113: i32):

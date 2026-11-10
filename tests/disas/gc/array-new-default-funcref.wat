@@ -114,7 +114,6 @@
 ;; @001f                               v80 = call fn1(v0, v44), stack_map=[i32 @ ss0+0]  ; v44 = 0
 ;; @001f                               v84 = icmp.i64 eq v4, v44  ; v44 = 0
 ;; @001f                               v81 = ireduce.i32 v80
-;; @001f                               v5 = iconst.i64 4
 ;; @001f                               v82 = iadd v65, v99
 ;; @001f                               brif v84, block6, block5(v65)
 ;;

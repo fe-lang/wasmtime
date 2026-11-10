@@ -69,8 +69,6 @@
 ;; @002b                               v79 = iadd.i64 v30, v116
 ;; @002b                               v80 = iadd.i64 v54, v116
 ;; @002b                               v82 = iadd.i32 v5, v6
-;; @002b                               v28 = iconst.i64 4
-;; @002b                               v105 = iconst.i32 1
 ;; @002b                               brif v74, block3(v30, v54, v5), block4(v79, v80, v82)
 ;;
 ;;                                 block3(v83: i64, v84: i64, v85: i32):

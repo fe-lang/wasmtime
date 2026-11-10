@@ -54,20 +54,10 @@
 ;;                                 block0(v0: i64, v1: i64):
 ;; @003c                               v3 = iconst.i32 10
 ;; @0044                               v7 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @0044                               v31 = iconst.i64 136
 ;; @0044                               v34 = stack_addr.i64 ss0
-;; @0044                               v40 = iconst.i64 32
-;; @0044                               v37 = iconst.i64 0
-;; @0044                               v49 = iconst.i64 96
-;; @0044                               v52 = iconst.i64 -24
-;;                                     v79 = iconst.i64 0x0002_0000_0000
-;; @0044                               v57 = iconst.i64 5
 ;; @0040                               jump block2(v3)  ; v3 = 10
 ;;
 ;;                                 block2(v4: i32):
-;; @0044                               v12 = iconst.i64 1
-;; @0044                               v16 = iconst.i64 40
-;; @003a                               v2 = iconst.i32 0
 ;; @0044                               v8 = load.i64 notrap aligned region2 v7+88
 ;; @0044                               v9 = load.i64 notrap aligned region2 v7+96
 ;; @0044                               jump block4(v8, v9, v4)
@@ -86,10 +76,7 @@
 ;; @0044                               v18 = load.i64 notrap aligned region3 v85+8
 ;; @0044                               v19 = load.i32 notrap aligned region3 v15+56
 ;;                                     v86 = iconst.i32 0
-;;                                     v76 = iconst.i32 3
 ;; @0044                               v5 = iconst.i64 48
-;; @0044                               v6 = iadd.i64 v0, v5  ; v5 = 48
-;; @0044                               v29 = iconst.i32 1
 ;; @0044                               jump block6(v86)  ; v86 = 0
 ;;
 ;;                                 block6(v21: i32):
@@ -204,20 +191,9 @@
 ;;                                     v148 = ishl v9, v10  ; v10 = 64
 ;; @0058                               v8 = uextend.i128 v6
 ;; @0058                               v13 = bor v148, v8
-;; @0062                               v22 = iconst.i64 1
 ;; @0062                               v25 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @0062                               v28 = iconst.i64 0
-;; @0062                               v29 = iconst.i64 2
-;; @0062                               v33 = iconst.i32 1
-;; @0062                               v34 = iconst.i64 32
-;; @0062                               v36 = iconst.i32 2
-;; @0062                               v52 = iconst.i64 40
 ;; @0062                               v55 = stack_addr.i64 ss0
 ;; @0062                               v56 = iconst.i64 48
-;; @0062                               v57 = iadd v0, v56  ; v56 = 48
-;; @0062                               v64 = iconst.i64 96
-;; @0062                               v67 = iconst.i64 -24
-;;                                     v152 = iconst.i64 0x0001_0000_0000
 ;; @005c                               jump block2(v13)
 ;;
 ;;                                 block2(v14: i128):
