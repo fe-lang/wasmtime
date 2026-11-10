@@ -1,0 +1,236 @@
+test compile precise-output
+target aarch64
+
+function %uadd_overflow_cin_i64(i64, i64, i8) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3, v4 = uadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   uxtb w4, w2
+;   subs wzr, w4, #1
+;   adcs x0, x0, x1
+;   cset x1, hs
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   uxtb w4, w2
+;   cmp w4, #1
+;   adcs x0, x0, x1
+;   cset x1, hs
+;   ret
+
+function %uadd_overflow_cin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = uadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   uxtb w6, w4
+;   subs wzr, w6, #1
+;   adcs x0, x0, x2
+;   adcs x1, x1, x3
+;   cset x2, hs
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   uxtb w6, w4
+;   cmp w6, #1
+;   adcs x0, x0, x2
+;   adcs x1, x1, x3
+;   cset x2, hs
+;   ret
+
+function %sadd_overflow_cin_i64(i64, i64, i8) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3, v4 = sadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   uxtb w4, w2
+;   subs wzr, w4, #1
+;   adcs x0, x0, x1
+;   cset x1, vs
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   uxtb w4, w2
+;   cmp w4, #1
+;   adcs x0, x0, x1
+;   cset x1, vs
+;   ret
+
+function %sadd_overflow_cin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = sadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   uxtb w6, w4
+;   subs wzr, w6, #1
+;   adcs x0, x0, x2
+;   adcs x1, x1, x3
+;   cset x2, vs
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   uxtb w6, w4
+;   cmp w6, #1
+;   adcs x0, x0, x2
+;   adcs x1, x1, x3
+;   cset x2, vs
+;   ret
+
+function %usub_overflow_bin_i64(i64, i64, i8) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3, v4 = usub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   uxtb w4, w2
+;   subs wzr, wzr, w4
+;   sbcs x0, x0, x1
+;   cset x1, lo
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   uxtb w4, w2
+;   cmp wzr, w4
+;   sbcs x0, x0, x1
+;   cset x1, lo
+;   ret
+
+function %usub_overflow_bin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = usub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   uxtb w6, w4
+;   subs wzr, wzr, w6
+;   sbcs x0, x0, x2
+;   sbcs x1, x1, x3
+;   cset x2, lo
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   uxtb w6, w4
+;   cmp wzr, w6
+;   sbcs x0, x0, x2
+;   sbcs x1, x1, x3
+;   cset x2, lo
+;   ret
+
+function %ssub_overflow_bin_i64(i64, i64, i8) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3, v4 = ssub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   uxtb w4, w2
+;   subs wzr, wzr, w4
+;   sbcs x0, x0, x1
+;   cset x1, vs
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   uxtb w4, w2
+;   cmp wzr, w4
+;   sbcs x0, x0, x1
+;   cset x1, vs
+;   ret
+
+function %ssub_overflow_bin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = ssub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   uxtb w6, w4
+;   subs wzr, wzr, w6
+;   sbcs x0, x0, x2
+;   sbcs x1, x1, x3
+;   cset x2, vs
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   uxtb w6, w4
+;   cmp wzr, w6
+;   sbcs x0, x0, x2
+;   sbcs x1, x1, x3
+;   cset x2, vs
+;   ret
+
+function %uadd_overflow_cin_i32(i32, i32, i8) -> i32, i8 {
+block0(v0: i32, v1: i32, v2: i8):
+    v3, v4 = uadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   uxtb w4, w2
+;   subs wzr, w4, #1
+;   adcs w0, w0, w1
+;   cset x1, hs
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   uxtb w4, w2
+;   cmp w4, #1
+;   adcs w0, w0, w1
+;   cset x1, hs
+;   ret
+
+function %chain(i64, i64, i64, i64) -> i64, i64, i8 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4, v5 = uadd_overflow v0, v2
+    v6, v7 = uadd_overflow_cin v1, v3, v5
+    return v4, v6, v7
+}
+
+; VCode:
+; block0:
+;   adds x0, x0, x2
+;   cset x10, hs
+;   uxtb w7, w10
+;   subs wzr, w7, #1
+;   adcs x1, x1, x3
+;   cset x2, hs
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   adds x0, x0, x2
+;   cset x10, hs
+;   uxtb w7, w10
+;   cmp w7, #1
+;   adcs x1, x1, x3
+;   cset x2, hs
+;   ret
+

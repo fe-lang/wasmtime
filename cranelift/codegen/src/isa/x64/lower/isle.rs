@@ -536,6 +536,10 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         self.backend.x64_flags.has_ssse3()
     }
 
+    fn has_sha(&mut self) -> bool {
+        self.backend.x64_flags.has_sha()
+    }
+
     #[inline]
     fn has_sse41(&mut self) -> bool {
         self.backend.x64_flags.has_sse41()

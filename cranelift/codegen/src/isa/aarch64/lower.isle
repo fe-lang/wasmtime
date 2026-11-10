@@ -1247,6 +1247,16 @@
 (rule smax 2 (lower (smax (and (fits_in_64 ty) (ty_int _)) x y))
       (cmp_and_choose ty (Cond.Gt) true x y))
 
+;; `i128`: compare both halves, then choose both.
+(rule umin_i128 3 (lower (umin $I128 x y))
+      (lower_select $I128 (emit_icmp (IntCC.UnsignedLessThan) x y) x y))
+(rule smin_i128 3 (lower (smin $I128 x y))
+      (lower_select $I128 (emit_icmp (IntCC.SignedLessThan) x y) x y))
+(rule umax_i128 3 (lower (umax $I128 x y))
+      (lower_select $I128 (emit_icmp (IntCC.UnsignedGreaterThan) x y) x y))
+(rule smax_i128 3 (lower (smax $I128 x y))
+      (lower_select $I128 (emit_icmp (IntCC.SignedGreaterThan) x y) x y))
+
 ;; Vector types.
 
 (rule (lower (smin ty @ (not_i64x2) x y))
@@ -2980,6 +2990,91 @@
 ;; For 128bit integers we emit add+adcs+cset
 (rule 0 (lower (uadd_overflow $I128 x y))
       (overflow_op_128 x y (ALUOp.AddS) (ALUOp.AdcS) (Cond.Hs)))
+
+;;;; Rules for `*_overflow_cin` and `*_overflow_bin` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; `adcs` adds C, so C must be set exactly when the carry is nonzero: compare
+;; the carry's zero-extended byte with 1.
+;;
+;;   uxtb  w_c, w_c_in
+;;   subs  wzr, w_c, #1
+;;   adcs  x, x, y
+;;   cset  c_out, hs
+(rule 1 (lower (uadd_overflow_cin _ x y @ (value_type (ty_32_or_64 ty)) c_in))
+      (carry_op ty x y (carry_flag c_in) (ALUOp.AdcS) (Cond.Hs)))
+
+(rule 1 (lower (sadd_overflow_cin _ x y @ (value_type (ty_32_or_64 ty)) c_in))
+      (carry_op ty x y (carry_flag c_in) (ALUOp.AdcS) (Cond.Vs)))
+
+;; `sbcs` subtracts !C, so C must be clear exactly when the borrow is nonzero:
+;; subtract the borrow's zero-extended byte from zero.
+;;
+;;   uxtb  w_b, w_b_in
+;;   subs  wzr, wzr, w_b
+;;   sbcs  x, x, y
+;;   cset  b_out, lo
+(rule 1 (lower (usub_overflow_bin _ x y @ (value_type (ty_32_or_64 ty)) b_in))
+      (carry_op ty x y (borrow_flag b_in) (ALUOp.SbcS) (Cond.Lo)))
+
+(rule 1 (lower (ssub_overflow_bin _ x y @ (value_type (ty_32_or_64 ty)) b_in))
+      (carry_op ty x y (borrow_flag b_in) (ALUOp.SbcS) (Cond.Vs)))
+
+;; The 128-bit forms carry through both halves:
+;;
+;;   uxtb  w_c, w_c_in
+;;   subs  wzr, w_c, #1
+;;   adcs  x_lo, x_lo, y_lo
+;;   adcs  x_hi, x_hi, y_hi
+;;   cset  c_out, hs
+(rule (lower (uadd_overflow_cin _ x y @ (value_type $I128) c_in))
+      (carry_op_128 x y (carry_flag c_in) (ALUOp.AdcS) (Cond.Hs)))
+
+(rule (lower (sadd_overflow_cin _ x y @ (value_type $I128) c_in))
+      (carry_op_128 x y (carry_flag c_in) (ALUOp.AdcS) (Cond.Vs)))
+
+(rule (lower (usub_overflow_bin _ x y @ (value_type $I128) b_in))
+      (carry_op_128 x y (borrow_flag b_in) (ALUOp.SbcS) (Cond.Lo)))
+
+(rule (lower (ssub_overflow_bin _ x y @ (value_type $I128) b_in))
+      (carry_op_128 x y (borrow_flag b_in) (ALUOp.SbcS) (Cond.Vs)))
+
+;; Sets C when `carry` is nonzero.
+(decl carry_flag (Value) ProducesFlags)
+(rule (carry_flag carry)
+      (cmp_imm (OperandSize.Size32) (put_in_reg_zext32 carry) (u8_into_imm12 1)))
+
+;; Clears C when `borrow` is nonzero.
+(decl borrow_flag (Value) ProducesFlags)
+(rule (borrow_flag borrow)
+      (cmp (OperandSize.Size32) (zero_reg) (put_in_reg_zext32 borrow)))
+
+(decl carry_op (Type Value Value ProducesFlags ALUOp Cond) InstOutput)
+(rule (carry_op ty x y flag op cond)
+      (let ((result MultiReg (with_flags_chained flag
+                                                 (alu_rrr_with_flags_chained ty x y op)
+                                                 (cset cond))))
+        (carry_op_outputs result)))
+
+(decl carry_op_128 (Value Value ProducesFlags ALUOp Cond) InstOutput)
+(rule (carry_op_128 x y flag op cond)
+      (let ((x_regs ValueRegs x)
+            (y_regs ValueRegs y)
+            (lo ConsumesAndProducesFlags
+                (alu_rrr_with_flags_chained $I64 (value_regs_get x_regs 0) (value_regs_get y_regs 0) op))
+            (hi ConsumesAndProducesFlags
+                (alu_rrr_with_flags_chained $I64 (value_regs_get x_regs 1) (value_regs_get y_regs 1) op)))
+        (multi_reg_to_pair_and_single
+          (with_flags_chained flag lo (chain_then_consume hi (cset cond))))))
+
+;; `hi` followed by `consumer`, returning both their results.
+(decl chain_then_consume (ConsumesAndProducesFlags ConsumesFlags) ConsumesFlags)
+(rule (chain_then_consume (ConsumesAndProducesFlags.ReturnsReg hi_inst hi)
+                          (ConsumesFlags.ConsumesFlagsReturnsReg inst result))
+      (ConsumesFlags.ConsumesFlagsTwiceReturnsValueRegs hi_inst inst (value_regs hi result)))
+
+(decl carry_op_outputs (MultiReg) InstOutput)
+(rule (carry_op_outputs (MultiReg.Two value flag))
+      (output_pair value flag))
 
 ;;;; Rules for `sadd_overflow` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

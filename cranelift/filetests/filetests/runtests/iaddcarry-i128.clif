@@ -1,0 +1,87 @@
+test interpret
+test run
+set enable_llvm_abi_extensions=true
+target aarch64
+set enable_multi_ret_implicit_sret
+target x86_64
+target riscv64
+
+function %uadd_overflow_cin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = uadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+; run: %uadd_overflow_cin_i128(0, 0, 0) == [0, 0]
+; run: %uadd_overflow_cin_i128(0, 0, 1) == [1, 0]
+; run: %uadd_overflow_cin_i128(1, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0) == [0, 1]
+; run: %uadd_overflow_cin_i128(1, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [1, 1]
+; run: %uadd_overflow_cin_i128(0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1]
+; run: %uadd_overflow_cin_i128(0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0, 1) == [0, 1]
+; run: %uadd_overflow_cin_i128(0, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [0, 1]
+; run: %uadd_overflow_cin_i128(18446744073709551615, 0, 1) == [0x00000000_00000001_00000000_00000000, 0]
+; run: %uadd_overflow_cin_i128(0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0, 1) == [0x80000000_00000000_00000000_00000000, 0]
+; run: %uadd_overflow_cin_i128(0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1, 0) == [0x80000000_00000000_00000000_00000000, 0]
+; run: %uadd_overflow_cin_i128(0x80000000_00000000_00000000_00000000, 0x80000000_00000000_00000000_00000000, 0) == [0, 1]
+; run: %uadd_overflow_cin_i128(0x80000000_00000000_00000000_00000000, 0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [0, 1]
+; run: %uadd_overflow_cin_i128(0x01234567_89ABCDEF_01234567_89ABCDEF, 0xFEDCBA98_76543210_FEDCBA98_76543210, 1) == [0, 1]
+; run: %uadd_overflow_cin_i128(5, 3, 10) == [9, 0]
+
+function %sadd_overflow_cin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = sadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+; run: %sadd_overflow_cin_i128(0, 0, 0) == [0, 0]
+; run: %sadd_overflow_cin_i128(0, 0, 1) == [1, 0]
+; run: %sadd_overflow_cin_i128(1, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0) == [0, 0]
+; run: %sadd_overflow_cin_i128(1, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [1, 0]
+; run: %sadd_overflow_cin_i128(0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0]
+; run: %sadd_overflow_cin_i128(0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0, 1) == [0, 0]
+; run: %sadd_overflow_cin_i128(0, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [0, 0]
+; run: %sadd_overflow_cin_i128(18446744073709551615, 0, 1) == [0x00000000_00000001_00000000_00000000, 0]
+; run: %sadd_overflow_cin_i128(0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0, 1) == [0x80000000_00000000_00000000_00000000, 1]
+; run: %sadd_overflow_cin_i128(0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1, 0) == [0x80000000_00000000_00000000_00000000, 1]
+; run: %sadd_overflow_cin_i128(0x80000000_00000000_00000000_00000000, 0x80000000_00000000_00000000_00000000, 0) == [0, 1]
+; run: %sadd_overflow_cin_i128(0x80000000_00000000_00000000_00000000, 0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [0, 0]
+; run: %sadd_overflow_cin_i128(0x01234567_89ABCDEF_01234567_89ABCDEF, 0xFEDCBA98_76543210_FEDCBA98_76543210, 1) == [0, 0]
+; run: %sadd_overflow_cin_i128(5, 3, 10) == [9, 0]
+
+function %usub_overflow_bin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = usub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+; run: %usub_overflow_bin_i128(0, 0, 0) == [0, 0]
+; run: %usub_overflow_bin_i128(0, 0, 1) == [0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1]
+; run: %usub_overflow_bin_i128(1, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0) == [2, 1]
+; run: %usub_overflow_bin_i128(1, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [1, 1]
+; run: %usub_overflow_bin_i128(0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1]
+; run: %usub_overflow_bin_i128(0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0, 1) == [0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFE, 0]
+; run: %usub_overflow_bin_i128(0, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [0, 1]
+; run: %usub_overflow_bin_i128(18446744073709551615, 0, 1) == [18446744073709551614, 0]
+; run: %usub_overflow_bin_i128(0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0, 1) == [0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFE, 0]
+; run: %usub_overflow_bin_i128(0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1, 0) == [0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFE, 0]
+; run: %usub_overflow_bin_i128(0x80000000_00000000_00000000_00000000, 0x80000000_00000000_00000000_00000000, 0) == [0, 0]
+; run: %usub_overflow_bin_i128(0x80000000_00000000_00000000_00000000, 0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [0, 0]
+; run: %usub_overflow_bin_i128(0x01234567_89ABCDEF_01234567_89ABCDEF, 0xFEDCBA98_76543210_FEDCBA98_76543210, 1) == [0x02468ACF_13579BDE_02468ACF_13579BDE, 1]
+; run: %usub_overflow_bin_i128(5, 3, 10) == [1, 0]
+
+function %ssub_overflow_bin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = ssub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+; run: %ssub_overflow_bin_i128(0, 0, 0) == [0, 0]
+; run: %ssub_overflow_bin_i128(0, 0, 1) == [0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0]
+; run: %ssub_overflow_bin_i128(1, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0) == [2, 0]
+; run: %ssub_overflow_bin_i128(1, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [1, 0]
+; run: %ssub_overflow_bin_i128(0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0]
+; run: %ssub_overflow_bin_i128(0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0, 1) == [0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFE, 0]
+; run: %ssub_overflow_bin_i128(0, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [0, 0]
+; run: %ssub_overflow_bin_i128(18446744073709551615, 0, 1) == [18446744073709551614, 0]
+; run: %ssub_overflow_bin_i128(0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 0, 1) == [0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFE, 0]
+; run: %ssub_overflow_bin_i128(0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1, 0) == [0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFE, 0]
+; run: %ssub_overflow_bin_i128(0x80000000_00000000_00000000_00000000, 0x80000000_00000000_00000000_00000000, 0) == [0, 0]
+; run: %ssub_overflow_bin_i128(0x80000000_00000000_00000000_00000000, 0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF, 1) == [0, 1]
+; run: %ssub_overflow_bin_i128(0x01234567_89ABCDEF_01234567_89ABCDEF, 0xFEDCBA98_76543210_FEDCBA98_76543210, 1) == [0x02468ACF_13579BDE_02468ACF_13579BDE, 0]
+; run: %ssub_overflow_bin_i128(5, 3, 10) == [1, 0]

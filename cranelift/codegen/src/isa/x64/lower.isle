@@ -202,6 +202,75 @@
 (rule 0 (lower (uadd_overflow _ x y @ (value_type $I128)))
         (construct_overflow_op_alu_128 (CC.B) (ProduceFlagsOp.Add) (ChainFlagsOp.Adc) x y))
 
+;;;; Rules for `*_overflow_cin` and `*_overflow_bin` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; `neg` of the carry's low byte sets CF exactly when the carry is nonzero, and
+;; `adc`/`sbb` take it from there:
+;;
+;;   neg c_in
+;;   adc x, y
+;;   setb c_out
+
+(rule 1 (lower (uadd_overflow_cin _ x y @ (value_type (fits_in_64 ty)) c_in))
+      (lower_carry_chain (x64_adc_chained ty x y) (CC.B) c_in))
+
+(rule 1 (lower (sadd_overflow_cin _ x y @ (value_type (fits_in_64 ty)) c_in))
+      (lower_carry_chain (x64_adc_chained ty x y) (CC.O) c_in))
+
+(rule 1 (lower (usub_overflow_bin _ x y @ (value_type (fits_in_64 ty)) b_in))
+      (lower_carry_chain (x64_sbb_chained ty x y) (CC.B) b_in))
+
+(rule 1 (lower (ssub_overflow_bin _ x y @ (value_type (fits_in_64 ty)) b_in))
+      (lower_carry_chain (x64_sbb_chained ty x y) (CC.O) b_in))
+
+;; The 128-bit forms carry through both halves:
+;;
+;;   neg c_in
+;;   adc x_lo, y_lo
+;;   adc x_hi, y_hi
+;;   setb c_out
+
+(rule 0 (lower (uadd_overflow_cin _ x y @ (value_type $I128) c_in))
+      (lower_carry_chain_128 (ChainFlagsOp.Adc) (CC.B) x y c_in))
+
+(rule 0 (lower (sadd_overflow_cin _ x y @ (value_type $I128) c_in))
+      (lower_carry_chain_128 (ChainFlagsOp.Adc) (CC.O) x y c_in))
+
+(rule 0 (lower (usub_overflow_bin _ x y @ (value_type $I128) b_in))
+      (lower_carry_chain_128 (ChainFlagsOp.Sbb) (CC.B) x y b_in))
+
+(rule 0 (lower (ssub_overflow_bin _ x y @ (value_type $I128) b_in))
+      (lower_carry_chain_128 (ChainFlagsOp.Sbb) (CC.O) x y b_in))
+
+(decl lower_carry_chain (ConsumesAndProducesFlags CC Value) InstOutput)
+(rule (lower_carry_chain op cc carry)
+      (carry_chain_outputs
+        (with_flags_chained (x64_neg_paired $I8 carry) op (x64_setcc_paired cc))))
+
+(decl lower_carry_chain_128 (ChainFlagsOp CC Value Value Value) InstOutput)
+(rule (lower_carry_chain_128 op cc x y carry)
+      (let ((x_regs ValueRegs x)
+            (y_regs ValueRegs y)
+            (lo ConsumesAndProducesFlags
+                (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 0) (value_regs_get_gpr y_regs 0)))
+            (hi ConsumesAndProducesFlags
+                (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 1) (value_regs_get_gpr y_regs 1))))
+        (carry_chain_outputs
+          (with_flags_chained (x64_neg_paired $I8 carry) lo (chain_then_consume hi (x64_setcc cc))))))
+
+;; `hi` followed by `consumer`, returning both their results.
+(decl chain_then_consume (ConsumesAndProducesFlags ConsumesFlags) ConsumesFlags)
+(rule (chain_then_consume (ConsumesAndProducesFlags.ReturnsReg hi_inst hi)
+                          (ConsumesFlags.ConsumesFlagsReturnsReg inst result))
+      (ConsumesFlags.ConsumesFlagsTwiceReturnsValueRegs hi_inst inst (value_regs hi result)))
+
+;; The value and flag outputs of a carry chain, dropping the `neg`'s result.
+(decl carry_chain_outputs (MultiReg) InstOutput)
+(rule (carry_chain_outputs (MultiReg.Three _ value flag))
+      (output_pair value flag))
+(rule (carry_chain_outputs (MultiReg.Four _ lo hi flag))
+      (output_pair (value_regs lo hi) flag))
+
 ;;;; Rules for `sadd_overflow` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (rule 1 (lower (sadd_overflow _ x y @ (value_type (fits_in_64 ty))))
@@ -1772,6 +1841,19 @@
 
 (rule -1 (lower (smax (fits_in_64 ty) x y))
       (cmp_and_choose ty (CC.NL) x y))
+
+;; `i128`: compare both halves, then choose both.
+(rule -2 (lower (umin $I128 x y))
+      (lower_select128 (emit_cmp (IntCC.UnsignedLessThan) x y) x y))
+
+(rule -2 (lower (umax $I128 x y))
+      (lower_select128 (emit_cmp (IntCC.UnsignedGreaterThan) x y) x y))
+
+(rule -2 (lower (smin $I128 x y))
+      (lower_select128 (emit_cmp (IntCC.SignedLessThan) x y) x y))
+
+(rule -2 (lower (smax $I128 x y))
+      (lower_select128 (emit_cmp (IntCC.SignedGreaterThan) x y) x y))
 
 ;; SSE helpers for determining if single-instruction lowerings are available.
 
@@ -4756,6 +4838,20 @@
 (rule (lower (swizzle _ src mask))
       (let ((mask Xmm (x64_paddusb mask (emit_xmm_mem_128_le_const 0x70707070707070707070707070707070))))
         (lower_pshufb src mask)))
+
+;; Rules for `x86_sha256rnds2`, `x86_sha256msg1` and `x86_sha256msg2` ;;;;;;;;;;;
+
+(rule (lower (x86_sha256rnds2 _ x y wk))
+      (if-let true (has_sha))
+      (x64_sha256rnds2 x y wk))
+
+(rule (lower (x86_sha256msg1 _ x y))
+      (if-let true (has_sha))
+      (x64_sha256msg1 x y))
+
+(rule (lower (x86_sha256msg2 _ x y))
+      (if-let true (has_sha))
+      (x64_sha256msg2 x y))
 
 ;; Rules for `x86_pshufb` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

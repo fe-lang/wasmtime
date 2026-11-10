@@ -1,0 +1,431 @@
+test compile precise-output
+set unwind_info=false
+set enable_multi_ret_implicit_sret
+target riscv64
+
+function %uadd_overflow_cin_i64(i64, i64, i8) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3, v4 = uadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   andi a2,a2,255
+;   sltu a2,zero,a2
+;   add a1,a0,a1
+;   mv a5,a0
+;   add a0,a1,a2
+;   sltu a2,a1,a5
+;   sltu a4,a0,a1
+;   or a1,a2,a4
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   andi a2, a2, 0xff
+;   snez a2, a2
+;   add a1, a0, a1
+;   mv a5, a0
+;   add a0, a1, a2
+;   sltu a2, a1, a5
+;   sltu a4, a0, a1
+;   or a1, a2, a4
+;   ret
+
+function %uadd_overflow_cin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = uadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   addi sp,sp,-16
+;   sd ra,8(sp)
+;   sd fp,0(sp)
+;   mv fp,sp
+;   addi sp,sp,-16
+;   sd s3,8(sp)
+; block0:
+;   mv s3,a0
+;   andi a0,a5,255
+;   sltu a0,zero,a0
+;   add a3,a1,a3
+;   add a0,a3,a0
+;   sltu a5,a3,a1
+;   sltu a1,a0,a3
+;   or a1,a5,a1
+;   add a3,a2,a4
+;   add a1,a3,a1
+;   sltu a2,a3,a2
+;   sltu a3,a1,a3
+;   or a2,a2,a3
+;   mv a3,s3
+;   sb a2,0(a3)
+;   ld s3,8(sp)
+;   addi sp,sp,16
+;   ld ra,8(sp)
+;   ld fp,0(sp)
+;   addi sp,sp,16
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   addi sp, sp, -0x10
+;   sd ra, 8(sp)
+;   sd s0, 0(sp)
+;   mv s0, sp
+;   addi sp, sp, -0x10
+;   sd s3, 8(sp)
+; block1: ; offset 0x18
+;   mv s3, a0
+;   andi a0, a5, 0xff
+;   snez a0, a0
+;   add a3, a1, a3
+;   add a0, a3, a0
+;   sltu a5, a3, a1
+;   sltu a1, a0, a3
+;   or a1, a5, a1
+;   add a3, a2, a4
+;   add a1, a3, a1
+;   sltu a2, a3, a2
+;   sltu a3, a1, a3
+;   or a2, a2, a3
+;   mv a3, s3
+;   sb a2, 0(a3)
+;   ld s3, 8(sp)
+;   addi sp, sp, 0x10
+;   ld ra, 8(sp)
+;   ld s0, 0(sp)
+;   addi sp, sp, 0x10
+;   ret
+
+function %usub_overflow_bin_i64(i64, i64, i8) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3, v4 = usub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   andi a2,a2,255
+;   sltu a3,zero,a2
+;   sub a4,a0,a1
+;   sub a2,a4,a3
+;   sltu a5,a0,a1
+;   sltu a4,a4,a3
+;   or a1,a5,a4
+;   mv a0,a2
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   andi a2, a2, 0xff
+;   snez a3, a2
+;   sub a4, a0, a1
+;   sub a2, a4, a3
+;   sltu a5, a0, a1
+;   sltu a4, a4, a3
+;   or a1, a5, a4
+;   mv a0, a2
+;   ret
+
+function %usub_overflow_bin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = usub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   addi sp,sp,-16
+;   sd ra,8(sp)
+;   sd fp,0(sp)
+;   mv fp,sp
+;   addi sp,sp,-16
+;   sd s3,8(sp)
+; block0:
+;   mv s3,a0
+;   andi a0,a5,255
+;   sltu a5,zero,a0
+;   sub a6,a1,a3
+;   sub a0,a6,a5
+;   sltu a1,a1,a3
+;   sltu a3,a6,a5
+;   or a3,a1,a3
+;   sub a5,a2,a4
+;   sub a1,a5,a3
+;   sltu a2,a2,a4
+;   sltu a3,a5,a3
+;   or a2,a2,a3
+;   mv a3,s3
+;   sb a2,0(a3)
+;   ld s3,8(sp)
+;   addi sp,sp,16
+;   ld ra,8(sp)
+;   ld fp,0(sp)
+;   addi sp,sp,16
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   addi sp, sp, -0x10
+;   sd ra, 8(sp)
+;   sd s0, 0(sp)
+;   mv s0, sp
+;   addi sp, sp, -0x10
+;   sd s3, 8(sp)
+; block1: ; offset 0x18
+;   mv s3, a0
+;   andi a0, a5, 0xff
+;   snez a5, a0
+;   sub a6, a1, a3
+;   sub a0, a6, a5
+;   sltu a1, a1, a3
+;   sltu a3, a6, a5
+;   or a3, a1, a3
+;   sub a5, a2, a4
+;   sub a1, a5, a3
+;   sltu a2, a2, a4
+;   sltu a3, a5, a3
+;   or a2, a2, a3
+;   mv a3, s3
+;   sb a2, 0(a3)
+;   ld s3, 8(sp)
+;   addi sp, sp, 0x10
+;   ld ra, 8(sp)
+;   ld s0, 0(sp)
+;   addi sp, sp, 0x10
+;   ret
+
+function %sadd_overflow_cin_i64(i64, i64, i8) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3, v4 = sadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   andi a2,a2,255
+;   sltu a2,zero,a2
+;   add a3,a0,a1
+;   mv a5,a0
+;   add a0,a3,a2
+;   mv a2,a5
+;   sltu a4,a3,a2
+;   sltu a5,a0,a3
+;   or a3,a4,a5
+;   xor a2,a0,a2
+;   xor a1,a0,a1
+;   and a1,a2,a1
+;   srli a1,a1,63
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   andi a2, a2, 0xff
+;   snez a2, a2
+;   add a3, a0, a1
+;   mv a5, a0
+;   add a0, a3, a2
+;   mv a2, a5
+;   sltu a4, a3, a2
+;   sltu a5, a0, a3
+;   or a3, a4, a5
+;   xor a2, a0, a2
+;   xor a1, a0, a1
+;   and a1, a2, a1
+;   srli a1, a1, 0x3f
+;   ret
+
+function %sadd_overflow_cin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = sadd_overflow_cin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   addi sp,sp,-16
+;   sd ra,8(sp)
+;   sd fp,0(sp)
+;   mv fp,sp
+;   addi sp,sp,-16
+;   sd s7,8(sp)
+; block0:
+;   mv s7,a0
+;   andi a0,a5,255
+;   sltu a0,zero,a0
+;   add a3,a1,a3
+;   add a0,a3,a0
+;   sltu a5,a3,a1
+;   sltu a1,a0,a3
+;   or a1,a5,a1
+;   add a3,a2,a4
+;   add a1,a3,a1
+;   sltu a5,a3,a2
+;   sltu a3,a1,a3
+;   or a3,a5,a3
+;   xor a2,a1,a2
+;   xor a3,a1,a4
+;   and a2,a2,a3
+;   srli a2,a2,63
+;   mv a3,s7
+;   sb a2,0(a3)
+;   ld s7,8(sp)
+;   addi sp,sp,16
+;   ld ra,8(sp)
+;   ld fp,0(sp)
+;   addi sp,sp,16
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   addi sp, sp, -0x10
+;   sd ra, 8(sp)
+;   sd s0, 0(sp)
+;   mv s0, sp
+;   addi sp, sp, -0x10
+;   sd s7, 8(sp)
+; block1: ; offset 0x18
+;   mv s7, a0
+;   andi a0, a5, 0xff
+;   snez a0, a0
+;   add a3, a1, a3
+;   add a0, a3, a0
+;   sltu a5, a3, a1
+;   sltu a1, a0, a3
+;   or a1, a5, a1
+;   add a3, a2, a4
+;   add a1, a3, a1
+;   sltu a5, a3, a2
+;   sltu a3, a1, a3
+;   or a3, a5, a3
+;   xor a2, a1, a2
+;   xor a3, a1, a4
+;   and a2, a2, a3
+;   srli a2, a2, 0x3f
+;   mv a3, s7
+;   sb a2, 0(a3)
+;   ld s7, 8(sp)
+;   addi sp, sp, 0x10
+;   ld ra, 8(sp)
+;   ld s0, 0(sp)
+;   addi sp, sp, 0x10
+;   ret
+
+function %ssub_overflow_bin_i64(i64, i64, i8) -> i64, i8 {
+block0(v0: i64, v1: i64, v2: i8):
+    v3, v4 = ssub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+; block0:
+;   andi a2,a2,255
+;   sltu a3,zero,a2
+;   sub a4,a0,a1
+;   sub a2,a4,a3
+;   sltu a5,a0,a1
+;   sltu a4,a4,a3
+;   or a3,a5,a4
+;   xor a1,a0,a1
+;   xor a0,a0,a2
+;   and a0,a1,a0
+;   srli a1,a0,63
+;   mv a0,a2
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   andi a2, a2, 0xff
+;   snez a3, a2
+;   sub a4, a0, a1
+;   sub a2, a4, a3
+;   sltu a5, a0, a1
+;   sltu a4, a4, a3
+;   or a3, a5, a4
+;   xor a1, a0, a1
+;   xor a0, a0, a2
+;   and a0, a1, a0
+;   srli a1, a0, 0x3f
+;   mv a0, a2
+;   ret
+
+function %ssub_overflow_bin_i128(i128, i128, i8) -> i128, i8 {
+block0(v0: i128, v1: i128, v2: i8):
+    v3, v4 = ssub_overflow_bin v0, v1, v2
+    return v3, v4
+}
+
+; VCode:
+;   addi sp,sp,-16
+;   sd ra,8(sp)
+;   sd fp,0(sp)
+;   mv fp,sp
+;   addi sp,sp,-16
+;   sd s7,8(sp)
+;   sd s9,0(sp)
+; block0:
+;   mv s7,a0
+;   andi a0,a5,255
+;   sltu a5,zero,a0
+;   sub a6,a1,a3
+;   sub a0,a6,a5
+;   sltu a1,a1,a3
+;   sltu a3,a6,a5
+;   or a3,a1,a3
+;   sub a5,a2,a4
+;   sub a1,a5,a3
+;   sltu s9,a2,a4
+;   sltu a3,a5,a3
+;   or a3,s9,a3
+;   xor a3,a2,a4
+;   xor a2,a2,a1
+;   and a2,a3,a2
+;   srli a2,a2,63
+;   mv a3,s7
+;   sb a2,0(a3)
+;   ld s7,8(sp)
+;   ld s9,0(sp)
+;   addi sp,sp,16
+;   ld ra,8(sp)
+;   ld fp,0(sp)
+;   addi sp,sp,16
+;   ret
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   addi sp, sp, -0x10
+;   sd ra, 8(sp)
+;   sd s0, 0(sp)
+;   mv s0, sp
+;   addi sp, sp, -0x10
+;   sd s7, 8(sp)
+;   sd s9, 0(sp)
+; block1: ; offset 0x1c
+;   mv s7, a0
+;   andi a0, a5, 0xff
+;   snez a5, a0
+;   sub a6, a1, a3
+;   sub a0, a6, a5
+;   sltu a1, a1, a3
+;   sltu a3, a6, a5
+;   or a3, a1, a3
+;   sub a5, a2, a4
+;   sub a1, a5, a3
+;   sltu s9, a2, a4
+;   sltu a3, a5, a3
+;   or a3, s9, a3
+;   xor a3, a2, a4
+;   xor a2, a2, a1
+;   and a2, a3, a2
+;   srli a2, a2, 0x3f
+;   mv a3, s7
+;   sb a2, 0(a3)
+;   ld s7, 8(sp)
+;   ld s9, 0(sp)
+;   addi sp, sp, 0x10
+;   ld ra, 8(sp)
+;   ld s0, 0(sp)
+;   addi sp, sp, 0x10
+;   ret
+
