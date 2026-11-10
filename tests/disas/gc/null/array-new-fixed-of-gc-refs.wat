@@ -93,7 +93,8 @@
 ;; @0025                               v85 = uadd_overflow_trap v204, v6, user2  ; v6 = 12
 ;; @0025                               v89 = uadd_overflow_trap v252, v85, user2
 ;; @0025                               v90 = uextend.i64 v89
-;; @0025                               v93 = iadd v32, v90
+;;                                     v257 = load.i64 notrap aligned readonly can_move region5 v26+32
+;; @0025                               v93 = iadd v257, v90
 ;;                                     v216 = iconst.i32 16
 ;; @0025                               v94 = isub v85, v216  ; v216 = 16
 ;; @0025                               v95 = uextend.i64 v94
@@ -111,7 +112,8 @@
 ;; @0025                               v113 = uadd_overflow_trap v230, v6, user2  ; v6 = 12
 ;; @0025                               v117 = uadd_overflow_trap v252, v113, user2
 ;; @0025                               v118 = uextend.i64 v117
-;; @0025                               v121 = iadd v32, v118
+;;                                     v256 = load.i64 notrap aligned readonly can_move region5 v26+32
+;; @0025                               v121 = iadd v256, v118
 ;;                                     v246 = iconst.i32 20
 ;; @0025                               v122 = isub v113, v246  ; v246 = 20
 ;; @0025                               v123 = uextend.i64 v122
