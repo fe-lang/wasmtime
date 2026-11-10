@@ -18,11 +18,12 @@
 ;;       mv      s0, sp
 ;;       addi    sp, sp, -0x10
 ;;       sd      s4, 8(sp)
-;;       sd      s8, 0(sp)
+;;       sd      s7, 0(sp)
 ;;       mv      s4, a1
-;;       mv      s8, a2
+;;       mv      s7, a2
 ;;       mv      a3, s0
-;;       ld      a1, 8(a1)
+;;       mv      a2, s4
+;;       ld      a1, 8(a2)
 ;;       sd      a3, 0x30(a1)
 ;;       ld      a2, 8(s0)
 ;;       sd      a2, 0x38(a1)
@@ -38,22 +39,21 @@
 ;;       srai    a1, a1, 0x20
 ;;       slli    a2, a4, 0x20
 ;;       srai    a2, a2, 0x20
-;;       mv      a3, s8
+;;       mv      a3, s7
 ;;       slli    a3, a3, 0x20
 ;;       srai    a3, a3, 0x20
 ;;       jalr    a5
 ;;       addi    a1, zero, -1
 ;;       beq     a0, a1, 0x20
 ;;       ld      s4, 8(sp)
-;;       ld      s8, 0(sp)
+;;       ld      s7, 0(sp)
 ;;       addi    sp, sp, 0x10
 ;;       ld      ra, 8(sp)
 ;;       ld      s0, 0(sp)
 ;;       addi    sp, sp, 0x10
 ;;       ret
-;;       mv      a1, s4
-;;       ld      a0, 0x10(a1)
-;;       ld      a2, 0x148(a0)
-;;       mv      a0, a1
-;;       jalr    a2
+;;       mv      a0, s4
+;;       ld      a1, 0x10(a0)
+;;       ld      a1, 0x148(a1)
+;;       jalr    a1
 ;;       .byte   0x00, 0x00, 0x00, 0x00

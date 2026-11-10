@@ -50,7 +50,6 @@
 ;;       movq    %rdx, %rax
 ;;       addq    %r8, %rax
 ;;       adcq    %r9, %rcx
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -60,7 +59,6 @@
 ;;       movq    %rdx, %rax
 ;;       subq    %r8, %rax
 ;;       sbbq    %r9, %rcx
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -70,7 +68,6 @@
 ;;       movq    %rdx, %rax
 ;;       imulq   %rcx
 ;;       movq    %rdx, %rcx
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -80,7 +77,6 @@
 ;;       movq    %rdx, %rax
 ;;       mulq    %rcx
 ;;       movq    %rdx, %rcx
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -90,7 +86,6 @@
 ;;       movq    %rdx, %rax
 ;;       imulq   %rcx
 ;;       movq    %rdx, %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -100,6 +95,5 @@
 ;;       movq    %rdx, %rax
 ;;       mulq    %rcx
 ;;       movq    %rdx, %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

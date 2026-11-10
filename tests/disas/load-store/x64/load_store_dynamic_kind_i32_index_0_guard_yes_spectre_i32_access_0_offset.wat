@@ -30,7 +30,6 @@
 ;;       cmpq    %r8, %r10
 ;;       cmovaq  %r11, %r9
 ;;       movl    %ecx, (%r9)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -46,6 +45,5 @@
 ;;       cmpq    %r8, %r10
 ;;       cmovaq  %r11, %r9
 ;;       movl    (%r9), %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

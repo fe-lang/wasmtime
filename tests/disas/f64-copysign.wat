@@ -40,6 +40,5 @@
 ;;       vorpd   %xmm0, %xmm1, %xmm0
 ;;       vmovsd  %xmm0, (%rax)
 ;;       xorl    %eax, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

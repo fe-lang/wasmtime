@@ -83,13 +83,11 @@
 ;;       xshr32_u_u6 x7, x7, 5
 ;;       xband32_s8 x7, x7, 127
 ;;       xmadd32 x6, x8, x7, x6
-;;       xmov x24, x6
 ;;       xadd32 x2, x2, x5
 ;;       xadd32_u8 x3, x3, 2
-;;       br_if_not32 x4, 0xe    // target = 0x53
-;;   4b: xmov x6, x24
-;;       jump -0x40    // target = 0xe
-;;   53: call2 x0, x0, 0x10    // target = 0x63
+;;       br_if32 x4, -0x34    // target = 0xe
+;;   48: xmov x24, x6
+;;       call2 x0, x0, 0x10    // target = 0x5b
 ;;       xmov x0, x24
 ;;       pop_frame_restore 16, x24
 ;;       ret

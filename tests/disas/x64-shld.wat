@@ -57,7 +57,6 @@
 ;;       movq    %rsp, %rbp
 ;;       movq    %rdx, %rax
 ;;       shldl   $0xb, %ecx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -66,7 +65,6 @@
 ;;       movq    %rsp, %rbp
 ;;       movq    %rdx, %rax
 ;;       shldl   $0xb, %ecx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -75,7 +73,6 @@
 ;;       movq    %rsp, %rbp
 ;;       movq    %rdx, %rax
 ;;       shldl   $0x15, %ecx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -84,7 +81,6 @@
 ;;       movq    %rsp, %rbp
 ;;       movq    %rdx, %rax
 ;;       shldq   $0x2b, %rcx, %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -93,7 +89,6 @@
 ;;       movq    %rsp, %rbp
 ;;       movq    %rdx, %rax
 ;;       shldq   $0x2b, %rcx, %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -102,6 +97,5 @@
 ;;       movq    %rsp, %rbp
 ;;       movq    %rdx, %rax
 ;;       shldq   $0x35, %rcx, %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

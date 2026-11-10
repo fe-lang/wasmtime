@@ -23,7 +23,6 @@
 ;;       movq    %rsp, %rbp
 ;;       movq    %rdx, %rax
 ;;       notl    %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -31,6 +30,5 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       andnl   %edx, %ecx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

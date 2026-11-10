@@ -16,6 +16,5 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       subl    $0x10, 0x30(%rdi)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

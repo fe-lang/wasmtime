@@ -24,7 +24,6 @@
 ;;       movq    0x38(%rdi), %rsi
 ;;       movl    %edx, %edi
 ;;       movb    %cl, 0x1000(%rsi, %rdi)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -34,6 +33,5 @@
 ;;       movq    0x38(%rdi), %rsi
 ;;       movl    %edx, %edi
 ;;       movzbq  0x1000(%rsi, %rdi), %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

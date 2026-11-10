@@ -94,7 +94,6 @@
 ;;   10: movl    $0xc8, %eax
 ;;       jmp     0x1f
 ;;   1a: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -104,7 +103,6 @@
 ;;       testl   $0x100000, %edx
 ;;       movq    %r8, %rax
 ;;       cmovnel %ecx, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -114,7 +112,6 @@
 ;;       testl   $0x100000, %edx
 ;;       sete    %sil
 ;;       movzbl  %sil, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -126,7 +123,6 @@
 ;;   8f: movl    $0x190, %eax
 ;;       jmp     0x9e
 ;;   99: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -136,7 +132,6 @@
 ;;       btq     $0x28, %rdx
 ;;       movq    %r8, %rax
 ;;       cmovbq  %rcx, %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -146,7 +141,6 @@
 ;;       btq     $0x28, %rdx
 ;;       setae   %sil
 ;;       movzbl  %sil, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -154,11 +148,10 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       btl     %ecx, %edx
-;;       jb      0x117
-;;  10d: movl    $0xc8, %eax
-;;       jmp     0x11c
-;;  117: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
+;;       jb      0xf7
+;;   ed: movl    $0xc8, %eax
+;;       jmp     0xfc
+;;   f7: movl    $0x64, %eax
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -168,7 +161,6 @@
 ;;       btl     %ecx, %edx
 ;;       movq    %r9, %rax
 ;;       cmovbl  %r8d, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -178,7 +170,6 @@
 ;;       btl     %ecx, %edx
 ;;       setae   %sil
 ;;       movzbl  %sil, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -186,11 +177,10 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       btq     %rcx, %rdx
-;;       jb      0x198
-;;  18e: movl    $0xc8, %eax
-;;       jmp     0x19d
-;;  198: movl    $0x64, %eax
-;;       movq    %rbp, %rsp
+;;       jb      0x158
+;;  14e: movl    $0xc8, %eax
+;;       jmp     0x15d
+;;  158: movl    $0x64, %eax
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -200,7 +190,6 @@
 ;;       btq     %rcx, %rdx
 ;;       movq    %r9, %rax
 ;;       cmovbq  %r8, %rax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -210,6 +199,5 @@
 ;;       btq     %rcx, %rdx
 ;;       setae   %sil
 ;;       movzbl  %sil, %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

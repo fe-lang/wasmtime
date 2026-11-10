@@ -22,24 +22,22 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       cmpq    0x40(%rdi), %rdx
-;;       ja      0x1f
+;;       ja      0x1c
 ;;    e: addq    0x38(%rdi), %rdx
 ;;       movl    $0xffff0000, %edi
 ;;       movl    %ecx, (%rdx, %rdi)
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;   1f: ud2
+;;   1c: ud2
 ;;
 ;; wasm[0]::function[1]:
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       cmpq    0x40(%rdi), %rdx
-;;       ja      0x5f
-;;   4e: addq    0x38(%rdi), %rdx
+;;       ja      0x3c
+;;   2e: addq    0x38(%rdi), %rdx
 ;;       movl    $0xffff0000, %edi
 ;;       movl    (%rdx, %rdi), %eax
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;   5f: ud2
+;;   3c: ud2

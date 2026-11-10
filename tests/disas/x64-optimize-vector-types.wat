@@ -138,7 +138,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       pcmpeqd %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -146,7 +145,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       pcmpeqd %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -154,7 +152,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       pcmpeqd %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -162,7 +159,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       pcmpeqd %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -170,7 +166,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       pcmpeqd %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -178,7 +173,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       pcmpeqd %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -186,7 +180,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       pxor    %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -194,7 +187,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       pxor    %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -205,7 +197,6 @@
 ;;       pcmpeqd %xmm7, %xmm7
 ;;       movdqa  %xmm1, %xmm0
 ;;       pcmpeqb %xmm7, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -217,7 +208,6 @@
 ;;       pcmpeqd %xmm2, %xmm2
 ;;       movdqa  %xmm1, %xmm0
 ;;       pxor    %xmm2, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -227,7 +217,6 @@
 ;;       pxor    %xmm5, %xmm5
 ;;       movdqa  %xmm1, %xmm0
 ;;       pcmpeqd %xmm5, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -236,7 +225,6 @@
 ;;       movq    %rsp, %rbp
 ;;       pxor    %xmm5, %xmm5
 ;;       pcmpeqd %xmm5, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -248,7 +236,6 @@
 ;;       pcmpeqd %xmm2, %xmm2
 ;;       movdqa  %xmm1, %xmm0
 ;;       pxor    %xmm2, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -257,7 +244,6 @@
 ;;       movq    %rsp, %rbp
 ;;       paddb   %xmm1, %xmm0
 ;;       pcmpeqb %xmm1, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -267,7 +253,6 @@
 ;;       pxor    %xmm5, %xmm5
 ;;       movdqa  %xmm1, %xmm0
 ;;       pcmpeqd %xmm5, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -276,6 +261,5 @@
 ;;       movq    %rsp, %rbp
 ;;       pxor    %xmm5, %xmm5
 ;;       pcmpeqd %xmm5, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

@@ -9,7 +9,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       pxor    %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -17,6 +16,5 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       pcmpeqd %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq

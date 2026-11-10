@@ -41,7 +41,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       cvttps2dq %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -61,7 +60,6 @@
 ;;       pxor    %xmm2, %xmm2
 ;;       pmaxsd  %xmm2, %xmm0
 ;;       paddd   %xmm1, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -69,7 +67,6 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       cvttpd2dq %xmm0, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -82,13 +79,14 @@
 ;;       roundpd $3, %xmm0, %xmm0
 ;;       addpd   0x1e(%rip), %xmm0
 ;;       shufps  $0x88, %xmm4, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;   ab: addb    %al, (%rax)
-;;   ad: addb    %al, (%rax)
-;;   af: addb    %al, (%rax)
-;;   b1: addb    %ah, %al
+;;   a8: addb    %al, (%rax)
+;;   aa: addb    %al, (%rax)
+;;   ac: addb    %al, (%rax)
+;;   ae: addb    %al, (%rax)
+;;   b0: addb    %al, (%rax)
+;;   b2: loopne  0xb3
 ;;
 ;; wasm[0]::function[4]:
 ;;       pushq   %rbp
@@ -96,7 +94,6 @@
 ;;       movdqa  %xmm0, %xmm5
 ;;       movdqa  %xmm1, %xmm0
 ;;       pmaddubsw %xmm5, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
 ;;
@@ -107,15 +104,15 @@
 ;;       pmaddwd 0xf(%rip), %xmm1
 ;;       movdqa  %xmm1, %xmm0
 ;;       paddd   %xmm2, %xmm0
-;;       movq    %rbp, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;  11e: addb    %al, (%rax)
-;;  120: addl    %eax, (%rax)
-;;  122: addl    %eax, (%rax)
-;;  124: addl    %eax, (%rax)
-;;  126: addl    %eax, (%rax)
-;;  128: addl    %eax, (%rax)
-;;  12a: addl    %eax, (%rax)
-;;  12c: addl    %eax, (%rax)
-;;  12e: addl    %eax, (%rax)
+;;  11b: addb    %al, (%rax)
+;;  11d: addb    %al, (%rax)
+;;  11f: addb    %al, (%rcx)
+;;  121: addb    %al, (%rcx)
+;;  123: addb    %al, (%rcx)
+;;  125: addb    %al, (%rcx)
+;;  127: addb    %al, (%rcx)
+;;  129: addb    %al, (%rcx)
+;;  12b: addb    %al, (%rcx)
+;;  12d: addb    %al, (%rcx)
