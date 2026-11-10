@@ -69,14 +69,15 @@
 ;;       movq    0x18(%r10), %r10
 ;;       addq    $0x10, %r10
 ;;       cmpq    %rsp, %r10
-;;       ja      0x4c
+;;       ja      0x4f
 ;;   39: movq    %rdi, %rsi
-;;       movq    0x48(%rdi), %rdi
 ;;       movl    $0x4d2, %edx
+;;       movq    %rsi, %r8
+;;       movq    0x48(%r8), %rdi
 ;;       callq   0x60
 ;;       popq    %rbp
 ;;       retq
-;;   4c: ud2
+;;   4f: ud2
 ;;
 ;; wasm[2]::function[2]:
 ;;       pushq   %rbp
@@ -95,10 +96,10 @@
 ;;       testl   %esi, %esi
 ;;       movq    %rsi, 8(%rsp)
 ;;       jne     0xbc
-;;   a0: movq    (%rsp), %rdi
+;;   a0: movl    $0x17, %edx
+;;       movq    (%rsp), %rdi
 ;;       movq    0x58(%rdi), %rax
 ;;       movq    0x68(%rdi), %rdi
-;;       movl    $0x17, %edx
 ;;       movq    (%rsp), %rsi
 ;;       callq   *%rax
 ;;       ├─╼ exception frame offset: SP = FP - 0x20
@@ -120,9 +121,9 @@
 ;;   e1: jmp     0xe8
 ;;   e6: ud2
 ;;   e8: movq    (%rsp), %rsi
-;;   ec: movq    0x58(%rsi), %rax
-;;   f0: movq    0x68(%rsi), %rdi
-;;   f4: movl    $0x31, %edx
+;;   ec: movl    $0x31, %edx
+;;   f1: movq    0x58(%rsi), %rax
+;;   f5: movq    0x68(%rsi), %rdi
 ;;   f9: callq   *%rax
 ;;   fb: ud2
 ;;   fd: ud2

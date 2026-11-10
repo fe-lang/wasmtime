@@ -34,13 +34,13 @@
 ;;
 ;;                                 block3:
 ;; @001e                               v13 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @001e                               v14 = load.i64 notrap aligned readonly can_move region4 v13+32
 ;; @001e                               v12 = uextend.i64 v2
+;; @001e                               v14 = load.i64 notrap aligned readonly can_move region4 v13+32
 ;; @001e                               v15 = iadd v14, v12
 ;; @001e                               v16 = iconst.i64 4
 ;; @001e                               v17 = iadd v15, v16  ; v16 = 4
-;; @001e                               v18 = load.i32 user2 readonly region6 v17
 ;; @001e                               v10 = load.i64 notrap aligned readonly can_move region2 v0+40
+;; @001e                               v18 = load.i32 user2 readonly region6 v17
 ;; @001e                               v11 = load.i32 notrap aligned readonly can_move region3 v10
 ;; @001e                               v19 = icmp eq v18, v11
 ;; @001e                               v20 = uextend.i32 v19

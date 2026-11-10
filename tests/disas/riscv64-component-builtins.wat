@@ -31,8 +31,8 @@
 ;;     v6 = load.i32 notrap aligned region3 v0+32
 ;;     trapz v6, user26
 ;;     v9 = load.i64 notrap aligned readonly region4 v0+8
-;;     v10 = load.i64 notrap aligned readonly can_move region5 v9+16
 ;;     v7 = iconst.i32 0
+;;     v10 = load.i64 notrap aligned readonly can_move region5 v9+16
 ;;     v11 = call_indirect sig0, v10(v0, v7, v7, v2)  ; v7 = 0, v7 = 0
 ;;     v12 = iconst.i64 -1
 ;;     v13 = icmp ne v11, v12  ; v12 = -1

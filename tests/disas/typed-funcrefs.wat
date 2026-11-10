@@ -144,11 +144,11 @@
 ;;     stack_limit = gv2
 ;;
 ;;                                 block0(v0: i64, v1: i64, v2: i32, v3: i32, v4: i32, v5: i32):
-;; @0048                               v11 = load.i64 notrap aligned readonly can_move region2 v0+48
 ;;                                     v62 = iconst.i64 8
+;; @0048                               v11 = load.i64 notrap aligned readonly can_move region2 v0+48
 ;; @0048                               v14 = iadd v11, v62  ; v62 = 8
-;; @0048                               v17 = load.i64 user6 aligned region3 v14
 ;; @0048                               v18 = iconst.i64 -2
+;; @0048                               v17 = load.i64 user6 aligned region3 v14
 ;; @0048                               v19 = band v17, v18  ; v18 = -2
 ;; @0048                               brif v17, block3(v19), block2
 ;;
@@ -164,8 +164,8 @@
 ;; @004a                               v26 = call_indirect sig1, v24(v25, v0, v2, v3, v4, v5)
 ;;                                     v69 = iconst.i64 16
 ;; @005b                               v40 = iadd.i64 v11, v69  ; v69 = 16
-;; @005b                               v43 = load.i64 user6 aligned region3 v40
 ;;                                     v70 = iconst.i64 -2
+;; @005b                               v43 = load.i64 user6 aligned region3 v40
 ;;                                     v71 = band v43, v70  ; v70 = -2
 ;; @005b                               brif v43, block5(v71), block4
 ;;
@@ -202,11 +202,11 @@
 ;;     stack_limit = gv2
 ;;
 ;;                                 block0(v0: i64, v1: i64, v2: i32, v3: i32, v4: i32, v5: i32):
-;; @0075                               v11 = load.i64 notrap aligned readonly can_move region2 v0+48
 ;;                                     v62 = iconst.i64 8
+;; @0075                               v11 = load.i64 notrap aligned readonly can_move region2 v0+48
 ;; @0075                               v14 = iadd v11, v62  ; v62 = 8
-;; @0075                               v17 = load.i64 user6 aligned region3 v14
 ;; @0075                               v18 = iconst.i64 -2
+;; @0075                               v17 = load.i64 user6 aligned region3 v14
 ;; @0075                               v19 = band v17, v18  ; v18 = -2
 ;; @0075                               brif v17, block3(v19), block2
 ;;
@@ -222,8 +222,8 @@
 ;; @0075                               v26 = call_indirect sig0, v24(v25, v0, v2, v3, v4, v5)
 ;;                                     v69 = iconst.i64 16
 ;; @0087                               v40 = iadd.i64 v11, v69  ; v69 = 16
-;; @0087                               v43 = load.i64 user6 aligned region3 v40
 ;;                                     v70 = iconst.i64 -2
+;; @0087                               v43 = load.i64 user6 aligned region3 v40
 ;;                                     v71 = band v43, v70  ; v70 = -2
 ;; @0087                               brif v43, block5(v71), block4
 ;;

@@ -24,9 +24,9 @@
 ;;       movq    %rbp, %rcx
 ;;       movq    8(%rcx), %rcx
 ;;       movq    %rcx, 0x38(%rax)
-;;       movq    8(%rdi), %rax
 ;;       leaq    (%rsp), %rdx
 ;;       xorq    %rcx, %rcx
+;;       movq    8(%rdi), %rax
 ;;       callq   *%rax
 ;;       testb   %al, %al
 ;;       je      0x47

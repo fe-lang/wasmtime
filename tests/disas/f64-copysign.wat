@@ -31,13 +31,13 @@
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
 ;;       movq    0x38(%rdi), %rax
-;;       vmovsd  0xfff3(%rax), %xmm0
-;;       vxorpd  %xmm1, %xmm1, %xmm1
+;;       vxorpd  %xmm0, %xmm0, %xmm0
+;;       vmovsd  0xfff3(%rax), %xmm1
 ;;       movabsq $9223372036854775808, %r8
 ;;       vmovq   %r8, %xmm2
-;;       vandnpd %xmm1, %xmm2, %xmm1
-;;       vandpd  %xmm0, %xmm2, %xmm0
-;;       vorpd   %xmm0, %xmm1, %xmm0
+;;       vandnpd %xmm0, %xmm2, %xmm0
+;;       vandpd  %xmm1, %xmm2, %xmm1
+;;       vorpd   %xmm1, %xmm0, %xmm0
 ;;       vmovsd  %xmm0, (%rax)
 ;;       xorl    %eax, %eax
 ;;       popq    %rbp

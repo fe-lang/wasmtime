@@ -21,27 +21,31 @@
 ;; wasm[0]::function[0]:
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
-;;       movq    0x40(%rdi), %rsi
-;;       movl    %edx, %r8d
+;;       movq    %rdi, %r8
+;;       movl    %edx, %edi
+;;       movq    %r8, %r9
+;;       movq    0x40(%r9), %rsi
 ;;       subq    $0x1001, %rsi
-;;       cmpq    %rsi, %r8
-;;       ja      0x29
-;;   1b: movq    0x38(%rdi), %r9
-;;       movb    %cl, 0x1000(%r9, %r8)
+;;       cmpq    %rsi, %rdi
+;;       ja      0x2e
+;;   20: movq    0x38(%r9), %r9
+;;       movb    %cl, 0x1000(%r9, %rdi)
 ;;       popq    %rbp
 ;;       retq
-;;   29: ud2
+;;   2e: ud2
 ;;
 ;; wasm[0]::function[1]:
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
-;;       movq    0x40(%rdi), %rsi
-;;       movl    %edx, %r8d
+;;       movq    %rdi, %r8
+;;       movl    %edx, %edi
+;;       movq    %r8, %r9
+;;       movq    0x40(%r9), %rsi
 ;;       subq    $0x1001, %rsi
-;;       cmpq    %rsi, %r8
-;;       ja      0x6a
-;;   5b: movq    0x38(%rdi), %r9
-;;       movzbq  0x1000(%r9, %r8), %rax
+;;       cmpq    %rsi, %rdi
+;;       ja      0x6f
+;;   60: movq    0x38(%r9), %r9
+;;       movzbq  0x1000(%r9, %rdi), %rax
 ;;       popq    %rbp
 ;;       retq
-;;   6a: ud2
+;;   6f: ud2

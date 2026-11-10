@@ -23,19 +23,20 @@
 ;;                                 block0(v0: i64, v1: i64, v2: i32, v3: i32, v4: i64, v5: i32):
 ;; @0027                               trapz v2, user16
 ;; @0027                               v7 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @0027                               v8 = load.i64 notrap aligned readonly can_move region2 v7+32
 ;; @0027                               v6 = uextend.i64 v2
+;; @0027                               v8 = load.i64 notrap aligned readonly can_move region2 v7+32
 ;; @0027                               v9 = iadd v8, v6
 ;; @0027                               v10 = iconst.i64 24
 ;; @0027                               v11 = iadd v9, v10  ; v10 = 24
-;; @0027                               v12 = load.i32 user2 readonly region4 v11
 ;; @0027                               v14 = uextend.i64 v3
 ;; @0027                               v15 = uextend.i64 v5
 ;; @0027                               v18 = iadd v14, v15
+;; @0027                               v12 = load.i32 user2 readonly region4 v11
 ;; @0027                               v13 = uextend.i64 v12
 ;; @0027                               v19 = icmp ugt v18, v13
 ;; @0027                               trapnz v19, user17
 ;; @0027                               v36 = load.i64 notrap aligned region3 v7+40
+;; @0027                               v37 = iadd v8, v36
 ;; @0027                               v24 = iconst.i64 32
 ;; @0027                               v25 = iadd v9, v24  ; v24 = 32
 ;;                                     v49 = iconst.i64 3
@@ -43,7 +44,6 @@
 ;; @0027                               v29 = iadd v25, v50
 ;;                                     v52 = ishl v15, v49  ; v49 = 3
 ;; @0027                               v38 = uadd_overflow_trap v29, v52, user2
-;; @0027                               v37 = iadd v8, v36
 ;; @0027                               v39 = icmp ugt v38, v37
 ;; @0027                               trapnz v39, user2
 ;;                                     v47 = iconst.i64 0

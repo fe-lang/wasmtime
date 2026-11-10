@@ -21,17 +21,17 @@
 ;; wasm[0]::function[0]:
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
-;;       movq    0x38(%rdi), %rsi
-;;       movl    %edx, %edi
-;;       movl    %ecx, 0x1000(%rsi, %rdi)
+;;       movl    %edx, %esi
+;;       movq    0x38(%rdi), %rdi
+;;       movl    %ecx, 0x1000(%rdi, %rsi)
 ;;       popq    %rbp
 ;;       retq
 ;;
 ;; wasm[0]::function[1]:
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
-;;       movq    0x38(%rdi), %rsi
-;;       movl    %edx, %edi
-;;       movl    0x1000(%rsi, %rdi), %eax
+;;       movl    %edx, %esi
+;;       movq    0x38(%rdi), %rdi
+;;       movl    0x1000(%rdi, %rsi), %eax
 ;;       popq    %rbp
 ;;       retq

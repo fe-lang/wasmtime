@@ -37,8 +37,8 @@
 ;;                                 block0(v0: i64, v1: i64, v2: i32):
 ;; @0033                               trapz v2, user16
 ;; @0033                               v4 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @0033                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @0033                               v3 = uextend.i64 v2
+;; @0033                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @0033                               v6 = iadd v5, v3
 ;; @0033                               v7 = iconst.i64 8
 ;; @0033                               v8 = iadd v6, v7  ; v7 = 8
@@ -63,8 +63,8 @@
 ;;                                 block0(v0: i64, v1: i64, v2: i32):
 ;; @003c                               trapz v2, user16
 ;; @003c                               v4 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @003c                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @003c                               v3 = uextend.i64 v2
+;; @003c                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @003c                               v6 = iadd v5, v3
 ;; @003c                               v7 = iconst.i64 12
 ;; @003c                               v8 = iadd v6, v7  ; v7 = 12
@@ -90,8 +90,8 @@
 ;;                                 block0(v0: i64, v1: i64, v2: i32):
 ;; @0045                               trapz v2, user16
 ;; @0045                               v4 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @0045                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @0045                               v3 = uextend.i64 v2
+;; @0045                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @0045                               v6 = iadd v5, v3
 ;; @0045                               v7 = iconst.i64 12
 ;; @0045                               v8 = iadd v6, v7  ; v7 = 12
@@ -117,8 +117,8 @@
 ;;                                 block0(v0: i64, v1: i64, v2: i32):
 ;; @004e                               trapz v2, user16
 ;; @004e                               v4 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @004e                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @004e                               v3 = uextend.i64 v2
+;; @004e                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @004e                               v6 = iadd v5, v3
 ;; @004e                               v7 = iconst.i64 16
 ;; @004e                               v8 = iadd v6, v7  ; v7 = 16

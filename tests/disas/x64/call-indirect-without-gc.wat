@@ -16,39 +16,43 @@
 ;;       movq    0x18(%r10), %r10
 ;;       addq    $0x20, %r10
 ;;       cmpq    %rsp, %r10
-;;       ja      0x8e
+;;       ja      0x9c
 ;;   19: subq    $0x10, %rsp
-;;       movq    0x38(%rdi), %rax
-;;       movq    0x30(%rdi), %r9
-;;       xorq    %r8, %r8
-;;       movl    %ecx, %esi
-;;       leaq    (%r9, %rsi, 8), %r9
-;;       cmpl    %eax, %ecx
-;;       cmovaeq %r8, %r9
-;;       movq    (%r9), %rcx
 ;;       movq    %rcx, %rax
-;;       andq    $0xfffffffffffffffe, %rax
-;;       testq   %rcx, %rcx
-;;       je      0x6d
-;;   47: movl    0x10(%rax), %ecx
-;;       movq    0x28(%rdi), %rsi
+;;       movq    0x38(%rdi), %rsi
+;;       xorq    %rcx, %rcx
+;;       movq    %rax, %r9
+;;       movl    %r9d, %eax
+;;       movq    %rax, %r8
+;;       shlq    $3, %r8
+;;       addq    0x30(%rdi), %r8
+;;       cmpl    %esi, %r9d
+;;       cmovaeq %rcx, %r8
+;;       movq    (%r8), %rsi
+;;       movq    %rsi, %rcx
+;;       andq    $0xfffffffffffffffe, %rcx
+;;       testq   %rsi, %rsi
+;;       je      0x78
+;;   52: movq    0x28(%rdi), %rax
 ;;       movq    %rdi, %r8
-;;       cmpl    4(%rsi), %ecx
-;;       jne     0x90
-;;   5a: movq    8(%rax), %rcx
-;;       movq    0x18(%rax), %rdi
+;;       movl    0x10(%rcx), %esi
+;;       cmpl    4(%rax), %esi
+;;       jne     0x9e
+;;   65: movq    8(%rcx), %rax
+;;       movq    0x18(%rcx), %rdi
 ;;       movq    %r8, %rsi
-;;       callq   *%rcx
+;;       callq   *%rax
 ;;       addq    $0x10, %rsp
 ;;       popq    %rbp
 ;;       retq
-;;   6d: movq    %rdx, 8(%rsp)
-;;   72: movq    %rdi, (%rsp)
-;;   76: movq    %rsi, %rdx
-;;   79: xorl    %esi, %esi
-;;   7b: callq   0x1fe
-;;   80: movq    8(%rsp), %rdx
-;;   85: movq    (%rsp), %rdi
-;;   89: jmp     0x47
-;;   8e: ud2
-;;   90: ud2
+;;   78: movq    %rdx, 8(%rsp)
+;;   7d: movq    %rdi, (%rsp)
+;;   81: movq    %rax, %rdx
+;;   84: xorl    %esi, %esi
+;;   86: callq   0x20c
+;;   8b: movq    %rax, %rcx
+;;   8e: movq    8(%rsp), %rdx
+;;   93: movq    (%rsp), %rdi
+;;   97: jmp     0x52
+;;   9c: ud2
+;;   9e: ud2

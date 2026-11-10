@@ -50,15 +50,15 @@
 ;;     fn0 = colocated u805306368:1 sig0
 ;;
 ;; block0(v0: i64, v1: i64):
-;;     v2 = load.i64 notrap aligned region0 v0+112
 ;;     v3 = iconst.i64 0
+;;     v2 = load.i64 notrap aligned region0 v0+112
 ;;     v4 = icmp eq v2, v3  ; v3 = 0
 ;;     brif v4, block2, block1
 ;;
 ;; block1:
 ;;     v6 = load.i32 notrap aligned region1 v0+120
-;;     v8 = load.i64 notrap aligned region2 v0+64
 ;;     v10 = uextend.i64 v6
+;;     v8 = load.i64 notrap aligned region2 v0+64
 ;;     v14 = icmp ugt v10, v8
 ;;     trapnz v14, heap_oob
 ;;     v15 = load.i64 notrap aligned readonly can_move region3 v0+56

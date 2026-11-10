@@ -41,9 +41,9 @@
 ;; @0033                               v5 = uadd_overflow_trap v3, v4, user2  ; v4 = 24
 ;; @0033                               v6 = load.i64 notrap aligned readonly can_move region0 v0+8
 ;; @0033                               v7 = load.i64 notrap aligned region3 v6+40
-;; @0033                               v10 = load.i64 notrap aligned region2 v6+32
 ;; @0033                               v8 = icmp ugt v5, v7
 ;; @0033                               v12 = iconst.i64 0
+;; @0033                               v10 = load.i64 notrap aligned region2 v6+32
 ;; @0033                               v11 = iadd v10, v3
 ;; @0033                               v13 = select_spectre_guard v8, v12, v11  ; v12 = 0
 ;; @0033                               v14 = iconst.i64 8
@@ -73,9 +73,9 @@
 ;; @003c                               v5 = uadd_overflow_trap v3, v4, user2  ; v4 = 24
 ;; @003c                               v6 = load.i64 notrap aligned readonly can_move region0 v0+8
 ;; @003c                               v7 = load.i64 notrap aligned region3 v6+40
-;; @003c                               v10 = load.i64 notrap aligned region2 v6+32
 ;; @003c                               v8 = icmp ugt v5, v7
 ;; @003c                               v12 = iconst.i64 0
+;; @003c                               v10 = load.i64 notrap aligned region2 v6+32
 ;; @003c                               v11 = iadd v10, v3
 ;; @003c                               v13 = select_spectre_guard v8, v12, v11  ; v12 = 0
 ;; @003c                               v14 = iconst.i64 12
@@ -106,9 +106,9 @@
 ;; @0045                               v5 = uadd_overflow_trap v3, v4, user2  ; v4 = 24
 ;; @0045                               v6 = load.i64 notrap aligned readonly can_move region0 v0+8
 ;; @0045                               v7 = load.i64 notrap aligned region3 v6+40
-;; @0045                               v10 = load.i64 notrap aligned region2 v6+32
 ;; @0045                               v8 = icmp ugt v5, v7
 ;; @0045                               v12 = iconst.i64 0
+;; @0045                               v10 = load.i64 notrap aligned region2 v6+32
 ;; @0045                               v11 = iadd v10, v3
 ;; @0045                               v13 = select_spectre_guard v8, v12, v11  ; v12 = 0
 ;; @0045                               v14 = iconst.i64 12
@@ -139,9 +139,9 @@
 ;; @004e                               v5 = uadd_overflow_trap v3, v4, user2  ; v4 = 24
 ;; @004e                               v6 = load.i64 notrap aligned readonly can_move region0 v0+8
 ;; @004e                               v7 = load.i64 notrap aligned region3 v6+40
-;; @004e                               v10 = load.i64 notrap aligned region2 v6+32
 ;; @004e                               v8 = icmp ugt v5, v7
 ;; @004e                               v12 = iconst.i64 0
+;; @004e                               v10 = load.i64 notrap aligned region2 v6+32
 ;; @004e                               v11 = iadd v10, v3
 ;; @004e                               v13 = select_spectre_guard v8, v12, v11  ; v12 = 0
 ;; @004e                               v14 = iconst.i64 16

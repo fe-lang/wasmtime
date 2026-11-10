@@ -21,10 +21,10 @@
 ;; wasm[0]::function[0]:
 ;;       stp     x29, x30, [sp, #-0x10]!
 ;;       mov     x29, sp
-;;       ldr     x7, [x2, #0x40]
-;;       mov     w8, w4
-;;       sub     x7, x7, #4
-;;       cmp     x8, x7
+;;       mov     w7, w4
+;;       ldr     x8, [x2, #0x40]
+;;       sub     x8, x8, #4
+;;       cmp     x7, x8
 ;;       b.hi    #0x2c
 ;;   1c: ldr     x9, [x2, #0x38]
 ;;       str     w5, [x9, w4, uxtw]
@@ -35,10 +35,10 @@
 ;; wasm[0]::function[1]:
 ;;       stp     x29, x30, [sp, #-0x10]!
 ;;       mov     x29, sp
-;;       ldr     x7, [x2, #0x40]
-;;       mov     w8, w4
-;;       sub     x7, x7, #4
-;;       cmp     x8, x7
+;;       mov     w7, w4
+;;       ldr     x8, [x2, #0x40]
+;;       sub     x8, x8, #4
+;;       cmp     x7, x8
 ;;       b.hi    #0x6c
 ;;   5c: ldr     x9, [x2, #0x38]
 ;;       ldr     w2, [x9, w4, uxtw]

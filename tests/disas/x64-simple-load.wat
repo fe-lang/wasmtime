@@ -13,12 +13,12 @@
 ;; wasm[0]::function[0]::load8:
 ;;       pushq   %rbp
 ;;       movq    %rsp, %rbp
-;;       movq    0x38(%rdi), %rsi
+;;       movl    %edx, %esi
 ;;       ╰─╼ addrmap: 0x21
-;;       movl    %edx, %edi
-;;       movzbq  (%rsi, %rdi), %rax
+;;       movq    0x38(%rdi), %rdi
+;;       movzbq  (%rdi, %rsi), %rax
 ;;       ╰─╼ trap: Normal(MemoryOutOfBounds)
-;;       movzbq  4(%rsi, %rdi), %rcx
+;;       movzbq  4(%rdi, %rsi), %rcx
 ;;       ├─╼ addrmap: 0x26
 ;;       ╰─╼ trap: Normal(MemoryOutOfBounds)
 ;;       popq    %rbp

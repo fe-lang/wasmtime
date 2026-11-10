@@ -15,8 +15,8 @@
 ;;       movq    %rsp, %rbp
 ;;       subq    $0x20, %rsp
 ;;       movq    8(%rdi), %rax
-;;       movq    0x18(%rax), %rax
 ;;       movq    %rsp, %rcx
+;;       movq    0x18(%rax), %rax
 ;;       cmpq    %rax, %rcx
 ;;       jb      0x86
 ;;   1c: movq    %rdi, (%rsp)
@@ -39,9 +39,9 @@
 ;;       nopl    (%rax, %rax)
 ;;       ├─╼ debug frame state (after previous inst): func key DefinedWasmFunction(StaticModuleIndex(0), DefinedFuncIndex(0)), wasm PC 0x27, slot at FP-0x20, locals , stack I32 @ slot+0x8, I32 @ slot+0xc, I32 @ slot+0x10, I32 @ slot+0x14
 ;;       ╰─╼ breakpoint patch: wasm PC 0x27, patch bytes [232, 163, 1, 0, 0]
-;;       movq    0x30(%rdi), %rax
-;;       movq    (%rax), %rcx
+;;       movq    0x30(%rdi), %rcx
 ;;       xorl    %eax, %eax
+;;       movq    (%rcx), %rcx
 ;;       lock cmpxchgl %eax, (%rcx)
 ;;       movl    %eax, 0xc(%rsp)
 ;;       movq    %rax, %rcx

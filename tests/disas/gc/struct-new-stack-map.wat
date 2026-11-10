@@ -52,9 +52,9 @@
 ;;   8b: movl    $0xb0000022, %esi
 ;;   90: movq    0x28(%rcx), %rax
 ;;   94: movq    %rcx, 8(%rsp)
-;;   99: movl    (%rax), %edx
-;;   9b: movl    $0x20, %ecx
-;;   a0: movl    $0x10, %r8d
+;;   99: movl    $0x20, %ecx
+;;   9e: movl    $0x10, %r8d
+;;   a4: movl    (%rax), %edx
 ;;   a6: movq    8(%rsp), %rdi
 ;;   ab: callq   0x137
 ;;   b0: movq    8(%rsp), %rcx

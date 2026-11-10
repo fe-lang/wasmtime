@@ -37,8 +37,8 @@
 ;;                                 block0(v0: i64, v1: i64, v2: i32):
 ;; @0033                               trapz v2, user16
 ;; @0033                               v4 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @0033                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @0033                               v3 = uextend.i64 v2
+;; @0033                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @0033                               v6 = iadd v5, v3
 ;; @0033                               v7 = iconst.i64 24
 ;; @0033                               v8 = iadd v6, v7  ; v7 = 24
@@ -63,8 +63,8 @@
 ;;                                 block0(v0: i64, v1: i64, v2: i32):
 ;; @003c                               trapz v2, user16
 ;; @003c                               v4 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @003c                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @003c                               v3 = uextend.i64 v2
+;; @003c                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @003c                               v6 = iadd v5, v3
 ;; @003c                               v7 = iconst.i64 28
 ;; @003c                               v8 = iadd v6, v7  ; v7 = 28
@@ -90,8 +90,8 @@
 ;;                                 block0(v0: i64, v1: i64, v2: i32):
 ;; @0045                               trapz v2, user16
 ;; @0045                               v4 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @0045                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @0045                               v3 = uextend.i64 v2
+;; @0045                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @0045                               v6 = iadd v5, v3
 ;; @0045                               v7 = iconst.i64 28
 ;; @0045                               v8 = iadd v6, v7  ; v7 = 28
@@ -125,13 +125,13 @@
 ;;                                 block0(v0: i64, v1: i64, v2: i32):
 ;; @004e                               trapz v2, user16
 ;; @004e                               v4 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @004e                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @004e                               v3 = uextend.i64 v2
+;; @004e                               v5 = load.i64 notrap aligned readonly can_move region2 v4+32
 ;; @004e                               v6 = iadd v5, v3
 ;; @004e                               v7 = iconst.i64 32
 ;; @004e                               v8 = iadd v6, v7  ; v7 = 32
-;; @004e                               v9 = load.i32 user2 little region4 v8
 ;;                                     v81 = stack_addr.i64 ss0
+;; @004e                               v9 = load.i32 user2 little region4 v8
 ;;                                     store notrap aligned region9 v9, v81
 ;; @004e                               v10 = iconst.i32 1
 ;; @004e                               v11 = band v9, v10  ; v10 = 1
@@ -144,29 +144,29 @@
 ;;                                 block2:
 ;; @004e                               v16 = uextend.i64 v9
 ;; @004e                               v19 = iadd.i64 v5, v16
-;; @004e                               v20 = load.i32 user2 region4 v19
 ;; @004e                               v21 = iconst.i32 2
+;; @004e                               v20 = load.i32 user2 region4 v19
 ;; @004e                               v22 = band v20, v21  ; v21 = 2
 ;; @004e                               brif v22, block4, block3
 ;;
 ;;                                 block3:
 ;; @004e                               v23 = load.i64 notrap aligned readonly can_move region5 v0+32
-;; @004e                               v24 = load.i32 notrap aligned region6 v23
 ;; @004e                               v29 = iconst.i64 16
 ;; @004e                               v30 = iadd.i64 v19, v29  ; v29 = 16
+;; @004e                               v24 = load.i32 notrap aligned region6 v23
 ;; @004e                               store user2 region4 v24, v30
 ;;                                     v82 = iconst.i32 2
 ;;                                     v83 = bor.i32 v20, v82  ; v82 = 2
 ;; @004e                               store user2 region4 v83, v19
 ;; @004e                               v41 = iconst.i64 8
 ;; @004e                               v42 = iadd.i64 v19, v41  ; v41 = 8
-;; @004e                               v43 = load.i64 user2 region4 v42
 ;; @004e                               v44 = iconst.i64 1
+;; @004e                               v43 = load.i64 user2 region4 v42
 ;; @004e                               v45 = iadd v43, v44  ; v44 = 1
 ;; @004e                               store user2 region4 v45, v42
 ;; @004e                               store.i32 notrap aligned region6 v9, v23
-;; @004e                               v52 = load.i32 notrap aligned region7 v23+4
 ;;                                     v84 = iconst.i32 1
+;; @004e                               v52 = load.i32 notrap aligned region7 v23+4
 ;;                                     v85 = iadd v52, v84  ; v84 = 1
 ;; @004e                               store notrap aligned region7 v85, v23+4
 ;; @004e                               v57 = load.i32 notrap aligned region8 v23+8

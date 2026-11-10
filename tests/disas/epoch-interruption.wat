@@ -19,8 +19,8 @@
 ;;
 ;;                                 block0(v0: i64, v1: i64):
 ;; @0016                               v2 = load.i64 notrap aligned region2 v0+24
-;; @0016                               v3 = load.i64 notrap aligned region3 v2
 ;; @0016                               v4 = load.i64 notrap aligned readonly can_move region0 v0+8
+;; @0016                               v3 = load.i64 notrap aligned region3 v2
 ;; @0016                               v5 = load.i64 notrap aligned region4 v4+8
 ;; @0016                               v6 = icmp uge v3, v5
 ;; @0016                               brif v6, block3, block2(v5)

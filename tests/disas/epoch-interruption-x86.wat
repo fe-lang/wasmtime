@@ -14,8 +14,8 @@
 ;;       ja      0xbf
 ;;   19: subq    $0x20, %rsp
 ;;       movq    0x18(%rdi), %rax
-;;       movq    (%rax), %rdx
 ;;       movq    8(%rdi), %rcx
+;;       movq    (%rax), %rdx
 ;;       movq    8(%rcx), %r8
 ;;       cmpq    %r8, %rdx
 ;;       jae     0x46

@@ -27,10 +27,10 @@
 ;;       stp     d8, d9, [sp, #-0x10]!
 ;;       sub     sp, sp, #0x20
 ;;       ldr     x0, [x2, #8]
-;;       ldr     x1, [x0, #0x18]
+;;       mov     x1, sp
+;;       ldr     x3, [x0, #0x18]
 ;;       stur    x0, [sp, #0x18]
-;;       mov     x0, sp
-;;       cmp     x0, x1
+;;       cmp     x1, x3
 ;;       b.lo    #0x214
 ;;   48: stur    x2, [sp]
 ;;       mov     x0, x2
@@ -141,9 +141,9 @@
 ;;  19c: movk    w3, #0x400, lsl #16
 ;;  1a0: ldur    x2, [sp, #0x10]
 ;;  1a4: ldr     x0, [x2, #0x28]
-;;  1a8: ldr     w4, [x0, #8]
-;;  1ac: mov     w5, #0x20
-;;  1b0: mov     w6, #0x10
+;;  1a8: mov     w5, #0x20
+;;  1ac: mov     w6, #0x10
+;;  1b0: ldr     w4, [x0, #8]
 ;;  1b4: bl      #0x3e8
 ;;  1b8: ldr     x0, [x19, #0x20]
 ;;  1bc: add     x1, x0, w2, uxtw

@@ -34,10 +34,10 @@
 ;;                                     store notrap aligned region9 v4, v45
 ;; @002a                               v6 = load.i64 notrap aligned readonly can_move region2 v0+32
 ;; @002a                               v7 = load.i32 notrap aligned region3 v6
-;; @002a                               v8 = load.i32 notrap aligned region4 v6+4
 ;; @002a                               v14 = uextend.i64 v7
 ;;                                     v46 = iconst.i64 32
 ;; @002a                               v15 = iadd v14, v46  ; v46 = 32
+;; @002a                               v8 = load.i32 notrap aligned region4 v6+4
 ;; @002a                               v16 = uextend.i64 v8
 ;; @002a                               v17 = icmp ule v15, v16
 ;; @002a                               brif v17, block2, block3
@@ -61,13 +61,13 @@
 ;;                                 block3 cold:
 ;; @002a                               v18 = iconst.i32 -1342177246
 ;; @002a                               v19 = load.i64 notrap aligned readonly can_move region5 v0+40
-;; @002a                               v20 = load.i32 notrap aligned readonly can_move region6 v19
 ;; @002a                               v5 = iconst.i32 32
 ;; @002a                               v21 = iconst.i32 16
+;; @002a                               v20 = load.i32 notrap aligned readonly can_move region6 v19
 ;; @002a                               v22 = call fn0(v0, v18, v20, v5, v21), stack_map=[i32 @ ss0+0]  ; v18 = -1342177246, v5 = 32, v21 = 16
 ;; @002a                               v23 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @002a                               v24 = load.i64 notrap aligned readonly can_move region7 v23+32
 ;; @002a                               v25 = uextend.i64 v22
+;; @002a                               v24 = load.i64 notrap aligned readonly can_move region7 v23+32
 ;; @002a                               v26 = iadd v24, v25
 ;; @002a                               jump block4(v22, v26)
 ;;
@@ -78,9 +78,9 @@
 ;; @002a                               v39 = iconst.i64 20
 ;; @002a                               v40 = iadd v36, v39  ; v39 = 20
 ;; @002a                               istore8.i32 user2 little region8 v3, v40
-;;                                     v44 = load.i32 notrap aligned region9 v45
 ;; @002a                               v41 = iconst.i64 24
 ;; @002a                               v42 = iadd v36, v41  ; v41 = 24
+;;                                     v44 = load.i32 notrap aligned region9 v45
 ;; @002a                               store user2 little region8 v44, v42
 ;; @002d                               jump block1
 ;;

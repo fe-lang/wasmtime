@@ -73,11 +73,11 @@
 ;;       push_frame_save 16, x24
 ;;       xzero x6
 ;;       xload64le_o32 x1, x0, 56
-;;       xload64le_o32 x8, x0, 64
-;;       xload16le_u32_g32 x7, x1, x8, x2, 0
-;;       xload16le_u32_g32 x8, x1, x8, x3, 0
+;;       xload64le_o32 x7, x0, 64
+;;       xload16le_u32_g32 x8, x1, x7, x2, 0
 ;;       xsub32_u8 x4, x4, 1
-;;       xmul32 x7, x7, x8
+;;       xload16le_u32_g32 x7, x1, x7, x3, 0
+;;       xmul32 x7, x8, x7
 ;;       xshr32_u_u6 x8, x7, 2
 ;;       xband32_s8 x8, x8, 15
 ;;       xshr32_u_u6 x7, x7, 5

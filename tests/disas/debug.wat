@@ -15,8 +15,8 @@
 ;;       movl    %edx, 8(%rsp)
 ;;       movl    %ecx, 0xc(%rsp)
 ;;       movq    8(%rdi), %r11
-;;       movq    0x18(%r11), %r11
 ;;       movq    %rsp, %rax
+;;       movq    0x18(%r11), %r11
 ;;       cmpq    %r11, %rax
 ;;       jb      0x55
 ;;   24: movq    %rdi, (%rsp)
@@ -111,8 +111,8 @@
 ;;       movq    %r8, %rax
 ;;       movl    %eax, (%rsp)
 ;;       movl    %ecx, 0x10(%rsp)
-;;       movq    8(%rdi), %rax
 ;;       movl    $2, %ecx
+;;       movq    8(%rdi), %rax
 ;;       callq   *%rax
 ;;       addq    $1, 0x10(%r15)
 ;;       testb   %al, %al

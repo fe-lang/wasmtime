@@ -23,10 +23,10 @@
 ;;       sd      ra, 8(sp)
 ;;       sd      s0, 0(sp)
 ;;       mv      s0, sp
-;;       ld      a4, 0x40(a0)
+;;       ld      a1, 0x40(a0)
+;;       sltu    a1, a2, a1
+;;       xori    a4, a1, 1
 ;;       ld      a1, 0x38(a0)
-;;       sltu    a0, a2, a4
-;;       xori    a4, a0, 1
 ;;       add     a1, a1, a2
 ;;       neg     a0, a4
 ;;       not     a2, a0
@@ -42,10 +42,10 @@
 ;;       sd      ra, 8(sp)
 ;;       sd      s0, 0(sp)
 ;;       mv      s0, sp
-;;       ld      a3, 0x40(a0)
+;;       ld      a1, 0x40(a0)
+;;       sltu    a1, a2, a1
+;;       xori    a3, a1, 1
 ;;       ld      a1, 0x38(a0)
-;;       sltu    a0, a2, a3
-;;       xori    a3, a0, 1
 ;;       add     a1, a1, a2
 ;;       neg     a0, a3
 ;;       not     a2, a0

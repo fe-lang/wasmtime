@@ -29,14 +29,14 @@
 ;;                                 block0(v0: i64, v1: i64):
 ;; @0021                               v6 = iconst.i32 -1342177280
 ;; @0021                               v7 = load.i64 notrap aligned readonly can_move region2 v0+40
-;; @0021                               v8 = load.i32 notrap aligned readonly can_move region3 v7
 ;; @0021                               v5 = iconst.i32 40
 ;; @0021                               v9 = iconst.i32 8
+;; @0021                               v8 = load.i32 notrap aligned readonly can_move region3 v7
 ;; @0021                               v10 = call fn0(v0, v6, v8, v5, v9)  ; v6 = -1342177280, v5 = 40, v9 = 8
 ;; @0021                               v2 = f32const 0.0
 ;; @0021                               v11 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @0021                               v12 = load.i64 notrap aligned readonly can_move region4 v11+32
 ;; @0021                               v13 = uextend.i64 v10
+;; @0021                               v12 = load.i64 notrap aligned readonly can_move region4 v11+32
 ;; @0021                               v14 = iadd v12, v13
 ;; @0021                               v15 = iconst.i64 24
 ;; @0021                               v16 = iadd v14, v15  ; v15 = 24

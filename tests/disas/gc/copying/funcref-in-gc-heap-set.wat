@@ -26,8 +26,8 @@
 ;; @0022                               v10 = call fn0(v0, v3)
 ;; @0022                               v11 = ireduce.i32 v10
 ;; @0022                               v5 = load.i64 notrap aligned readonly can_move region0 v0+8
-;; @0022                               v6 = load.i64 notrap aligned readonly can_move region2 v5+32
 ;; @0022                               v4 = uextend.i64 v2
+;; @0022                               v6 = load.i64 notrap aligned readonly can_move region2 v5+32
 ;; @0022                               v7 = iadd v6, v4
 ;; @0022                               v8 = iconst.i64 16
 ;; @0022                               v9 = iadd v7, v8  ; v8 = 16

@@ -93,9 +93,9 @@
 ;;                                     brif v10, block9, block10
 ;;
 ;;                                 block10:
+;;                                     v22 = iconst.i32 23
 ;;                                     v24 = load.i64 notrap aligned readonly can_move region5 v3+88
 ;;                                     v23 = load.i64 notrap aligned readonly can_move region2 v3+104
-;;                                     v22 = iconst.i32 23
 ;;                                     try_call_indirect v24(v23, v3, v22), sig1, block11, [ context v3, default: block8(exn0) ]  ; v22 = 23
 ;;
 ;;                                 block11:
