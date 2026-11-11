@@ -116,6 +116,7 @@ impl<'a> Arbitrary<'a> for CodegenSettings {
                     std:"avx" => clif:"has_avx",
                     std:"avx2" => clif:"has_avx2",
                     std:"fma" => clif:"has_fma",
+                    std:"sha" => clif:"has_sha",
                     std:"bmi1" => clif:"has_bmi1",
                     std:"bmi2" => clif:"has_bmi2",
                     std:"lzcnt" => clif:"has_lzcnt",
