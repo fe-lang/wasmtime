@@ -25,11 +25,11 @@ function %f0(i32) -> i32, f32, f64 {
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x40, %rsp
-;   movq %rbx, 0x10(%rsp)
-;   movq %r12, 0x18(%rsp)
-;   movq %r13, 0x20(%rsp)
-;   movq %r14, 0x28(%rsp)
-;   movq %r15, 0x30(%rsp)
+;   movq %rbx, -0x30(%rbp)
+;   movq %r12, -0x28(%rbp)
+;   movq %r13, -0x20(%rbp)
+;   movq %r14, -0x18(%rbp)
+;   movq %r15, -0x10(%rbp)
 ; block0:
 ;   movabsq $0x3ff0000000000000, %rax
 ;   movq %rax, %xmm1
@@ -39,11 +39,11 @@ function %f0(i32) -> i32, f32, f64 {
 ; block1:
 ;   movl $0x1, %eax
 ;   movdqu <offset:1>+(%rsp), %xmm1
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
@@ -52,11 +52,11 @@ function %f0(i32) -> i32, f32, f64 {
 ;   leal 1(%rax), %eax
 ;   uninit  %xmm0
 ;   xorps %xmm0, %xmm0
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
@@ -66,37 +66,37 @@ function %f0(i32) -> i32, f32, f64 {
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x40, %rsp
-;   movq %rbx, 0x10(%rsp)
-;   movq %r12, 0x18(%rsp)
-;   movq %r13, 0x20(%rsp)
-;   movq %r14, 0x28(%rsp)
-;   movq %r15, 0x30(%rsp)
-; block1: ; offset 0x21
+;   movq %rbx, -0x30(%rbp)
+;   movq %r12, -0x28(%rbp)
+;   movq %r13, -0x20(%rbp)
+;   movq %r14, -0x18(%rbp)
+;   movq %r15, -0x10(%rbp)
+; block1: ; offset 0x1c
 ;   movabsq $0x3ff0000000000000, %rax
 ;   movq %rax, %xmm1
 ;   movdqu %xmm1, (%rsp)
 ;   movabsq $0, %rax ; reloc_external Abs8 %g 0
 ;   callq *%rax
-; block2: ; offset 0x41
+; block2: ; offset 0x3c
 ;   movl $1, %eax
 ;   movdqu (%rsp), %xmm1
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x6a
+; block3: ; offset 0x60
 ;   movdqu (%rsp), %xmm1
 ;   addl $1, %eax
 ;   xorps %xmm0, %xmm0
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
@@ -135,11 +135,11 @@ function %f1(i32) -> i32, f32, f64 {
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x40, %rsp
-;   movq %rbx, 0x10(%rsp)
-;   movq %r12, 0x18(%rsp)
-;   movq %r13, 0x20(%rsp)
-;   movq %r14, 0x28(%rsp)
-;   movq %r15, 0x30(%rsp)
+;   movq %rbx, -0x30(%rbp)
+;   movq %r12, -0x28(%rbp)
+;   movq %r13, -0x20(%rbp)
+;   movq %r14, -0x18(%rbp)
+;   movq %r15, -0x10(%rbp)
 ; block0:
 ;   testl %edi, %edi
 ;   jnz     label4; j label1
@@ -168,11 +168,11 @@ function %f1(i32) -> i32, f32, f64 {
 ; block7:
 ;   movl $0x1, %eax
 ;   movdqu <offset:1>+(%rsp), %xmm1
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
@@ -181,11 +181,11 @@ function %f1(i32) -> i32, f32, f64 {
 ;   uninit  %xmm0
 ;   xorps %xmm0, %xmm0
 ;   movq %rcx, %xmm1
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
@@ -198,61 +198,61 @@ function %f1(i32) -> i32, f32, f64 {
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x40, %rsp
-;   movq %rbx, 0x10(%rsp)
-;   movq %r12, 0x18(%rsp)
-;   movq %r13, 0x20(%rsp)
-;   movq %r14, 0x28(%rsp)
-;   movq %r15, 0x30(%rsp)
-; block1: ; offset 0x21
+;   movq %rbx, -0x30(%rbp)
+;   movq %r12, -0x28(%rbp)
+;   movq %r13, -0x20(%rbp)
+;   movq %r14, -0x18(%rbp)
+;   movq %r15, -0x10(%rbp)
+; block1: ; offset 0x1c
 ;   testl %edi, %edi
-;   jne 0x58
-; block2: ; offset 0x29
+;   jne 0x53
+; block2: ; offset 0x24
 ;   movl $0x2a, %eax
 ;   movl $0x4591a000, %ecx
 ;   movd %ecx, %xmm0
 ;   movabsq $0x40d59e0000000000, %rcx
 ;   movq %rcx, %xmm1
 ;   testl %edi, %edi
-;   jne 0xd8
-; block3: ; offset 0x4e
+;   jne 0xc9
+; block3: ; offset 0x49
 ;   movdqu %xmm1, (%rsp)
-;   jmp 0x85
-; block4: ; offset 0x58
+;   jmp 0x80
+; block4: ; offset 0x53
 ;   movabsq $0x3ff0000000000000, %rax
 ;   movq %rax, %xmm1
 ;   movdqu %xmm1, (%rsp)
 ;   movabsq $0, %rax ; reloc_external Abs8 %g 0
 ;   callq *%rax
-;   jmp 0x85
-; block5: ; offset 0x7d
+;   jmp 0x80
+; block5: ; offset 0x78
 ;   movq %rax, %rcx
-;   jmp 0xae
-; block6: ; offset 0x85
+;   jmp 0xa4
+; block6: ; offset 0x80
 ;   movl $1, %eax
 ;   movdqu (%rsp), %xmm1
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
-; block7: ; offset 0xae
+; block7: ; offset 0xa4
 ;   leal 1(%rcx), %eax
 ;   xorps %xmm0, %xmm0
 ;   movq %rcx, %xmm1
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
-; block8: ; offset 0xd8
+; block8: ; offset 0xc9
 ;   movq %rax, %rcx
-;   jmp 0xae
+;   jmp 0xa4
 
 function %f2(i32) -> i32, f32, f64 {
     sig0 = (i32) -> f32 tail
@@ -279,11 +279,11 @@ function %f2(i32) -> i32, f32, f64 {
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x40, %rsp
-;   movq %rbx, 0x10(%rsp)
-;   movq %r12, 0x18(%rsp)
-;   movq %r13, 0x20(%rsp)
-;   movq %r14, 0x28(%rsp)
-;   movq %r15, 0x30(%rsp)
+;   movq %rbx, -0x30(%rbp)
+;   movq %r12, -0x28(%rbp)
+;   movq %r13, -0x20(%rbp)
+;   movq %r14, -0x18(%rbp)
+;   movq %r15, -0x10(%rbp)
 ; block0:
 ;   movabsq $0x3ff0000000000000, %rax
 ;   movq %rax, %xmm1
@@ -293,11 +293,11 @@ function %f2(i32) -> i32, f32, f64 {
 ; block1:
 ;   movl $0x1, %eax
 ;   movdqu <offset:1>+(%rsp), %xmm1
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
@@ -306,11 +306,11 @@ function %f2(i32) -> i32, f32, f64 {
 ;   leal 1(%rax), %eax
 ;   uninit  %xmm0
 ;   xorps %xmm0, %xmm0
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
@@ -320,37 +320,37 @@ function %f2(i32) -> i32, f32, f64 {
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x40, %rsp
-;   movq %rbx, 0x10(%rsp)
-;   movq %r12, 0x18(%rsp)
-;   movq %r13, 0x20(%rsp)
-;   movq %r14, 0x28(%rsp)
-;   movq %r15, 0x30(%rsp)
-; block1: ; offset 0x21
+;   movq %rbx, -0x30(%rbp)
+;   movq %r12, -0x28(%rbp)
+;   movq %r13, -0x20(%rbp)
+;   movq %r14, -0x18(%rbp)
+;   movq %r15, -0x10(%rbp)
+; block1: ; offset 0x1c
 ;   movabsq $0x3ff0000000000000, %rax
 ;   movq %rax, %xmm1
 ;   movdqu %xmm1, (%rsp)
 ;   movabsq $0, %rax ; reloc_external Abs8 %g 0
 ;   callq *%rax
-; block2: ; offset 0x41
+; block2: ; offset 0x3c
 ;   movl $1, %eax
 ;   movdqu (%rsp), %xmm1
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
-; block3: ; offset 0x6a
+; block3: ; offset 0x60
 ;   movdqu (%rsp), %xmm1
 ;   addl $1, %eax
 ;   xorps %xmm0, %xmm0
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
@@ -419,11 +419,11 @@ function %f4(i64, i32) -> i32, f32, f64 {
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x50, %rsp
-;   movq %rbx, 0x20(%rsp)
-;   movq %r12, 0x28(%rsp)
-;   movq %r13, 0x30(%rsp)
-;   movq %r14, 0x38(%rsp)
-;   movq %r15, 0x40(%rsp)
+;   movq %rbx, -0x30(%rbp)
+;   movq %r12, -0x28(%rbp)
+;   movq %r13, -0x20(%rbp)
+;   movq %r14, -0x18(%rbp)
+;   movq %r15, -0x10(%rbp)
 ; block0:
 ;   movq %rdi, <offset:1>+8(%rsp)
 ;   movabsq $0x3ff0000000000000, %rax
@@ -444,11 +444,11 @@ function %f4(i64, i32) -> i32, f32, f64 {
 ; block3:
 ;   movl $0x1, %eax
 ;   movdqu <offset:1>+0x10(%rsp), %xmm1
-;   movq 0x20(%rsp), %rbx
-;   movq 0x28(%rsp), %r12
-;   movq 0x30(%rsp), %r13
-;   movq 0x38(%rsp), %r14
-;   movq 0x40(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x50, %rsp
 ;   popq %rbp
 ;   retq
@@ -460,11 +460,11 @@ function %f4(i64, i32) -> i32, f32, f64 {
 ;   leal 1(%rdi), %eax
 ;   uninit  %xmm0
 ;   xorps %xmm0, %xmm0
-;   movq 0x20(%rsp), %rbx
-;   movq 0x28(%rsp), %r12
-;   movq 0x30(%rsp), %r13
-;   movq 0x38(%rsp), %r14
-;   movq 0x40(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x50, %rsp
 ;   popq %rbp
 ;   retq
@@ -474,51 +474,51 @@ function %f4(i64, i32) -> i32, f32, f64 {
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x50, %rsp
-;   movq %rbx, 0x20(%rsp)
-;   movq %r12, 0x28(%rsp)
-;   movq %r13, 0x30(%rsp)
-;   movq %r14, 0x38(%rsp)
-;   movq %r15, 0x40(%rsp)
-; block1: ; offset 0x21
-;   movq %rdi, 8(%rsp)
+;   movq %rbx, -0x30(%rbp)
+;   movq %r12, -0x28(%rbp)
+;   movq %r13, -0x20(%rbp)
+;   movq %r14, -0x18(%rbp)
+;   movq %r15, -0x10(%rbp)
+; block1: ; offset 0x1c
+;   movq %rdi, -0x48(%rbp)
 ;   movabsq $0x3ff0000000000000, %rax
 ;   movq %rax, %xmm1
-;   movdqu %xmm1, 0x10(%rsp)
+;   movdqu %xmm1, -0x40(%rbp)
 ;   movabsq $0, %rax ; reloc_external Abs8 %g 0
 ;   movq %rsi, %rdi
 ;   movq %rsi, (%rsp)
 ;   callq *%rax
-;   jmp 0x6f
-; block2: ; offset 0x53
+;   jmp 0x66
+; block2: ; offset 0x4c
 ;   movq %rax, %rdi
-;   movdqu 0x10(%rsp), %xmm1
-;   jmp 0xa4
-; block3: ; offset 0x61
+;   movdqu -0x40(%rbp), %xmm1
+;   jmp 0x93
+; block3: ; offset 0x59
 ;   movq %rax, %rdi
-;   movdqu 0x10(%rsp), %xmm1
-;   jmp 0xa4
-; block4: ; offset 0x6f
+;   movdqu -0x40(%rbp), %xmm1
+;   jmp 0x93
+; block4: ; offset 0x66
 ;   movl $1, %eax
-;   movdqu 0x10(%rsp), %xmm1
-;   movq 0x20(%rsp), %rbx
-;   movq 0x28(%rsp), %r12
-;   movq 0x30(%rsp), %r13
-;   movq 0x38(%rsp), %r14
-;   movq 0x40(%rsp), %r15
+;   movdqu -0x40(%rbp), %xmm1
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x50, %rsp
 ;   popq %rbp
 ;   retq
-; block5: ; offset 0x99
-;   movdqu 0x10(%rsp), %xmm1
-;   movq 8(%rsp), %rdi
-; block6: ; offset 0xa4
+; block5: ; offset 0x8a
+;   movdqu -0x40(%rbp), %xmm1
+;   movq -0x48(%rbp), %rdi
+; block6: ; offset 0x93
 ;   leal 1(%rdi), %eax
 ;   xorps %xmm0, %xmm0
-;   movq 0x20(%rsp), %rbx
-;   movq 0x28(%rsp), %r12
-;   movq 0x30(%rsp), %r13
-;   movq 0x38(%rsp), %r14
-;   movq 0x40(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x50, %rsp
 ;   popq %rbp
 ;   retq
@@ -545,11 +545,11 @@ function %f5() -> i64 {
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x40, %rsp
-;   movq %rbx, 0x10(%rsp)
-;   movq %r12, 0x18(%rsp)
-;   movq %r13, 0x20(%rsp)
-;   movq %r14, 0x28(%rsp)
-;   movq %r15, 0x30(%rsp)
+;   movq %rbx, -0x30(%rbp)
+;   movq %r12, -0x28(%rbp)
+;   movq %r13, -0x20(%rbp)
+;   movq %r14, -0x18(%rbp)
+;   movq %r15, -0x10(%rbp)
 ; block0:
 ;   label_address %rax, MachLabel(3)
 ;   movq %rax, <offset:1>+(%rsp)
@@ -559,21 +559,21 @@ function %f5() -> i64 {
 ;   call    *%rsi; jmp MachLabel(2); catch [default: MachLabel(3)]
 ; block2:
 ;   movq <offset:1>+(%rsp), %rax
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
 ; block3:
 ;   movq <offset:1>+(%rsp), %rax
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
@@ -583,34 +583,34 @@ function %f5() -> i64 {
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x40, %rsp
-;   movq %rbx, 0x10(%rsp)
-;   movq %r12, 0x18(%rsp)
-;   movq %r13, 0x20(%rsp)
-;   movq %r14, 0x28(%rsp)
-;   movq %r15, 0x30(%rsp)
-; block1: ; offset 0x21
-;   leaq 0x33(%rip), %rax
+;   movq %rbx, -0x30(%rbp)
+;   movq %r12, -0x28(%rbp)
+;   movq %r13, -0x20(%rbp)
+;   movq %r14, -0x18(%rbp)
+;   movq %r15, -0x10(%rbp)
+; block1: ; offset 0x1c
+;   leaq 0x2e(%rip), %rax
 ;   movq %rax, (%rsp)
-; block2: ; offset 0x2c
+; block2: ; offset 0x27
 ;   movabsq $0, %rsi ; reloc_external Abs8 %g 0
 ;   callq *%rsi
-; block3: ; offset 0x38
+; block3: ; offset 0x33
 ;   movq (%rsp), %rax
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq
-; block4: ; offset 0x5b
+; block4: ; offset 0x51
 ;   movq (%rsp), %rax
-;   movq 0x10(%rsp), %rbx
-;   movq 0x18(%rsp), %r12
-;   movq 0x20(%rsp), %r13
-;   movq 0x28(%rsp), %r14
-;   movq 0x30(%rsp), %r15
+;   movq -0x30(%rbp), %rbx
+;   movq -0x28(%rbp), %r12
+;   movq -0x20(%rbp), %r13
+;   movq -0x18(%rbp), %r14
+;   movq -0x10(%rbp), %r15
 ;   addq $0x40, %rsp
 ;   popq %rbp
 ;   retq

@@ -51,11 +51,8 @@
 ;;     v39 = iconst.i64 10
 ;;     v51 = icmp ult v11, v39  ; v39 = 10
 ;;     trapnz v51, user6
-;;     v3 = iconst.i32 1
 ;;     v81 = iconst.i64 36
 ;;     v18 = load.i64 notrap aligned region0 v0+48
-;;     v83 = iadd v18, v81  ; v81 = 36
-;;     v20 = iconst.i64 4
 ;;     jump block1(v18)
 ;;
 ;; block1(v29: i64):

@@ -444,8 +444,23 @@ pub fn emit_modrm_sib_disp<R: AsReg>(
 ) {
     match *mem_e {
         Amode::ImmReg { simm32, base, .. } => {
-            let enc_e = base.enc();
+            let mut enc_e = base.enc();
             let mut imm = Disp::new(simm32.value(sink), evex_scaling);
+
+            // A frame slot may be addressed from the frame pointer instead:
+            // RBP needs no SIB byte, though always a displacement. Both bases
+            // share REX.B, so the prefix already emitted holds for either.
+            if enc_e == gpr::enc::RSP
+                && let Some(offset) = simm32.offset
+                && let Some(sp_to_fp) = sink.frame_pointer_offset(offset)
+            {
+                let mut from_fp = Disp::new(simm32.value(sink) - sp_to_fp, evex_scaling);
+                from_fp.force_immediate();
+                if from_fp.bytes() < 1 + imm.bytes() {
+                    enc_e = gpr::enc::RBP;
+                    imm = from_fp;
+                }
+            }
 
             // Most base registers allow for a single ModRM byte plus an
             // optional immediate. If rsp is the base register, however, then a

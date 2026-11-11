@@ -80,10 +80,10 @@ block0(v0: i64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0xa0, %rsp
-;   movq %rbx, 0x80(%rsp)
-;   movq %r12, 0x88(%rsp)
-;   movq %r13, 0x90(%rsp)
-;   movq %r14, 0x98(%rsp)
+;   movq %rbx, -0x20(%rbp)
+;   movq %r12, -0x18(%rbp)
+;   movq %r13, -0x10(%rbp)
+;   movq %r14, -8(%rbp)
 ; block0:
 ;   movq (%rdi), %r14
 ;   movq 8(%rdi), %rcx
@@ -148,10 +148,10 @@ block0(v0: i64):
 ;   xorq 0x78(%rdi), %rax
 ;   movq %rax, <offset:1>+0x78(%rsp)
 ;   movq <offset:1>+8(%rsp), %rax
-;   movq 0x80(%rsp), %rbx
-;   movq 0x88(%rsp), %r12
-;   movq 0x90(%rsp), %r13
-;   movq 0x98(%rsp), %r14
+;   movq -0x20(%rbp), %rbx
+;   movq -0x18(%rbp), %r12
+;   movq -0x10(%rbp), %r13
+;   movq -8(%rbp), %r14
 ;   addq $0xa0, %rsp
 ;   popq %rbp
 ;   retq
@@ -161,11 +161,11 @@ block0(v0: i64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0xa0, %rsp
-;   movq %rbx, 0x80(%rsp)
-;   movq %r12, 0x88(%rsp)
-;   movq %r13, 0x90(%rsp)
-;   movq %r14, 0x98(%rsp)
-; block1: ; offset 0x2b
+;   movq %rbx, -0x20(%rbp)
+;   movq %r12, -0x18(%rbp)
+;   movq %r13, -0x10(%rbp)
+;   movq %r14, -8(%rbp)
+; block1: ; offset 0x1b
 ;   movq (%rdi), %r14
 ;   movq 8(%rdi), %rcx
 ;   leaq (%r14, %rcx), %rax
@@ -201,38 +201,38 @@ block0(v0: i64):
 ;   xorq %rax, %rsi
 ;   movq %rsi, 0x18(%rsp)
 ;   xorq %rax, %r8
-;   movq %r8, 0x20(%rsp)
+;   movq %r8, -0x80(%rbp)
 ;   xorq %rax, %r9
-;   movq %r9, 0x28(%rsp)
+;   movq %r9, -0x78(%rbp)
 ;   xorq %rax, %r10
-;   movq %r10, 0x30(%rsp)
+;   movq %r10, -0x70(%rbp)
 ;   xorq %rax, %r11
-;   movq %r11, 0x38(%rsp)
+;   movq %r11, -0x68(%rbp)
 ;   xorq %rax, %rbx
-;   movq %rbx, 0x40(%rsp)
+;   movq %rbx, -0x60(%rbp)
 ;   xorq %rax, %r12
-;   movq %r12, 0x48(%rsp)
+;   movq %r12, -0x58(%rbp)
 ;   xorq %rax, %r13
-;   movq %r13, 0x50(%rsp)
+;   movq %r13, -0x50(%rbp)
 ;   movq %rax, %rcx
 ;   xorq 0x58(%rdi), %rcx
-;   movq %rcx, 0x58(%rsp)
+;   movq %rcx, -0x48(%rbp)
 ;   movq %rax, %rcx
 ;   xorq 0x60(%rdi), %rcx
-;   movq %rcx, 0x60(%rsp)
+;   movq %rcx, -0x40(%rbp)
 ;   movq %rax, %rcx
 ;   xorq 0x68(%rdi), %rcx
-;   movq %rcx, 0x68(%rsp)
+;   movq %rcx, -0x38(%rbp)
 ;   movq %rax, %rcx
 ;   xorq 0x70(%rdi), %rcx
-;   movq %rcx, 0x70(%rsp)
+;   movq %rcx, -0x30(%rbp)
 ;   xorq 0x78(%rdi), %rax
-;   movq %rax, 0x78(%rsp)
+;   movq %rax, -0x28(%rbp)
 ;   movq 8(%rsp), %rax
-;   movq 0x80(%rsp), %rbx
-;   movq 0x88(%rsp), %r12
-;   movq 0x90(%rsp), %r13
-;   movq 0x98(%rsp), %r14
+;   movq -0x20(%rbp), %rbx
+;   movq -0x18(%rbp), %r12
+;   movq -0x10(%rbp), %r13
+;   movq -8(%rbp), %r14
 ;   addq $0xa0, %rsp
 ;   popq %rbp
 ;   retq

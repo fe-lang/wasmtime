@@ -39,7 +39,7 @@
 ;;       movq    %rsi, (%rsp)
 ;;       movq    %r14, %rdi
 ;;       movl    $0, %esi
-;;       callq   0x269
+;;       callq   0x249
 ;;       movq    8(%rsp), %r14
 ;;       addq    $0x10, %rsp
 ;;       popq    %rbp

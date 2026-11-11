@@ -253,3 +253,70 @@ block0(v0: i64):
 ;   popq %rbp
 ;   retq
 
+
+function %add_from_stack_slot(i64) -> i64 {
+  ss0 = explicit_slot 16
+block0(v0: i64):
+  v1 = stack_addr.i64 ss0+8
+  v2 = load.i64 v1
+  v3 = iadd v0, v2
+  return v3
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block0:
+;   movq %rdi, %rax
+;   addq <offset:1>+8(%rsp), %rax
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block1: ; offset 0x8
+;   movq %rdi, %rax
+;   addq -8(%rbp), %rax
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+
+function %unaligned_vector_from_stack_slot() -> f64 {
+  ss0 = explicit_slot 24
+block0:
+  v0 = stack_addr.i64 ss0+1
+  v1 = load.f64x2 notrap v0
+  v2 = extractlane v1, 1
+  return v2
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x20, %rsp
+; block0:
+;   leaq <offset:1>+1(%rsp), %rdx
+;   movdqu (%rdx), %xmm1
+;   pshufd $0xee, %xmm1, %xmm0
+;   addq $0x20, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x20, %rsp
+; block1: ; offset 0x8
+;   leaq -0x1f(%rbp), %rdx
+;   movdqu (%rdx), %xmm1
+;   pshufd $0xee, %xmm1, %xmm0
+;   addq $0x20, %rsp
+;   popq %rbp
+;   retq
+

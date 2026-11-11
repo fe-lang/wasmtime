@@ -56,7 +56,6 @@
 ;; @0030                               trapnz v39, user2
 ;;                                     v47 = iconst.i64 0
 ;; @0030                               v42 = icmp eq v15, v47  ; v47 = 0
-;; @0030                               v27 = iconst.i64 4
 ;; @0030                               v40 = iadd v29, v52
 ;; @0030                               brif v42, block3, block2(v29)
 ;;
@@ -113,8 +112,6 @@
 ;; @003e                               trapnz v39, user2
 ;;                                     v47 = iconst.i64 0
 ;; @003e                               v42 = icmp eq v15, v47  ; v47 = 0
-;; @003a                               v5 = iconst.i32 0
-;; @003e                               v27 = iconst.i64 4
 ;; @003e                               v40 = iadd v29, v52
 ;; @003e                               brif v42, block3, block2(v29)
 ;;
@@ -172,8 +169,6 @@
 ;; @004e                               trapnz v43, user2
 ;;                                     v57 = iconst.i64 0
 ;; @004e                               v46 = icmp eq v19, v57  ; v57 = 0
-;; @0048                               v5 = iconst.i32 -1
-;; @004e                               v31 = iconst.i64 4
 ;; @004e                               v44 = iadd v33, v62
 ;; @004e                               brif v46, block3, block2(v33)
 ;;

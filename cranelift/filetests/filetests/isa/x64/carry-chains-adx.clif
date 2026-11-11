@@ -31,7 +31,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x10, %rsp
-;   movq %rbx, (%rsp)
+;   movq %rbx, -0x10(%rbp)
 ; block0:
 ;   movq %rdx, %rbx
 ;   movq <offset:0>+-0x10(%rbp), %r11
@@ -55,7 +55,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   leaq (%rsi, %rcx), %rcx
 ;   movq %r11, (%rdi)
 ;   movq %rcx, 8(%rdi)
-;   movq (%rsp), %rbx
+;   movq -0x10(%rbp), %rbx
 ;   addq $0x10, %rsp
 ;   popq %rbp
 ;   retq
@@ -65,7 +65,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x10, %rsp
-;   movq %rbx, (%rsp)
+;   movq %rbx, -0x10(%rbp)
 ; block1: ; offset 0xc
 ;   movq %rdx, %rbx
 ;   movq 0x10(%rbp), %r11
@@ -88,7 +88,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   addq %rsi, %rcx
 ;   movq %r11, (%rdi)
 ;   movq %rcx, 8(%rdi)
-;   movq (%rsp), %rbx
+;   movq -0x10(%rbp), %rbx
 ;   addq $0x10, %rsp
 ;   popq %rbp
 ;   retq
@@ -240,7 +240,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x10, %rsp
-;   movq %rbx, (%rsp)
+;   movq %rbx, -0x10(%rbp)
 ; block0:
 ;   movq %rdx, %rbx
 ;   movq <offset:0>+-0x10(%rbp), %r10
@@ -263,7 +263,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   movzbq %cl, %rcx
 ;   movq %r10, (%rdi)
 ;   movq %rcx, 8(%rdi)
-;   movq (%rsp), %rbx
+;   movq -0x10(%rbp), %rbx
 ;   addq $0x10, %rsp
 ;   popq %rbp
 ;   retq
@@ -273,7 +273,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   pushq %rbp
 ;   movq %rsp, %rbp
 ;   subq $0x10, %rsp
-;   movq %rbx, (%rsp)
+;   movq %rbx, -0x10(%rbp)
 ; block1: ; offset 0xc
 ;   movq %rdx, %rbx
 ;   movq 0x10(%rbp), %r10
@@ -295,7 +295,7 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   movzbq %cl, %rcx
 ;   movq %r10, (%rdi)
 ;   movq %rcx, 8(%rdi)
-;   movq (%rsp), %rbx
+;   movq -0x10(%rbp), %rbx
 ;   addq $0x10, %rsp
 ;   popq %rbp
 ;   retq

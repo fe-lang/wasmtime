@@ -592,7 +592,8 @@
 ;; And two registers.
 (rule 0 (lower (band ty x y))
       (if (ty_int_ref_scalar_64 ty))
-      (x64_and ty x y))
+      (let ((commute bool (commutes_to_tie x y)))
+        (x64_and ty (tied_operand x y commute) (untied_operand x y commute))))
 
 ;; The above case automatically handles when the rhs is an immediate or a
 ;; sinkable load, but additionally handle the lhs here.
@@ -718,7 +719,8 @@
 ;; Or two registers.
 (rule 0 (lower (bor ty x y))
       (if (ty_int_ref_scalar_64 ty))
-      (x64_or ty x y))
+      (let ((commute bool (commutes_to_tie x y)))
+        (x64_or ty (tied_operand x y commute) (untied_operand x y commute))))
 
 ;; Handle immediates/sinkable loads on the lhs in addition to the automatic
 ;; handling of the rhs above
@@ -789,7 +791,8 @@
 ;; Xor two registers.
 (rule 0 (lower (bxor ty x y))
       (if (ty_int_ref_scalar_64 ty))
-      (x64_xor ty x y))
+      (let ((commute bool (commutes_to_tie x y)))
+        (x64_xor ty (tied_operand x y commute) (untied_operand x y commute))))
 
 ;; Handle xor with lhs immediates/sinkable loads in addition to the automatic
 ;; handling of the rhs above.
@@ -1317,7 +1320,8 @@
 
 ;; 16-to-64-bit base cases, same as above by moving sinkable loads to the right.
 (rule -6 (lower (imul (ty_int_ref_16_to_64 ty) x y))
-         (x64_imul ty x y))
+         (let ((commute bool (commutes_to_tie x y)))
+           (x64_imul ty (tied_operand x y commute) (untied_operand x y commute))))
 (rule -5 (lower (imul (ty_int_ref_16_to_64 ty) (sinkable_load x) y))
          (x64_imul ty y x))
 

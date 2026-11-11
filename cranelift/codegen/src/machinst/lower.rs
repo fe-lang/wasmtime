@@ -1245,6 +1245,13 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
         self.value_ir_uses[val] == ValueUseState::Once
     }
 
+    /// Whether the current instruction is the last to read `val`'s register:
+    /// `val` is used only in the block that defines it, where lowering runs
+    /// backwards, and nothing lowered so far uses it.
+    pub fn value_dies_here(&self, val: Value) -> bool {
+        !self.nonlocal_values.contains(val) && self.value_lowered_uses[val] == 0
+    }
+
     pub fn value_is_unused(&self, val: Value) -> bool {
         match self.value_ir_uses[val] {
             ValueUseState::Unused => true,

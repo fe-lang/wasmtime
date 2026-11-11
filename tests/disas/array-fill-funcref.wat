@@ -63,7 +63,6 @@
 ;;                                     v49 = iconst.i64 0
 ;; @003b                               v44 = icmp eq v15, v49  ; v49 = 0
 ;; @003b                               v41 = ireduce.i32 v40
-;; @003b                               v27 = iconst.i64 4
 ;; @003b                               v42 = iadd v29, v54
 ;; @003b                               brif v44, block3, block2(v29)
 ;;
@@ -124,7 +123,6 @@
 ;; @0049                               v40 = call fn0(v0, v5)  ; v5 = 0
 ;; @0049                               v44 = icmp eq v15, v5  ; v5 = 0
 ;; @0049                               v41 = ireduce.i32 v40
-;; @0049                               v27 = iconst.i64 4
 ;; @0049                               v42 = iadd v29, v53
 ;; @0049                               brif v44, block3, block2(v29)
 ;;
@@ -194,7 +192,6 @@
 ;;                                     v57 = iconst.i64 0
 ;; @0057                               v45 = icmp eq v16, v57  ; v57 = 0
 ;; @0057                               v42 = ireduce.i32 v41
-;; @0057                               v28 = iconst.i64 4
 ;; @0057                               v43 = iadd v30, v62
 ;; @0057                               brif v45, block3, block2(v30)
 ;;

@@ -81,6 +81,7 @@ fn emit_jcc_no_offset(sink: &mut MachBuffer<Inst>, cc: CC) {
         sink,
         incoming_arg_offset: 0,
         slot_offset: 0,
+        sp_to_fp: None,
     });
 }
 
@@ -97,6 +98,7 @@ fn uncond_jmp(sink: &mut MachBuffer<Inst>, label: MachLabel) {
         sink,
         incoming_arg_offset: 0,
         slot_offset: 0,
+        sp_to_fp: None,
     });
     debug_assert_eq!(sink.cur_offset(), uncond_disp_off + 4);
     debug_assert_eq!(sink.cur_offset(), uncond_end);
@@ -1862,6 +1864,10 @@ pub(crate) fn emit(
                     )
                     .unwrap(),
                     slot_offset: i32::try_from(frame.outgoing_args_size).unwrap(),
+                    // A frame with a setup area has RBP set up as its frame
+                    // pointer for the whole body.
+                    sp_to_fp: (frame.setup_area_size > 0)
+                        .then(|| i32::try_from(frame.sp_to_fp()).unwrap()),
                 },
             );
         }
@@ -2111,7 +2117,10 @@ fn emit_maybe_shrink(inst: &AsmInst, sink: &mut impl asm::CodeSink) {
             m32,
             sink,
             |dst, amode, s| leal_rm::<R>::new(dst, amode).encode(s),
-            |dst, simm32, s| addl_mi::<R>::new(dst, simm32.cast_unsigned()).encode(s),
+            |dst, simm32, s| match i8::try_from(simm32) {
+                Ok(simm8) => addl_mi_sxb::<R>::new(dst, simm8).encode(s),
+                Err(_) => addl_mi::<R>::new(dst, simm32.cast_unsigned()).encode(s),
+            },
             |dst, reg, s| addl_rm::<R>::new(dst, reg).encode(s),
         ),
         Inst::leaq_rm(leaq_rm { r64, m64 }) => emit_lea(
@@ -2119,7 +2128,10 @@ fn emit_maybe_shrink(inst: &AsmInst, sink: &mut impl asm::CodeSink) {
             m64,
             sink,
             |dst, amode, s| leaq_rm::<R>::new(dst, amode).encode(s),
-            |dst, simm32, s| addq_mi_sxl::<R>::new(dst, simm32).encode(s),
+            |dst, simm32, s| match i8::try_from(simm32) {
+                Ok(simm8) => addq_mi_sxb::<R>::new(dst, simm8).encode(s),
+                Err(_) => addq_mi_sxl::<R>::new(dst, simm32).encode(s),
+            },
             |dst, reg, s| addq_rm::<R>::new(dst, reg).encode(s),
         ),
 

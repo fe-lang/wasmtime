@@ -52,7 +52,6 @@
 ;; @002f                               trapnz v39, user2
 ;;                                     v47 = iconst.i64 0
 ;; @002f                               v42 = icmp eq v15, v47  ; v47 = 0
-;; @002f                               v27 = iconst.i64 4
 ;; @002f                               v40 = iadd v29, v52
 ;; @002f                               brif v42, block3, block2(v29)
 ;;
@@ -109,8 +108,6 @@
 ;; @003d                               trapnz v39, user2
 ;;                                     v47 = iconst.i64 0
 ;; @003d                               v42 = icmp eq v15, v47  ; v47 = 0
-;; @0039                               v5 = iconst.i32 0
-;; @003d                               v27 = iconst.i64 4
 ;; @003d                               v40 = iadd v29, v52
 ;; @003d                               brif v42, block3, block2(v29)
 ;;
