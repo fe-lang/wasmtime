@@ -603,6 +603,7 @@ information about this check\
             "has_avx2" => "avx2",
             "has_fma" => "fma",
             "has_avx_vnni" => "avxvnni",
+            "has_sha" => "sha",
             "has_bmi1" => "bmi1",
             "has_bmi2" => "bmi2",
             "has_adx" => "adx",
