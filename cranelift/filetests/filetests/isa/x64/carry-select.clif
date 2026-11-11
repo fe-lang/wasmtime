@@ -1,0 +1,54 @@
+test compile precise-output
+set opt_level=speed
+target x86_64
+
+;; The borrow of a two-limb subtraction picks the limbs without `setb`.
+function %reduce(i64, i64, i64, i64) {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+  v4 = iconst.i64 0x1234
+  v5 = iconst.i64 0x5678
+  v6, v7 = usub_overflow v1, v4
+  v8, v9 = usub_overflow_bin v2, v5, v7
+  v10 = uextend.i64 v9
+  v11 = iconst.i64 1
+  v12 = icmp eq v10, v11
+  v13 = select v12, v1, v6
+  store v13, v0
+  v14 = select v12, v2, v8
+  store v14, v0+8
+  return
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rsi, %r8
+;   subq $0x1234, %r8
+;   movq %rsi, %r10
+;   movq %rdx, %rsi
+;   sbbq $0x5678, %rsi
+;   cmovbq %r10, %r8
+;   movq %r8, (%rdi)
+;   cmovbq %rdx, %rsi
+;   movq %rsi, 8(%rdi)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rsi, %r8
+;   subq $0x1234, %r8
+;   movq %rsi, %r10
+;   movq %rdx, %rsi
+;   sbbq $0x5678, %rsi
+;   cmovbq %r10, %r8
+;   movq %r8, (%rdi) ; trap: heap_oob
+;   cmovbq %rdx, %rsi
+;   movq %rsi, 8(%rdi) ; trap: heap_oob
+;   popq %rbp
+;   retq
+

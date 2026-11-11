@@ -1,0 +1,302 @@
+test compile precise-output
+set enable_multi_ret_implicit_sret
+target x86_64 has_bmi2 has_adx
+
+;; Two carry chains interleave: the low words of the products through CF
+;; with `adcx`, the high words a word up through OF with `adox`.
+function %mac_row(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    ;; [t0, t1, t2] + [a0, a1] * b, with a = v0 v1, b = v2, t = v3 v4 v5.
+    v6 = uextend.i128 v0
+    v7 = uextend.i128 v2
+    v8 = imul v6, v7
+    v9, v10 = isplit v8
+    v11, v12 = uadd_overflow v3, v9
+    v13, v14 = uadd_overflow v4, v10
+    v15 = uextend.i128 v1
+    v16 = uextend.i128 v2
+    v17 = imul v15, v16
+    v18, v19 = isplit v17
+    v20, v21 = uadd_overflow_cin v13, v18, v12
+    v22, v23 = uadd_overflow_cin v5, v19, v14
+    v24 = iconst.i64 0
+    v25, v26 = uadd_overflow_cin v22, v24, v21
+    v27 = uextend.i64 v26
+    v28 = uextend.i64 v23
+    v29 = iadd v27, v28
+    return v11, v20, v25, v29
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %rbx, (%rsp)
+; block0:
+;   movq %rdx, %rbx
+;   movq <offset:0>+-0x10(%rbp), %r11
+;   movq %rsi, %rdx
+;   mulxq %rcx, %r10, %rsi ;; implicit: %rdx
+;   uninit  %rax
+;   xorl %eax, %eax
+;   movq %r8, %rax
+;   adcxq %r10, %rax
+;   adoxq %rsi, %r9
+;   movq %rbx, %rdx
+;   mulxq %rcx, %rsi, %rcx ;; implicit: %rdx
+;   movq %r9, %rdx
+;   adcxq %rsi, %rdx
+;   adoxq %rcx, %r11
+;   seto %cl
+;   adcq $0x0, %r11
+;   setb %sil
+;   movzbq %sil, %rsi
+;   movzbq %cl, %rcx
+;   leaq (%rsi, %rcx), %rcx
+;   movq %r11, (%rdi)
+;   movq %rcx, 8(%rdi)
+;   movq (%rsp), %rbx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %rbx, (%rsp)
+; block1: ; offset 0xc
+;   movq %rdx, %rbx
+;   movq 0x10(%rbp), %r11
+;   movq %rsi, %rdx
+;   mulxq %rcx, %r10, %rsi
+;   xorl %eax, %eax
+;   movq %r8, %rax
+;   adcxq %r10, %rax
+;   adoxq %rsi, %r9
+;   movq %rbx, %rdx
+;   mulxq %rcx, %rsi, %rcx
+;   movq %r9, %rdx
+;   adcxq %rsi, %rdx
+;   adoxq %rcx, %r11
+;   seto %cl
+;   adcq $0, %r11
+;   setb %sil
+;   movzbq %sil, %rsi
+;   movzbq %cl, %rcx
+;   addq %rsi, %rcx
+;   movq %r11, (%rdi)
+;   movq %rcx, 8(%rdi)
+;   movq (%rsp), %rbx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+
+;; A chain whose last carry goes nowhere is over: the pair after it takes
+;; CF and OF afresh.
+function %pair_after_finished_chain(i64, i64, i64, i64, i64, i64) -> i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8, v9 = uadd_overflow_cin v2, v3, v7
+    v10, v11 = uadd_overflow v4, v6
+    v12, v13 = uadd_overflow v5, v8
+    v14, v15 = uadd_overflow_cin v12, v10, v11
+    v16, v17 = uadd_overflow_cin v14, v12, v13
+    return v10, v14, v16
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq <offset:0>+-0x10(%rbp), %r10
+;   addq %rdx, %rsi
+;   adcq %r8, %rcx
+;   uninit  %rax
+;   xorl %eax, %eax
+;   movq %r9, %rax
+;   adcxq %rsi, %rax
+;   adoxq %rcx, %r10
+;   movq %r10, %rdx
+;   adcxq %rax, %rdx
+;   movq %rdx, %rcx
+;   adoxq %r10, %rcx
+;   movq %rcx, (%rdi)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq 0x10(%rbp), %r10
+;   addq %rdx, %rsi
+;   adcq %r8, %rcx
+;   xorl %eax, %eax
+;   movq %r9, %rax
+;   adcxq %rsi, %rax
+;   adoxq %rcx, %r10
+;   movq %r10, %rdx
+;   adcxq %rax, %rdx
+;   movq %rdx, %rcx
+;   adoxq %r10, %rcx
+;   movq %rcx, (%rdi)
+;   popq %rbp
+;   retq
+
+;; The address of the second word's load is a sum the load folds into its
+;; addressing mode, so it leaves the first chain's carry in CF, and the two
+;; chains interleave.
+
+function %chains_past_an_address_sum(i64, i64, i64, i64) -> i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = load.i64 notrap v0
+    v5, v6 = uadd_overflow v4, v1
+    v7 = iconst.i64 8
+    v8 = iadd v0, v7
+    v9 = load.i64 notrap v8
+    v10, v11 = uadd_overflow v9, v2
+    v12, v13 = uadd_overflow_cin v10, v3, v6
+    v14, v15 = uadd_overflow_cin v12, v1, v11
+    v16 = uextend.i64 v13
+    v17 = uextend.i64 v15
+    v18 = iadd v16, v17
+    v19 = iadd v14, v5
+    return v19, v18
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rcx, %r8
+;   movq (%rdi), %rax
+;   uninit  %rcx
+;   xorl %ecx, %ecx
+;   adcxq %rsi, %rax
+;   movq 8(%rdi), %rcx
+;   adoxq %rdx, %rcx
+;   movq %r8, %rdx
+;   adcxq %rdx, %rcx
+;   setb %dl
+;   adoxq %rsi, %rcx
+;   seto %sil
+;   movzbq %dl, %rdx
+;   movzbq %sil, %rsi
+;   leaq (%rdx, %rsi), %rdx
+;   leaq (%rcx, %rax), %rax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rcx, %r8
+;   movq (%rdi), %rax
+;   xorl %ecx, %ecx
+;   adcxq %rsi, %rax
+;   movq 8(%rdi), %rcx
+;   adoxq %rdx, %rcx
+;   movq %r8, %rdx
+;   adcxq %rdx, %rcx
+;   setb %dl
+;   adoxq %rsi, %rcx
+;   seto %sil
+;   movzbq %dl, %rdx
+;   movzbq %sil, %rsi
+;   addq %rsi, %rdx
+;   addq %rcx, %rax
+;   popq %rbp
+;   retq
+
+
+;; A zero addend while both chains are in flight takes the pair's zero
+;; register, which the `xor` clearing the flags set: here the CF chain ends
+;; on the second product's high word before the OF chain adds it.
+function %zero_addend_in_pair(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6 = uextend.i128 v0
+    v7 = uextend.i128 v2
+    v8 = imul v6, v7
+    v9, v10 = isplit v8
+    v11, v12 = uadd_overflow v3, v9
+    v13, v14 = uadd_overflow v4, v10
+    v15 = uextend.i128 v1
+    v16 = imul v15, v7
+    v17, v18 = isplit v16
+    v19, v20 = uadd_overflow_cin v13, v17, v12
+    v21 = iconst.i64 0
+    v22, v23 = uadd_overflow_cin v18, v21, v20
+    v24, v25 = uadd_overflow_cin v5, v22, v14
+    v26 = uextend.i64 v25
+    return v11, v19, v24, v26
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %rbx, (%rsp)
+; block0:
+;   movq %rdx, %rbx
+;   movq <offset:0>+-0x10(%rbp), %r10
+;   movq %rsi, %rdx
+;   mulxq %rcx, %r11, %rsi ;; implicit: %rdx
+;   movq %rcx, %rdx
+;   uninit  %rcx
+;   xorl %ecx, %ecx
+;   movq %r8, %rax
+;   adcxq %r11, %rax
+;   adoxq %rsi, %r9
+;   movq %rdx, %rsi
+;   movq %rbx, %rdx
+;   mulxq %rsi, %r8, %rsi ;; implicit: %rdx
+;   movq %r9, %rdx
+;   adcxq %r8, %rdx
+;   adcxq %rcx, %rsi
+;   adoxq %rsi, %r10
+;   seto %cl
+;   movzbq %cl, %rcx
+;   movq %r10, (%rdi)
+;   movq %rcx, 8(%rdi)
+;   movq (%rsp), %rbx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %rbx, (%rsp)
+; block1: ; offset 0xc
+;   movq %rdx, %rbx
+;   movq 0x10(%rbp), %r10
+;   movq %rsi, %rdx
+;   mulxq %rcx, %r11, %rsi
+;   movq %rcx, %rdx
+;   xorl %ecx, %ecx
+;   movq %r8, %rax
+;   adcxq %r11, %rax
+;   adoxq %rsi, %r9
+;   movq %rdx, %rsi
+;   movq %rbx, %rdx
+;   mulxq %rsi, %r8, %rsi
+;   movq %r9, %rdx
+;   adcxq %r8, %rdx
+;   adcxq %rcx, %rsi
+;   adoxq %rsi, %r10
+;   seto %cl
+;   movzbq %cl, %rcx
+;   movq %r10, (%rdi)
+;   movq %rcx, 8(%rdi)
+;   movq (%rsp), %rbx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+

@@ -1,0 +1,33 @@
+test interpret
+test run
+set enable_llvm_abi_extensions=true
+target x86_64
+
+;; Selects sharing one compare choose by it.
+
+function %three_selects(i64, i64, i64, i64) -> i64 {
+    ss0 = explicit_slot 24
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = stack_addr.i64 ss0
+    v5 = iconst.i64 1
+    v6 = icmp eq v0, v5
+    v7 = select v6, v1, v2
+    store notrap v7, v4
+    v8 = select v6, v2, v3
+    store notrap v8, v4+8
+    v9 = select v6, v3, v1
+    store notrap v9, v4+16
+    v10 = load.i64 notrap v4
+    v11 = load.i64 notrap v4+8
+    v12 = load.i64 notrap v4+16
+    v17 = iconst.i64 100
+    v18 = iconst.i64 10000
+    v13 = imul v11, v17
+    v14 = imul v12, v18
+    v15 = iadd v10, v13
+    v16 = iadd v15, v14
+    return v16
+}
+
+; run: %three_selects(1, 1, 2, 3) == 30201
+; run: %three_selects(0, 1, 2, 3) == 10302

@@ -118,6 +118,7 @@ impl<'a> Arbitrary<'a> for CodegenSettings {
                     std:"fma" => clif:"has_fma",
                     std:"bmi1" => clif:"has_bmi1",
                     std:"bmi2" => clif:"has_bmi2",
+                    std:"adx" => clif:"has_adx",
                     std:"lzcnt" => clif:"has_lzcnt",
 
                     // not a lot of cpus support avx512 so these are weighted

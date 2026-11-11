@@ -178,22 +178,56 @@
 ;; set<cc> r8
 (decl construct_overflow_op_alu_128 (CC ProduceFlagsOp ChainFlagsOp Value Value) InstOutput)
 (rule (construct_overflow_op_alu_128 cc op1 op2 x y)
-      ;; Get the high/low registers for `x`.
       (let ((x_regs ValueRegs x)
             (x_lo Gpr (value_regs_get_gpr x_regs 0))
-            (x_hi Gpr (value_regs_get_gpr x_regs 1)))
-        ;; Get the high/low registers for `y`.
-        (let ((y_regs ValueRegs y)
-              (y_lo Gpr (value_regs_get_gpr y_regs 0))
-              (y_hi Gpr (value_regs_get_gpr y_regs 1)))
-          (let    ((lo_inst ProducesFlags (x64_produce_flags op1 $I64 x_lo y_lo))
-                   (hi_inst ConsumesAndProducesFlags (x64_chain_flags op2 $I64 x_hi y_hi))
-                   (of_inst ConsumesFlags (x64_setcc_paired cc))
+            (x_hi Gpr (value_regs_get_gpr x_regs 1))
+            (y_halves I128Halves (i128_halves y))
+            (y_lo GprMemImm (i128_lo y_halves))
+            (y_hi GprMemImm (i128_hi y_halves))
+            (lo_inst ProducesFlags (x64_produce_flags op1 $I64 x_lo y_lo))
+            (hi_inst ConsumesAndProducesFlags (x64_chain_flags op2 $I64 x_hi y_hi))
+            (of_inst ConsumesFlags (x64_setcc_paired cc))
+            (result MultiReg (with_flags_chained lo_inst hi_inst of_inst)))
+        (multi_reg_to_pair_and_single result)))
 
-                   (result MultiReg (with_flags_chained lo_inst hi_inst of_inst)))
-                  (multi_reg_to_pair_and_single result)))))
+;; The low and high halves of the i128 operand `y`, as second operands of
+;; 64-bit ops: the halves of an `iconcat` each, which may be loads that sink
+;; into the ops, a load of it that sinks into them read from memory, and
+;; anything else a register pair.
+(type I128Halves (enum (Operands (lo GprMemImm) (hi GprMemImm))
+                       (Regs (lo Gpr) (hi Gpr))))
+(decl i128_halves (Value) I128Halves)
+;; The high half first: a load sinks only while no other unsunk load comes
+;; between it and its use, and the high half's load comes after the low's.
+(rule 2 (i128_halves (iconcat _ lo hi))
+      (let ((hi_op GprMemImm hi)
+            (lo_op GprMemImm lo))
+        (I128Halves.Operands lo_op hi_op)))
+(rule 1 (i128_halves (sinkable_load_exact load))
+      (let ((lo SyntheticAmode (sink_load load))
+            (hi SyntheticAmode (amode_offset lo (mem_flags_trusted_data) 8)))
+        (I128Halves.Operands (RegMemImm.Mem lo) (RegMemImm.Mem hi))))
+(rule 0 (i128_halves y)
+      (let ((regs ValueRegs y))
+        (I128Halves.Regs (value_regs_get_gpr regs 0) (value_regs_get_gpr regs 1))))
+(decl i128_lo (I128Halves) GprMemImm)
+(rule (i128_lo (I128Halves.Operands lo _)) lo)
+(rule (i128_lo (I128Halves.Regs lo _)) lo)
+(decl i128_hi (I128Halves) GprMemImm)
+(rule (i128_hi (I128Halves.Operands _ hi)) hi)
+(rule (i128_hi (I128Halves.Regs _ hi)) hi)
 
 ;;;; Rules for `uadd_overflow` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; A carry out that is unused, or whose one use takes it from the flags,
+;; needs no `setb`.
+(rule 3 (lower i @ (uadd_overflow _ x y @ (value_type (fits_in_64 ty))))
+      (if-let _ (carry_stays_in_flags i))
+      (flags_only_overflow_op (x64_produce_flags (ProduceFlagsOp.Add) ty x y)))
+
+(rule 2 (lower i @ (uadd_overflow _ x y @ (value_type $I128)))
+      (if-let _ (carry_stays_in_flags i))
+      (flags_only_overflow_op_128 (ProduceFlagsOp.Add) (ChainFlagsOp.Adc) x y))
 
 (rule 1 (lower (uadd_overflow _ x y @ (value_type (fits_in_64 ty))))
       (construct_overflow_op_alu ty (CC.B) (ProduceFlagsOp.Add) x y))
@@ -205,23 +239,175 @@
 ;;;; Rules for `*_overflow_cin` and `*_overflow_bin` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; `neg` of the carry's low byte sets CF exactly when the carry is nonzero, and
-;; `adc`/`sbb` take it from there:
+;; `adc`/`sbb` take it from there. A carry straight from the CF of the
+;; `adc`/`sbb` before is still in the flags, and an unsigned carry out that
+;; is unused, or whose one use takes it from the flags, stays there:
 ;;
-;;   neg c_in
+;;   neg c_in       ; unless CF holds it
 ;;   adc x, y
-;;   setb c_out
+;;   setb c_out     ; unless the flags carry it on
 
-(rule 1 (lower (uadd_overflow_cin _ x y @ (value_type (fits_in_64 ty)) c_in))
-      (lower_carry_chain (x64_adc_chained ty x y) (CC.B) c_in))
+(rule 1 (lower i @ (uadd_overflow_cin _ x y @ (value_type (fits_in_64 ty)) c_in))
+      (carry_op i c_in (x64_adc_chained ty x y)))
 
 (rule 1 (lower (sadd_overflow_cin _ x y @ (value_type (fits_in_64 ty)) c_in))
       (lower_carry_chain (x64_adc_chained ty x y) (CC.O) c_in))
 
-(rule 1 (lower (usub_overflow_bin _ x y @ (value_type (fits_in_64 ty)) b_in))
-      (lower_carry_chain (x64_sbb_chained ty x y) (CC.B) b_in))
+(rule 1 (lower i @ (usub_overflow_bin _ x y @ (value_type (fits_in_64 ty)) b_in))
+      (carry_op i b_in (x64_sbb_chained ty x y)))
 
 (rule 1 (lower (ssub_overflow_bin _ x y @ (value_type (fits_in_64 ty)) b_in))
       (lower_carry_chain (x64_sbb_chained ty x y) (CC.O) b_in))
+
+(decl carry_op (Inst Value ConsumesAndProducesFlags) InstOutput)
+(rule (carry_op i carry op)
+      (let ((_ Unit (carry_in i carry))
+            (value Reg (emit_chained op)))
+        (output_pair value (carry_out i))))
+
+(decl carry_op_128 (Inst Value ChainFlagsOp Value Value) InstOutput)
+(rule (carry_op_128 i carry op x y)
+      (let ((x_regs ValueRegs x)
+            (y_halves I128Halves (i128_halves y))
+            (y_lo GprMemImm (i128_lo y_halves))
+            (y_hi GprMemImm (i128_hi y_halves))
+            (_ Unit (carry_in i carry))
+            (lo Reg (emit_chained (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 0) y_lo)))
+            (hi Reg (emit_chained (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 1) y_hi))))
+        (output_pair (value_regs lo hi) (carry_out i))))
+
+;; Two interleaved 64-bit addition chains run as `adcx` through CF and
+;; `adox` through OF, which leave each other's flag alone; the first op of
+;; the pair clears both flags.
+
+(rule 6 (lower i @ (uadd_overflow _ x y @ (value_type $I64)))
+      (if-let _ (carry_lane_cf i))
+      (lane_add i (CC.B) (x64_adcxq_rm (lane_clear i x) (lane_operand i y))))
+
+(rule 7 (lower i @ (uadd_overflow _ x y @ (value_type $I64)))
+      (if-let _ (carry_lane_of i))
+      (lane_add i (CC.O) (x64_adoxq_rm x (lane_operand i y))))
+
+(rule 6 (lower i @ (uadd_overflow_cin _ x y @ (value_type $I64) c_in))
+      (if-let _ (carry_lane_cf i))
+      (let ((_ Unit (carry_in i c_in)))
+        (lane_add i (CC.B) (x64_adcxq_rm x (lane_operand i y)))))
+
+(rule 7 (lower i @ (uadd_overflow_cin _ x y @ (value_type $I64) c_in))
+      (if-let _ (carry_lane_of i))
+      (let ((_ Unit (carry_in i c_in)))
+        (lane_add i (CC.O) (x64_adoxq_rm x (lane_operand i y)))))
+
+;; The sum of a lane op, with its carry out (`setb` or `seto`) when wanted.
+(decl lane_add (Inst CC Gpr) InstOutput)
+(rule (lane_add i cc sum)
+      (output_pair (value_reg sum) (lane_carry_out i cc)))
+
+(decl lane_carry_out (Inst CC) ValueRegs)
+(rule 1 (lane_carry_out i _)
+      (if-let _ (carry_stays_in_flags i))
+      (value_reg (invalid_reg)))
+(rule 0 (lane_carry_out _ cc)
+      (value_reg (emit_consumer (x64_setcc cc))))
+
+;; `x`, after clearing CF and OF when `inst` starts an interleaved pair. The
+;; `xor` that clears them zeroes the pair's zero register.
+(decl lane_clear (Inst Value) Gpr)
+(rule 1 (lane_clear i x)
+      (if-let _ (carry_lane_clears i))
+      (if-let zero (lane_zero i))
+      (let ((_ Unit (define_lane_zero zero)))
+        x))
+(rule 0 (lane_clear _ x) x)
+
+;; The addend of lane op `inst`. Zero is the pair's zero register. Another
+;; constant moves into a register with `mov`, which leaves the flags alone,
+;; where `imm` zeroes with `xor`; below 2^32 a `movl`, which zero-extends, is
+;; half the size.
+(decl lane_operand (Inst Value) GprMem64)
+(rule 3 (lane_operand i (u64_from_iconst 0))
+      (if-let zero (lane_zero i))
+      zero)
+(rule 2 (lane_operand _ (u64_from_iconst (u32_from_u64 c)))
+      (x64_movl_oi c))
+(rule 1 (lane_operand _ (u64_from_iconst c))
+      (x64_movabsq_oi c))
+(rule 0 (lane_operand _ y) y)
+
+;; The zero register of the interleaved pair of chains `inst` belongs to:
+;; the pair's first op sets it with `define_lane_zero`, before every use.
+(decl pure partial lane_zero (Inst) Gpr)
+(extern constructor lane_zero lane_zero)
+(decl define_lane_zero (Gpr) Unit)
+(extern constructor define_lane_zero define_lane_zero)
+
+(decl pure partial carry_lane_cf (Inst) Unit)
+(extern constructor carry_lane_cf carry_lane_cf)
+(decl pure partial carry_lane_of (Inst) Unit)
+(extern constructor carry_lane_of carry_lane_of)
+(decl pure partial carry_lane_clears (Inst) Unit)
+(extern constructor carry_lane_clears carry_lane_clears)
+
+;; Sets CF to `carry`, the carry in of `inst`, unless it holds it already.
+;; Taking the carry from the flags still counts as a use of it, so that its
+;; producer is lowered even when nothing else uses its results.
+(decl carry_in (Inst Value) Unit)
+(rule 1 (carry_in i carry)
+      (if-let _ (carry_flags_live i))
+      (let ((_ ValueRegs (put_in_regs carry)))
+        (unit)))
+(rule 0 (carry_in _ carry)
+      (let ((_ Reg (emit_producer (x64_neg_paired $I8 carry))))
+        (unit)))
+
+;; The unsigned carry out of `inst`, in CF, as a register: none when it is
+;; unused or its one use takes it from the flags.
+(decl carry_out (Inst) ValueRegs)
+(rule 1 (carry_out i)
+      (if-let _ (carry_stays_in_flags i))
+      (value_reg (invalid_reg)))
+(rule 0 (carry_out _)
+      (value_reg (emit_consumer (x64_setcc (CC.B)))))
+
+;; Whether the carry in of `inst` is the carry out of an unsigned
+;; `*_overflow`, `*_overflow_cin` or `*_overflow_bin` earlier in its block
+;; that is still in the flags (see `carry_plans`).
+(decl pure partial carry_flags_live (Inst) Unit)
+(extern constructor carry_flags_live carry_flags_live)
+
+;; Whether the carry out of `inst` is unused, or its one use takes it from
+;; the flags.
+(decl pure partial carry_stays_in_flags (Inst) Unit)
+(extern constructor carry_stays_in_flags carry_stays_in_flags)
+
+(decl emit_chained (ConsumesAndProducesFlags) Reg)
+(rule (emit_chained (ConsumesAndProducesFlags.ReturnsReg inst reg))
+      (let ((_ Unit (emit inst)))
+        reg))
+
+(decl emit_producer (ProducesFlags) Reg)
+(rule (emit_producer (ProducesFlags.ProducesFlagsReturnsResultWithConsumer inst reg))
+      (let ((_ Unit (emit inst)))
+        reg))
+
+(decl emit_consumer (ConsumesFlags) Reg)
+(rule (emit_consumer (ConsumesFlags.ConsumesFlagsReturnsReg inst reg))
+      (let ((_ Unit (emit inst)))
+        reg))
+
+(decl flags_only_overflow_op (ProducesFlags) InstOutput)
+(rule (flags_only_overflow_op producer)
+      (output_pair (emit_producer producer) (value_reg (invalid_reg))))
+
+(decl flags_only_overflow_op_128 (ProduceFlagsOp ChainFlagsOp Value Value) InstOutput)
+(rule (flags_only_overflow_op_128 lo_op hi_op x y)
+      (let ((x_regs ValueRegs x)
+            (y_halves I128Halves (i128_halves y))
+            (y_lo GprMemImm (i128_lo y_halves))
+            (y_hi GprMemImm (i128_hi y_halves))
+            (lo Reg (emit_producer (x64_produce_flags lo_op $I64 (value_regs_get_gpr x_regs 0) y_lo)))
+            (hi Reg (emit_chained (x64_chain_flags hi_op $I64 (value_regs_get_gpr x_regs 1) y_hi))))
+        (output_pair (value_regs lo hi) (value_reg (invalid_reg)))))
 
 ;; The 128-bit forms carry through both halves:
 ;;
@@ -230,14 +416,14 @@
 ;;   adc x_hi, y_hi
 ;;   setb c_out
 
-(rule 0 (lower (uadd_overflow_cin _ x y @ (value_type $I128) c_in))
-      (lower_carry_chain_128 (ChainFlagsOp.Adc) (CC.B) x y c_in))
+(rule 0 (lower i @ (uadd_overflow_cin _ x y @ (value_type $I128) c_in))
+      (carry_op_128 i c_in (ChainFlagsOp.Adc) x y))
 
 (rule 0 (lower (sadd_overflow_cin _ x y @ (value_type $I128) c_in))
       (lower_carry_chain_128 (ChainFlagsOp.Adc) (CC.O) x y c_in))
 
-(rule 0 (lower (usub_overflow_bin _ x y @ (value_type $I128) b_in))
-      (lower_carry_chain_128 (ChainFlagsOp.Sbb) (CC.B) x y b_in))
+(rule 0 (lower i @ (usub_overflow_bin _ x y @ (value_type $I128) b_in))
+      (carry_op_128 i b_in (ChainFlagsOp.Sbb) x y))
 
 (rule 0 (lower (ssub_overflow_bin _ x y @ (value_type $I128) b_in))
       (lower_carry_chain_128 (ChainFlagsOp.Sbb) (CC.O) x y b_in))
@@ -250,11 +436,11 @@
 (decl lower_carry_chain_128 (ChainFlagsOp CC Value Value Value) InstOutput)
 (rule (lower_carry_chain_128 op cc x y carry)
       (let ((x_regs ValueRegs x)
-            (y_regs ValueRegs y)
-            (lo ConsumesAndProducesFlags
-                (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 0) (value_regs_get_gpr y_regs 0)))
-            (hi ConsumesAndProducesFlags
-                (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 1) (value_regs_get_gpr y_regs 1))))
+            (y_halves I128Halves (i128_halves y))
+            (y_lo GprMemImm (i128_lo y_halves))
+            (y_hi GprMemImm (i128_hi y_halves))
+            (lo ConsumesAndProducesFlags (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 0) y_lo))
+            (hi ConsumesAndProducesFlags (x64_chain_flags op $I64 (value_regs_get_gpr x_regs 1) y_hi)))
         (carry_chain_outputs
           (with_flags_chained (x64_neg_paired $I8 carry) lo (chain_then_consume hi (x64_setcc cc))))))
 
@@ -280,6 +466,14 @@
         (construct_overflow_op_alu_128 (CC.O) (ProduceFlagsOp.Add) (ChainFlagsOp.Adc) x y))
 
 ;;;; Rules for `usub_overflow` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(rule 3 (lower i @ (usub_overflow _ x y @ (value_type (fits_in_64 ty))))
+      (if-let _ (carry_stays_in_flags i))
+      (flags_only_overflow_op (x64_produce_flags (ProduceFlagsOp.Sub) ty x y)))
+
+(rule 2 (lower i @ (usub_overflow _ x y @ (value_type $I128)))
+      (if-let _ (carry_stays_in_flags i))
+      (flags_only_overflow_op_128 (ProduceFlagsOp.Sub) (ChainFlagsOp.Sbb) x y))
 
 (rule 1 (lower (usub_overflow _ x y @ (value_type (fits_in_64 ty))))
       (construct_overflow_op_alu ty (CC.B) (ProduceFlagsOp.Sub) x y))
@@ -2263,6 +2457,39 @@
 
 (rule (lower (select _ cond x y)) (lower_select (is_nonzero_cmp cond) x y))
 
+;; A select on the condition of the select lowered just before it, with only
+;; instructions that leave the flags alone between, tests the flags that
+;; select's compare set instead of comparing again.
+(rule 1 (lower i @ (select _ cond x y))
+      (if-let _ (select_flags_live i))
+      (lower_select (reuse_flags (is_nonzero_cmp cond)) x y))
+
+(decl pure partial select_flags_live (Inst) Unit)
+(extern constructor select_flags_live select_flags_live)
+
+;; A select on a carry left in the flags, possibly extended or compared with
+;; 0 or 1, tests its flag instead of materializing the carry and comparing
+;; it (see `carry_selects`). Taking the carry from the flags counts as a use
+;; of it, so that its producer is lowered even when nothing else uses its
+;; results.
+(rule 2 (lower i @ (select _ _ x y))
+      (if-let carry (select_carry i))
+      (if-let cc (select_carry_flag i))
+      (let ((_ ValueRegs (put_in_regs carry)))
+        (lower_select (CondResult.CC (ProducesFlags.AlreadyExistingFlags) cc) x y)))
+
+(decl pure partial select_carry (Inst) Value)
+(extern constructor select_carry select_carry)
+(decl pure partial select_carry_flag (Inst) CC)
+(extern constructor select_carry_flag select_carry_flag)
+
+;; A condition's flag test without its compare; a condition testing more than
+;; one flag, which `select_reuse` leaves out, keeps its compare.
+(decl reuse_flags (CondResult) CondResult)
+(rule 1 (reuse_flags (CondResult.CC _ cc))
+      (CondResult.CC (ProducesFlags.AlreadyExistingFlags) cc))
+(rule 0 (reuse_flags cond) cond)
+
 ; Recursion: at most once to swap the And case for an Or.
 (decl rec lower_select (CondResult Value Value) InstOutput)
 (rule 0 (lower_select cond a @ (value_type (ty_int (fits_in_64 ty))) b)
@@ -3696,6 +3923,18 @@
 
 (rule (lower_branch (brif val _ _) (two_targets then else))
       (emit_side_effect (jmp_cond_result (is_nonzero_cmp val) then else)))
+
+;; A branch on a carry still in the flags branches on the flag, and the op
+;; making the carry keeps it there (see `carry_plans`). Taking the carry
+;; from the flags still counts as a use of it, so that its producer is
+;; lowered even when nothing else uses its results.
+(rule 1 (lower_branch (brif (carry_branch carry cc) _ _) (two_targets then else))
+      (let ((_ ValueRegs (put_in_regs carry)))
+        (emit_side_effect
+          (jmp_cond_result (CondResult.CC (ProducesFlags.AlreadyExistingFlags) cc) then else))))
+
+(decl carry_branch (Value CC) Value)
+(extern extractor carry_branch carry_branch)
 
 ;; Rules for `br_table` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

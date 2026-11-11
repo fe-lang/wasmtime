@@ -1899,7 +1899,7 @@
 ;; Other operations consume _and_ produce flags--"chaining".
 (type ChainFlagsOp (enum (Adc) (Sbb)))
 
-(decl x64_chain_flags (ChainFlagsOp Type Gpr Gpr) ConsumesAndProducesFlags)
+(decl x64_chain_flags (ChainFlagsOp Type Gpr GprMemImm) ConsumesAndProducesFlags)
 (rule (x64_chain_flags (ChainFlagsOp.Adc) ty src1 src2)
       (x64_adc_chained ty src1 src2))
 (rule (x64_chain_flags (ChainFlagsOp.Sbb) ty src1 src2)
