@@ -18,6 +18,7 @@ mod max;
 mod min;
 mod misc;
 mod mov;
+mod movbe;
 mod mul;
 mod neg;
 mod nop;
@@ -69,6 +70,7 @@ pub fn list() -> Vec<Inst> {
     all.extend(round::list());
     all.extend(setcc::list());
     all.extend(sha::list());
+    all.extend(movbe::list());
     all.extend(shift::list());
     all.extend(sqrt::list());
     all.extend(stack::list());

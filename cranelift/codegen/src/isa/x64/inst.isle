@@ -1342,6 +1342,17 @@
 (decl pure has_sha () bool)
 (extern constructor has_sha has_sha)
 
+(decl pure has_movbe () bool)
+(extern constructor has_movbe has_movbe)
+
+;; Loads and stores that reverse the bytes of the value they move.
+(decl x64_movbe_load (Type SyntheticAmode) Gpr)
+(rule (x64_movbe_load $I32 addr) (x64_movbel_rm addr))
+(rule (x64_movbe_load $I64 addr) (x64_movbeq_rm addr))
+(decl x64_movbe_store (Type SyntheticAmode Gpr) SideEffectNoResult)
+(rule (x64_movbe_store $I32 addr data) (x64_movbel_mr_mem addr data))
+(rule (x64_movbe_store $I64 addr data) (x64_movbeq_mr_mem addr data))
+
 ;;;; Helpers for Merging and Sinking Immediates/Loads  ;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Generate a mask for the bit-width of the given type

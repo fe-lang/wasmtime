@@ -121,6 +121,7 @@ impl<'a> Arbitrary<'a> for CodegenSettings {
                     std:"bmi2" => clif:"has_bmi2",
                     std:"adx" => clif:"has_adx",
                     std:"lzcnt" => clif:"has_lzcnt",
+                    std:"movbe" => clif:"has_movbe",
 
                     // not a lot of cpus support avx512 so these are weighted
                     // to get enabled much less frequently.

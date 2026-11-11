@@ -614,6 +614,7 @@ information about this check\
             "has_avx512vbmi" => "avx512vbmi",
             "has_avx512vnni" => "avx512vnni",
             "has_lzcnt" => "lzcnt",
+            "has_movbe" => "movbe",
 
             // pulley features
             "big_endian" if cfg!(target_endian = "big") => return Ok(()),

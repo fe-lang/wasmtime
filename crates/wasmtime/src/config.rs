@@ -4766,6 +4766,7 @@ fn detect_host_feature(feature: &str) -> Option<bool> {
             "avx512vbmi" => Some(std::is_x86_feature_detected!("avx512vbmi")),
             "avx512vnni" => Some(std::is_x86_feature_detected!("avx512vnni")),
             "lzcnt" => Some(std::is_x86_feature_detected!("lzcnt")),
+            "movbe" => Some(std::is_x86_feature_detected!("movbe")),
 
             _ => None,
         };
