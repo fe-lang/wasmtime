@@ -134,3 +134,259 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ;   popq %rbp
 ;   retq
 
+
+;; A zero between selects on one condition moves in with `movl`, which leaves
+;; the flags alone.
+
+function %zero_between(i64, i64, i64, i64) -> i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = iconst.i64 1
+    v5 = band v0, v4
+    v6 = select v5, v1, v2
+    v7 = iconst.i64 0
+    v8 = select v5, v3, v7
+    return v6, v8
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   testq $0x1, %rdi
+;   movq %rdx, %rax
+;   cmovneq %rsi, %rax
+;   movl $0x0, %edx
+;   cmovneq %rcx, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   testq $1, %rdi
+;   movq %rdx, %rax
+;   cmovneq %rsi, %rax
+;   movl $0, %edx
+;   cmovneq %rcx, %rdx
+;   popq %rbp
+;   retq
+
+;; The select between the zero and the select taking the flags of the first
+;; one, used only by unused code, is skipped: the zero is a `movl`.
+
+function %zero_before_skipped_select(i64, i64, i64, i64) -> i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = iconst.i64 1
+    v5 = band v0, v4
+    v6 = iconst.i64 2
+    v7 = band v0, v6
+    v8 = select v5, v1, v2
+    v9 = iconst.i64 0
+    v10 = select v7, v1, v8
+    v11 = select v5, v3, v9
+    v12 = iadd v10, v10
+    return v8, v11
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   testq $0x1, %rdi
+;   movq %rdx, %rax
+;   cmovneq %rsi, %rax
+;   movl $0x0, %edx
+;   cmovneq %rcx, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   testq $1, %rdi
+;   movq %rdx, %rax
+;   cmovneq %rsi, %rax
+;   movl $0, %edx
+;   cmovneq %rcx, %rdx
+;   popq %rbp
+;   retq
+
+;; An addition, a call or a compare on another condition between a borrow
+;; and the select on it writes the flags: the borrow is kept with `setb`, and
+;; the zero is an `xor`.
+
+function %zero_and_add_between(i64, i64, i64) -> i64, i64 {
+block0(v0: i64, v1: i64, v2: i64):
+    v3, v4 = usub_overflow v0, v1
+    v5 = iadd v2, v2
+    v6 = iconst.i64 0
+    v7 = select v4, v3, v6
+    return v7, v5
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   subq %rsi, %rdi
+;   setb %r10b
+;   leaq (%rdx, %rdx), %rdx
+;   uninit  %rax
+;   xorq %rax, %rax
+;   testb %r10b, %r10b
+;   cmovneq %rdi, %rax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   subq %rsi, %rdi
+;   setb %r10b
+;   addq %rdx, %rdx
+;   xorq %rax, %rax
+;   testb %r10b, %r10b
+;   cmovneq %rdi, %rax
+;   popq %rbp
+;   retq
+
+function %zero_and_call_between(i64, i64) -> i64 {
+    fn0 = %g()
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    call fn0()
+    v4 = iconst.i64 0
+    v5 = select v3, v2, v4
+    return v5
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %r12, -0x10(%rbp)
+;   movq %r13, -8(%rbp)
+; block0:
+;   subq %rsi, %rdi
+;   movq %rdi, %r13
+;   setb %r12b
+;   load_ext_name %g+0, %r8
+;   call    *%r8
+;   uninit  %rax
+;   xorq %rax, %rax
+;   testb %r12b, %r12b
+;   movq %r13, %rdi
+;   cmovneq %rdi, %rax
+;   movq -0x10(%rbp), %r12
+;   movq -8(%rbp), %r13
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %r12, -0x10(%rbp)
+;   movq %r13, -8(%rbp)
+; block1: ; offset 0x10
+;   subq %rsi, %rdi
+;   movq %rdi, %r13
+;   setb %r12b
+;   movabsq $0, %r8 ; reloc_external Abs8 %g 0
+;   callq *%r8
+;   xorq %rax, %rax
+;   testb %r12b, %r12b
+;   movq %r13, %rdi
+;   cmovneq %rdi, %rax
+;   movq -0x10(%rbp), %r12
+;   movq -8(%rbp), %r13
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+
+function %zero_and_compare_between(i64, i64, i64) -> i64, i64 {
+block0(v0: i64, v1: i64, v2: i64):
+    v3, v4 = usub_overflow v0, v1
+    v5 = icmp ult v0, v2
+    v6 = select v5, v2, v0
+    v7 = iconst.i64 0
+    v8 = select v4, v3, v7
+    return v8, v6
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rdi, %r8
+;   subq %rsi, %r8
+;   setb %r10b
+;   cmpq %rdx, %rdi
+;   movq %rdi, %r11
+;   cmovbq %rdx, %r11
+;   uninit  %rax
+;   xorq %rax, %rax
+;   testb %r10b, %r10b
+;   cmovneq %r8, %rax
+;   movq %r11, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rdi, %r8
+;   subq %rsi, %r8
+;   setb %r10b
+;   cmpq %rdx, %rdi
+;   movq %rdi, %r11
+;   cmovbq %rdx, %r11
+;   xorq %rax, %rax
+;   testb %r10b, %r10b
+;   cmovneq %r8, %rax
+;   movq %r11, %rdx
+;   popq %rbp
+;   retq
+
+;; A zero before the borrow stays an `xor`.
+
+function %zero_before_borrow(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2 = iconst.i64 0
+    v3, v4 = usub_overflow v0, v1
+    v5 = select v4, v3, v2
+    return v5
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   uninit  %rax
+;   xorq %rax, %rax
+;   subq %rsi, %rdi
+;   cmovbq %rdi, %rax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   xorq %rax, %rax
+;   subq %rsi, %rdi
+;   cmovbq %rdi, %rax
+;   popq %rbp
+;   retq
+

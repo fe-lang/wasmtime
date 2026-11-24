@@ -31,3 +31,48 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 
 ; run: %three_selects(1, 1, 2, 3) == 30201
 ; run: %three_selects(0, 1, 2, 3) == 10302
+
+;; A zero alternative between selects on one condition.
+
+function %zero_between(i64, i64, i64, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = iconst.i64 1
+    v5 = band v0, v4
+    v6 = select v5, v1, v2
+    v7 = iconst.i64 0
+    v8 = select v5, v3, v7
+    v9 = iconst.i64 100
+    v10 = imul v8, v9
+    v11 = iadd v6, v10
+    return v11
+}
+
+; run: %zero_between(1, 1, 2, 3) == 301
+; run: %zero_between(0, 1, 2, 3) == 2
+; run: %zero_between(3, 4, 5, 6) == 604
+; run: %zero_between(2, 4, 5, 6) == 5
+
+;; The select between the zero and the select taking the flags of the first
+;; one, used only by unused code, is skipped.
+
+function %zero_before_skipped_select(i64, i64, i64, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = iconst.i64 1
+    v5 = band v0, v4
+    v6 = iconst.i64 2
+    v7 = band v0, v6
+    v8 = select v5, v1, v2
+    v9 = iconst.i64 0
+    v10 = select v7, v1, v8
+    v11 = select v5, v3, v9
+    v12 = iadd v10, v10
+    v13 = iconst.i64 100
+    v14 = imul v11, v13
+    v15 = iadd v8, v14
+    return v15
+}
+
+; run: %zero_before_skipped_select(1, 1, 2, 3) == 301
+; run: %zero_before_skipped_select(0, 1, 2, 3) == 2
+; run: %zero_before_skipped_select(2, 1, 2, 3) == 2
+; run: %zero_before_skipped_select(3, 1, 2, 3) == 301

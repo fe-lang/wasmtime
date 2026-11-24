@@ -445,6 +445,8 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   popq %rbp
 ;   retq
 
+;; A zero between the links moves in with `movl`, which leaves the carry in
+;; CF.
 function %carry_after_zero_constant(i64, i64) -> i64, i8 {
 block0(v0: i64, v1: i64):
     v2, v3 = uadd_overflow v0, v1
@@ -459,10 +461,7 @@ block0(v0: i64, v1: i64):
 ;   movq %rsp, %rbp
 ; block0:
 ;   addq %rsi, %rdi
-;   setb %r8b
-;   uninit  %rsi
-;   xorq %rsi, %rsi
-;   negb %r8b
+;   movl $0x0, %esi
 ;   adcq $0x0, %rsi
 ;   setb %dl
 ;   movq %rdi, %rax
@@ -476,16 +475,13 @@ block0(v0: i64, v1: i64):
 ;   movq %rsp, %rbp
 ; block1: ; offset 0x4
 ;   addq %rsi, %rdi
-;   setb %r8b
-;   xorq %rsi, %rsi
-;   negb %r8b
+;   movl $0, %esi
 ;   adcq $0, %rsi
 ;   setb %dl
 ;   movq %rdi, %rax
 ;   xorq %rsi, %rax
 ;   popq %rbp
 ;   retq
-
 
 function %carry_past_dead_overflow(i64, i64, i64, i64) -> i64, i64 {
 block0(v0: i64, v1: i64, v2: i64, v3: i64):

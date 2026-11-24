@@ -97,6 +97,12 @@ block0(v0: i64, v1: i64):
 ; run: %carry_direct(5, 3) == 2
 ; run: %carry_direct(3, 5) == 0
 ; run: %carry_direct(3, 3) == 0
+; run: %carry_direct(0, 1) == 0
+; run: %carry_direct(-1, 0) == -1
+; run: %carry_direct(0, -1) == 0
+; run: %carry_direct(-1, -1) == 0
+; run: %carry_direct(-2, -1) == 0
+; run: %carry_direct(-1, -2) == 1
 
 ;; A store between the selects leaves the flags alone; a compare after the
 ;; first select's group needs the carry again.
@@ -119,3 +125,37 @@ block0(v0: i64, v1: i64, v2: i64):
 ; run: %reused_after(5, 3, 1) == 5
 ; run: %reused_after(3, 5, 1) == 6
 ; run: %reused_after(3, 5, 9) == 12
+
+;; The borrow masked to its low bit picks zero.
+function %carry_direct_masked(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    v4 = iconst.i8 1
+    v5 = band v3, v4
+    v6 = iconst.i64 0
+    v7 = select v5, v6, v2
+    return v7
+}
+
+; run: %carry_direct_masked(5, 3) == 2
+; run: %carry_direct_masked(3, 5) == 0
+; run: %carry_direct_masked(0, 1) == 0
+; run: %carry_direct_masked(-1, 0) == -1
+; run: %carry_direct_masked(0, -1) == 0
+
+;; A zero alternative between the borrow and the select on it.
+function %zero_alternative(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    v4 = uextend.i64 v3
+    v5 = iconst.i64 0
+    v6 = icmp eq v4, v5
+    v7 = select v6, v2, v5
+    return v7
+}
+
+; run: %zero_alternative(5, 3) == 2
+; run: %zero_alternative(3, 5) == 0
+; run: %zero_alternative(3, 3) == 0
+; run: %zero_alternative(-1, 0) == -1
+; run: %zero_alternative(0, -1) == 0

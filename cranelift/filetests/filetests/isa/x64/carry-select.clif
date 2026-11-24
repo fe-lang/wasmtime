@@ -52,3 +52,109 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ;   popq %rbp
 ;   retq
 
+
+;; A saturating subtraction: the select takes the borrow from the flags and
+;; zero from memory.
+function %saturating_sub(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+  v2, v3 = usub_overflow v0, v1
+  v4 = iconst.i64 0
+  v5 = select v3, v4, v2
+  return v5
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   subq %rsi, %rdi
+;   movq %rdi, %rax
+;   cmovbq (%rip), %rax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   subq %rsi, %rdi
+;   movq %rdi, %rax
+;   cmovbq 6(%rip), %rax
+;   popq %rbp
+;   retq
+;   addb %al, (%rax)
+;   addb %al, (%rax)
+;   addb %al, (%rax)
+;   addb %al, (%rax)
+;   addb %al, (%rax)
+;   addb %al, (%rax)
+
+function %saturating_sub_masked(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+  v2, v3 = usub_overflow v0, v1
+  v4 = iconst.i8 1
+  v5 = band v3, v4
+  v6 = iconst.i64 0
+  v7 = select v5, v6, v2
+  return v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   subq %rsi, %rdi
+;   movq %rdi, %rax
+;   cmovbq (%rip), %rax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   subq %rsi, %rdi
+;   movq %rdi, %rax
+;   cmovbq 6(%rip), %rax
+;   popq %rbp
+;   retq
+;   addb %al, (%rax)
+;   addb %al, (%rax)
+;   addb %al, (%rax)
+;   addb %al, (%rax)
+;   addb %al, (%rax)
+;   addb %al, (%rax)
+
+;; A zero alternative moves in with `movl`, which leaves the borrow in CF.
+function %zero_alternative(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+  v2, v3 = usub_overflow v0, v1
+  v4 = uextend.i64 v3
+  v5 = iconst.i64 0
+  v6 = icmp eq v4, v5
+  v7 = select v6, v2, v5
+  return v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   subq %rsi, %rdi
+;   movl $0x0, %eax
+;   cmovaeq %rdi, %rax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   subq %rsi, %rdi
+;   movl $0, %eax
+;   cmovaeq %rdi, %rax
+;   popq %rbp
+;   retq

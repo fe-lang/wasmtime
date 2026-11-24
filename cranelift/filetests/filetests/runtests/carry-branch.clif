@@ -101,3 +101,19 @@ block2:
 ; run: %no_borrow_of_unused_differences(0, 1, 1, 0) == 1
 ; run: %no_borrow_of_unused_differences(0, 1, 1, 1) == 2
 ; run: %no_borrow_of_unused_differences(5, 1, 4, 1) == 1
+
+; A zero between the borrow and the branch leaves it in the flags.
+function %borrow_past_zero(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    v4 = iconst.i64 0
+    brif v3, block1(v4), block1(v2)
+block1(v5: i64):
+    return v5
+}
+; run: %borrow_past_zero(5, 3) == 2
+; run: %borrow_past_zero(3, 5) == 0
+; run: %borrow_past_zero(3, 3) == 0
+; run: %borrow_past_zero(0, 1) == 0
+; run: %borrow_past_zero(-1, 0) == -1
+; run: %borrow_past_zero(0, -1) == 0

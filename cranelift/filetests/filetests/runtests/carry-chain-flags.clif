@@ -52,3 +52,20 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ; run: %borrow_out_of_unused_differences(0, 1, 1, 0) == 0
 ; run: %borrow_out_of_unused_differences(0, 1, 1, 1) == 1
 ; run: %borrow_out_of_unused_differences(5, 1, 4, 1) == 0
+
+; A zero high half between the links leaves the borrow in the flags.
+function %zero_between_links(i64, i64, i64, i64) -> i64, i64, i8 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4, v5 = usub_overflow v0, v2
+    v6 = iconst.i64 0
+    v7 = iconcat v4, v6
+    v8, v9 = usub_overflow_bin v1, v3, v5
+    v10, v11 = isplit v7
+    v12 = bxor v10, v11
+    return v12, v8, v9
+}
+; run: %zero_between_links(0, 0, 1, 0) == [-1, -1, 1]
+; run: %zero_between_links(1, 0, 1, 0) == [0, 0, 0]
+; run: %zero_between_links(5, 7, 3, 7) == [2, 0, 0]
+; run: %zero_between_links(0, 7, 1, 6) == [-1, 0, 0]
+; run: %zero_between_links(-1, -1, 0, -1) == [-1, 0, 0]
