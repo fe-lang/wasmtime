@@ -2466,7 +2466,8 @@
 ;; select's compare set instead of comparing again.
 (rule 1 (lower i @ (select _ cond x y))
       (if-let _ (select_flags_live i))
-      (lower_select (reuse_flags (is_nonzero_cmp cond)) x y))
+      (let ((start usize (emitted_len)))
+        (lower_select (reuse_flags start (is_nonzero_cmp cond)) x y)))
 
 (decl pure partial select_flags_live (Inst) Unit)
 (extern constructor select_flags_live select_flags_live)
@@ -2487,12 +2488,23 @@
 (decl pure partial select_carry_flag (Inst) CC)
 (extern constructor select_carry_flag select_carry_flag)
 
-;; A condition's flag test without its compare; a condition testing more than
-;; one flag, which `select_reuse` leaves out, keeps its compare.
-(decl reuse_flags (CondResult) CondResult)
-(rule 1 (reuse_flags (CondResult.CC _ cc))
-      (CondResult.CC (ProducesFlags.AlreadyExistingFlags) cc))
-(rule 0 (reuse_flags cond) cond)
+;; A condition's flag test without its compare, given the number of
+;; instructions emitted before the condition was built. Building it can emit
+;; instructions besides its flag producer, such as the `and` that wraps a
+;; narrow `bt`'s bit index or the `xor`s of a 128-bit equality, and they write
+;; the flags too: everything emitted since `start` goes with the compare. A
+;; condition testing more than one flag, which `select_reuse` leaves out,
+;; keeps its compare.
+(decl reuse_flags (usize CondResult) CondResult)
+(rule 1 (reuse_flags start (CondResult.CC _ cc))
+      (let ((_ Unit (truncate_emitted start)))
+        (CondResult.CC (ProducesFlags.AlreadyExistingFlags) cc)))
+(rule 0 (reuse_flags _ cond) cond)
+
+(decl emitted_len () usize)
+(extern constructor emitted_len emitted_len)
+(decl truncate_emitted (usize) Unit)
+(extern constructor truncate_emitted truncate_emitted)
 
 ; Recursion: at most once to swap the And case for an Or.
 (decl rec lower_select (CondResult Value Value) InstOutput)

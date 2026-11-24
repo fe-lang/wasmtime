@@ -1727,6 +1727,18 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
         self.ir_insts.push(mach_inst);
     }
 
+    /// The number of machine instructions emitted so far for the instruction
+    /// being lowered.
+    pub fn emitted_len(&self) -> usize {
+        self.ir_insts.len()
+    }
+
+    /// Drop the machine instructions emitted for the instruction being
+    /// lowered after the first `len`.
+    pub fn truncate_emitted(&mut self, len: usize) {
+        self.ir_insts.truncate(len);
+    }
+
     /// Indicate that the side-effect of an instruction has been sunk to the
     /// current scan location. This should only be done with the instruction's
     /// original results are not used (i.e., `put_input_in_regs` is not invoked

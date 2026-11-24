@@ -609,6 +609,17 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         (!self.carry_plan(inst).keep_out).then_some(())
     }
 
+    fn emitted_len(&mut self) -> usize {
+        self.lower_ctx.emitted_len()
+    }
+
+    /// Drops what building a reused select's condition emitted. The
+    /// condition has a use in each select, so nothing it is computed from is
+    /// used once, and no load sinks into it to be lost with it.
+    fn truncate_emitted(&mut self, len: usize) {
+        self.lower_ctx.truncate_emitted(len);
+    }
+
     fn select_flags_live(&mut self, inst: Inst) -> Option<()> {
         let block = self.lower_ctx.f.layout.inst_block(inst)?;
         self.with_carry_state(block, |state| state.selects.contains(&inst).then_some(()))

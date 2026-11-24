@@ -1,0 +1,55 @@
+test interpret
+test run
+set enable_llvm_abi_extensions=true
+target x86_64
+
+;; Selects on the condition of the select before them choose by it.
+
+function %narrow_bit_test(i8, i8, i64, i64, i64) -> i64, i64 {
+block0(v0: i8, v1: i8, v2: i64, v3: i64, v4: i64):
+    v5 = iconst.i8 1
+    v6 = ishl v5, v1
+    v7 = band v0, v6
+    v8 = select v7, v2, v3
+    v9 = select v7, v4, v2
+    return v8, v9
+}
+
+; run: %narrow_bit_test(1, 0, 10, 20, 30) == [10, 30]
+; run: %narrow_bit_test(2, 0, 10, 20, 30) == [20, 10]
+; run: %narrow_bit_test(4, 2, 10, 20, 30) == [10, 30]
+; run: %narrow_bit_test(4, 10, 10, 20, 30) == [10, 30]
+; run: %narrow_bit_test(0x80, 7, 10, 20, 30) == [10, 30]
+; run: %narrow_bit_test(0x7f, 7, 10, 20, 30) == [20, 10]
+
+function %narrow_bit_test_compared(i16, i16, i64, i64, i64) -> i64, i64 {
+block0(v0: i16, v1: i16, v2: i64, v3: i64, v4: i64):
+    v5 = iconst.i16 1
+    v6 = ishl v5, v1
+    v7 = band v0, v6
+    v8 = iconst.i16 0
+    v9 = icmp ne v7, v8
+    v10 = select v9, v2, v3
+    v11 = select v9, v4, v2
+    return v10, v11
+}
+
+; run: %narrow_bit_test_compared(1, 0, 10, 20, 30) == [10, 30]
+; run: %narrow_bit_test_compared(2, 0, 10, 20, 30) == [20, 10]
+; run: %narrow_bit_test_compared(0x8000, 15, 10, 20, 30) == [10, 30]
+; run: %narrow_bit_test_compared(0x8000, 31, 10, 20, 30) == [10, 30]
+; run: %narrow_bit_test_compared(0x4000, 15, 10, 20, 30) == [20, 10]
+
+function %wide_equality(i128, i128, i64, i64, i64) -> i64, i64 {
+block0(v0: i128, v1: i128, v2: i64, v3: i64, v4: i64):
+    v5 = icmp eq v0, v1
+    v6 = uextend.i64 v5
+    v7 = select v6, v2, v3
+    v8 = select v6, v4, v2
+    return v7, v8
+}
+
+; run: %wide_equality(1, 1, 10, 20, 30) == [10, 30]
+; run: %wide_equality(1, 2, 10, 20, 30) == [20, 10]
+; run: %wide_equality(0x10000000000000001, 0x10000000000000001, 10, 20, 30) == [10, 30]
+; run: %wide_equality(0x10000000000000001, 0x20000000000000001, 10, 20, 30) == [20, 10]
