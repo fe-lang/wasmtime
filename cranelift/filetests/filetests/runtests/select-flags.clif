@@ -52,6 +52,29 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ; run: %zero_between(3, 4, 5, 6) == 604
 ; run: %zero_between(2, 4, 5, 6) == 5
 
+;; A stack slot address between selects on one condition.
+
+function %stack_addr_between(i64, i64, i64, i64) -> i64 {
+    ss0 = explicit_slot 16
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = iconst.i64 1
+    v5 = icmp eq v0, v4
+    v6 = select v5, v1, v2
+    v7 = stack_addr.i64 ss0
+    store notrap v6, v7
+    v8 = select v5, v2, v3
+    store notrap v8, v7+8
+    v9 = load.i64 notrap v7
+    v10 = load.i64 notrap v7+8
+    v11 = iconst.i64 100
+    v12 = imul v10, v11
+    v13 = iadd v9, v12
+    return v13
+}
+
+; run: %stack_addr_between(1, 1, 2, 3) == 201
+; run: %stack_addr_between(0, 1, 2, 3) == 302
+
 ;; The select between the zero and the select taking the flags of the first
 ;; one, used only by unused code, is skipped.
 

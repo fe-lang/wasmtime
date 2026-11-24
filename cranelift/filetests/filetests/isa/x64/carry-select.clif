@@ -158,3 +158,61 @@ block0(v0: i64, v1: i64):
 ;   cmovaeq %rdi, %rax
 ;   popq %rbp
 ;   retq
+
+;; The address of the slot the limbs go to is an `lea` between the selects.
+function %limbs_through_slot(i64, i64, i64, i64) -> i64 {
+  ss0 = explicit_slot 16
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+  v4, v5 = usub_overflow v0, v2
+  v6, v7 = usub_overflow_bin v1, v3, v5
+  v8 = uextend.i64 v7
+  v9 = iconst.i64 1
+  v10 = icmp eq v8, v9
+  v11 = select v10, v0, v4
+  v12 = stack_addr.i64 ss0
+  store notrap v11, v12
+  v13 = select v10, v1, v6
+  store notrap v13, v12+8
+  v14 = load.i64 notrap v12
+  v15 = load.i64 notrap v12+8
+  v16 = bxor v14, v15
+  return v16
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block0:
+;   movq %rdi, %r8
+;   subq %rdx, %r8
+;   movq %rsi, %rax
+;   sbbq %rcx, %rax
+;   cmovbq %rdi, %r8
+;   movq %r8, <offset:1>+(%rsp)
+;   cmovbq %rsi, %rax
+;   movq %rax, <offset:1>+8(%rsp)
+;   xorq <offset:1>+(%rsp), %rax
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block1: ; offset 0x8
+;   movq %rdi, %r8
+;   subq %rdx, %r8
+;   movq %rsi, %rax
+;   sbbq %rcx, %rax
+;   cmovbq %rdi, %r8
+;   movq %r8, (%rsp)
+;   cmovbq %rsi, %rax
+;   movq %rax, -8(%rbp)
+;   xorq (%rsp), %rax
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+

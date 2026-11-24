@@ -159,3 +159,31 @@ block0(v0: i64, v1: i64):
 ; run: %zero_alternative(3, 3) == 0
 ; run: %zero_alternative(-1, 0) == -1
 ; run: %zero_alternative(0, -1) == 0
+
+;; A stack slot address between the selects on a borrow.
+function %limbs_through_slot(i64, i64, i64, i64) -> i64 {
+    ss0 = explicit_slot 16
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4, v5 = usub_overflow v0, v2
+    v6, v7 = usub_overflow_bin v1, v3, v5
+    v8 = uextend.i64 v7
+    v9 = iconst.i64 1
+    v10 = icmp eq v8, v9
+    v11 = select v10, v0, v4
+    v12 = stack_addr.i64 ss0
+    store notrap v11, v12
+    v13 = select v10, v1, v6
+    store notrap v13, v12+8
+    v14 = load.i64 notrap v12
+    v15 = load.i64 notrap v12+8
+    v16 = iconst.i64 100
+    v17 = imul v15, v16
+    v18 = iadd v14, v17
+    return v18
+}
+
+; run: %limbs_through_slot(10, 5, 3, 2) == 307
+; run: %limbs_through_slot(1, 5, 3, 2) == 198
+; run: %limbs_through_slot(1, 5, 3, 5) == 501
+; run: %limbs_through_slot(3, 5, 3, 5) == 0
+; run: %limbs_through_slot(0, 0, 0, 0) == 0

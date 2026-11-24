@@ -2267,10 +2267,12 @@ const I8X16_USHR_MASKS: [u8; 128] = [
 /// instruction without side effects whose results are unused or whose uses
 /// absorb it (`FlagFree`), and otherwise loads, stores that are not a
 /// load-op-store, constants of 64 bits or fewer (`mov`, and for a zero where
-/// the flags are live `movl` rather than `xor`, see `flag_zeros`), extensions
-/// to 64 bits or fewer, the register shuffles of `ireduce`, `iconcat` and
-/// `isplit`, and with BMI2 a widening 64-bit multiply, `mulx`. A 128-bit
-/// constant or extension zeroes or shifts its high half.
+/// the flags are live `movl` rather than `xor`, see `flag_zeros`), stack slot
+/// addresses (`lea` from RSP or RBP, which no register allocated to it can
+/// turn into an `add`), extensions to 64 bits or fewer, the register
+/// shuffles of `ireduce`, `iconcat` and `isplit`, and with BMI2 a widening
+/// 64-bit multiply, `mulx`. A 128-bit constant or extension zeroes or shifts
+/// its high half.
 fn leaves_flags_alone(ctx: &Lower<MInst>, free: &FlagFree, inst: Inst) -> bool {
     let f = ctx.f;
     let dfg = &f.dfg;
@@ -2309,6 +2311,7 @@ fn leaves_flags_alone(ctx: &Lower<MInst>, free: &FlagFree, inst: Inst) -> bool {
                 | Opcode::Sload16
                 | Opcode::Uload32
                 | Opcode::Sload32
+                | Opcode::StackAddr
                 | Opcode::Ireduce
                 | Opcode::Iconcat
                 | Opcode::Isplit
