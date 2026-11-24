@@ -99,3 +99,81 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ; run: %zero_before_skipped_select(0, 1, 2, 3) == 2
 ; run: %zero_before_skipped_select(2, 1, 2, 3) == 2
 ; run: %zero_before_skipped_select(3, 1, 2, 3) == 301
+
+;; A narrow `bt` condition reused across a zero.
+
+function %bit_test_past_zero(i8, i8, i64, i64, i64) -> i64, i64 {
+block0(v0: i8, v1: i8, v2: i64, v3: i64, v4: i64):
+    v5 = iconst.i8 1
+    v6 = ishl v5, v1
+    v7 = band v0, v6
+    v8 = select v7, v2, v3
+    v9 = iconst.i64 0
+    v10 = select v7, v4, v9
+    return v8, v10
+}
+
+; run: %bit_test_past_zero(1, 0, 10, 20, 30) == [10, 30]
+; run: %bit_test_past_zero(2, 0, 10, 20, 30) == [20, 0]
+; run: %bit_test_past_zero(4, 10, 10, 20, 30) == [10, 30]
+
+;; Selected stack slot addresses between selects on one condition.
+
+function %stack_addrs_between(i64, i64, i64) -> i64, i64 {
+    ss0 = explicit_slot 8
+    ss1 = explicit_slot 8
+block0(v0: i64, v1: i64, v2: i64):
+    v3 = iconst.i64 1
+    v4 = icmp eq v0, v3
+    v5 = select v4, v1, v2
+    v6 = stack_addr.i64 ss0
+    v7 = stack_addr.i64 ss1
+    v8 = select v4, v6, v7
+    store notrap v1, v6
+    store notrap v2, v7
+    v9 = load.i64 notrap v8
+    return v5, v9
+}
+
+; run: %stack_addrs_between(1, 10, 20) == [10, 10]
+; run: %stack_addrs_between(0, 10, 20) == [20, 20]
+
+;; Narrow zeros between a borrow and the selects on it.
+
+function %narrow_zeros(i32, i32, i8, i16) -> i8, i16, i32 {
+block0(v0: i32, v1: i32, v2: i8, v3: i16):
+    v4, v5 = usub_overflow v0, v1
+    v6 = iconst.i8 0
+    v7 = select v5, v2, v6
+    v8 = iconst.i16 0
+    v9 = select v5, v3, v8
+    v10 = iconst.i32 0
+    v11 = select v5, v4, v10
+    return v7, v9, v11
+}
+
+; run: %narrow_zeros(1, 2, 5, 7) == [5, 7, -1]
+; run: %narrow_zeros(2, 1, 5, 7) == [0, 0, 0]
+; run: %narrow_zeros(0, -1, -1, -1) == [-1, -1, 1]
+; run: %narrow_zeros(-1, 0, -1, -1) == [0, 0, 0]
+
+;; A 128-bit zero between selects on one condition.
+
+function %wide_zero_between(i64, i64, i64, i64) -> i64, i64 {
+    ss0 = explicit_slot 16
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4 = iconst.i64 1
+    v5 = band v0, v4
+    v6 = select v5, v1, v2
+    v7 = iconst.i64 0
+    v8 = uextend.i128 v7
+    v9 = select v5, v3, v1
+    v10 = stack_addr.i64 ss0
+    store notrap v8, v10
+    v11 = load.i64 notrap v10+8
+    v12 = iadd v9, v11
+    return v6, v12
+}
+
+; run: %wide_zero_between(1, 10, 20, 30) == [10, 30]
+; run: %wide_zero_between(0, 10, 20, 30) == [20, 10]

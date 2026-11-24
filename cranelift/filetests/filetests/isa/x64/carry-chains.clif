@@ -579,3 +579,55 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 ;   popq %rbp
 ;   retq
 
+
+;; A stack slot address stored between the links is an `lea`.
+function %borrow_past_stack_addr(i64, i64, i64, i64) -> i64, i64 {
+    ss0 = explicit_slot 8
+    ss1 = explicit_slot 8
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v4, v5 = usub_overflow v0, v2
+    v6 = stack_addr.i64 ss0
+    v7 = stack_addr.i64 ss1
+    store notrap v6, v7
+    v8, v9 = usub_overflow_bin v1, v3, v5
+    store notrap v8, v6
+    v10 = load.i64 notrap v7
+    v11 = load.i64 notrap v10
+    return v4, v11
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block0:
+;   movq %rdi, %rax
+;   subq %rdx, %rax
+;   leaq <offset:1>+(%rsp), %r9
+;   movq %r9, <offset:1>+8(%rsp)
+;   sbbq %rcx, %rsi
+;   movq %rsi, <offset:1>+(%rsp)
+;   movq <offset:1>+8(%rsp), %r11
+;   movq (%r11), %rdx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block1: ; offset 0x8
+;   movq %rdi, %rax
+;   subq %rdx, %rax
+;   leaq (%rsp), %r9
+;   movq %r9, -8(%rbp)
+;   sbbq %rcx, %rsi
+;   movq %rsi, (%rsp)
+;   movq -8(%rbp), %r11
+;   movq (%r11), %rdx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+

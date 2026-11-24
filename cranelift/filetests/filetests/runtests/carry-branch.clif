@@ -117,3 +117,24 @@ block1(v5: i64):
 ; run: %borrow_past_zero(0, 1) == 0
 ; run: %borrow_past_zero(-1, 0) == -1
 ; run: %borrow_past_zero(0, -1) == 0
+
+; Stack slot addresses passed to the branch target.
+function %borrow_past_stack_addr(i64, i64) -> i64 {
+    ss0 = explicit_slot 8
+    ss1 = explicit_slot 8
+block0(v0: i64, v1: i64):
+    v2 = stack_addr.i64 ss0
+    store notrap v0, v2
+    v3, v4 = usub_overflow v0, v1
+    v5 = stack_addr.i64 ss1
+    store notrap v3, v5
+    v6 = stack_addr.i64 ss0
+    brif v4, block1(v6), block1(v5)
+block1(v7: i64):
+    v8 = load.i64 notrap v7
+    return v8
+}
+; run: %borrow_past_stack_addr(5, 3) == 2
+; run: %borrow_past_stack_addr(3, 5) == 3
+; run: %borrow_past_stack_addr(0, 1) == 0
+; run: %borrow_past_stack_addr(-1, 0) == -1
