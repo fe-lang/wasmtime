@@ -2605,11 +2605,13 @@ fn select_reuse(ctx: &Lower<MInst>, free: &FlagFree, block: Block) -> FxHashSet<
 
 /// The zero constants of `block` where the flags are live: between an
 /// instruction setting them and one that the plans let take them, a carry op
-/// whose carry in is still in the flags, the branch or a select testing a
-/// carry, or a select taking the flags of the select before it. `imm` zeroes
-/// with `xor`, so these move zero in with `movl` instead. Each taker leads
-/// back to what set its flags: the op making its carry, the select before it
-/// on the same carry, or the select lowered before it.
+/// whose carry in is still in the flags, the first `adox` of an interleaved
+/// pair, which takes OF clear, the branch or a select testing a carry, or a
+/// select taking the flags of the select before it. `imm` zeroes with `xor`,
+/// so these move zero in with `movl` instead. Each taker leads back to what
+/// set its flags: the op making its carry, the first op of the pair, which
+/// clears CF and OF, the select before it on the same carry, or the select
+/// lowered before it.
 fn flag_zeros(f: &Function, state: &CarryState, block: Block) -> FxHashSet<Inst> {
     let dfg = &f.dfg;
     let op = |carry: Value| match dfg.value_def(carry) {
@@ -2636,6 +2638,13 @@ fn flag_zeros(f: &Function, state: &CarryState, block: Block) -> FxHashSet<Inst>
         if plan.fused_in {
             let setter = op(dfg.inst_args(inst)[2]);
             mark(inst, &|other| Some(other) == setter);
+        } else if plan.lane == Some(Lane::Of) {
+            mark(inst, &|other| {
+                state
+                    .plans
+                    .get(&other)
+                    .is_some_and(|setter| setter.clear && setter.pair == plan.pair)
+            });
         }
     }
     if let Some((carry, _, _)) = state.branch

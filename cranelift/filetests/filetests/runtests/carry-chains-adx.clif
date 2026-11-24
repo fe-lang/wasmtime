@@ -59,3 +59,39 @@ block0(v1: i64, v2: i64, v3: i64):
 ; run: %chains_past_an_address_sum(1, 1, 1) == [2, 1]
 ; run: %chains_past_an_address_sum(0, 0, 0) == [-3, 0]
 ; run: %chains_past_an_address_sum(2, 3, 0) == [6, 0]
+
+;; A zero between the first ops of an interleaved pair.
+function %zero_at_pair_start(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8 = iconst.i64 0
+    v9, v10 = uadd_overflow v2, v3
+    v11, v12 = uadd_overflow_cin v4, v5, v10
+    jump block1
+
+block1:
+    v13, v14 = uadd_overflow_cin v6, v5, v7
+    return v9, v8, v11, v13
+}
+
+; run: %zero_at_pair_start(-1, 1, -1, 1, 5, 6) == [0, 0, 12, 7]
+; run: %zero_at_pair_start(1, 2, 3, 4, 5, 6) == [7, 0, 11, 9]
+; run: %zero_at_pair_start(-1, 2, 1, 2, 5, 6) == [3, 0, 11, 8]
+; run: %zero_at_pair_start(1, 1, -1, -1, 5, 6) == [-2, 0, 12, 8]
+
+;; A zero inside the pair, between the links of both chains.
+function %zero_inside_pair(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8, v9 = uadd_overflow v2, v3
+    v10 = iconst.i64 0
+    v11, v12 = uadd_overflow_cin v4, v5, v7
+    v13, v14 = uadd_overflow_cin v4, v1, v9
+    v15 = bxor v6, v8
+    return v15, v10, v11, v13
+}
+
+; run: %zero_inside_pair(-1, 1, -1, 1, 5, 6) == [0, 0, 12, 7]
+; run: %zero_inside_pair(1, 2, 3, 4, 5, 6) == [4, 0, 11, 7]
+; run: %zero_inside_pair(-1, 2, 3, 4, 5, 6) == [6, 0, 12, 7]
+; run: %zero_inside_pair(1, 2, -1, 4, 5, 6) == [0, 0, 11, 8]
