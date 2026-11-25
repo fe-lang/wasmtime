@@ -107,8 +107,52 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   retq
 
 
-;; A link adding a negative 32-bit constant before the pair is an `adcx` of a
-;; sign-extended `movq`.
+;; A link adding zero, the pair's zero register, or a negative constant, a
+;; sign-extended `movq`, before the pair is an `adcx` too.
+function %zero_link_before_pair(i64, i64, i64, i64, i64) -> i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5, v6 = uadd_overflow v0, v1
+    v7 = iconst.i64 0
+    v8, v9 = uadd_overflow_cin v2, v7, v6
+    v10, v11 = uadd_overflow v3, v4
+    v12, v13 = uadd_overflow_cin v5, v7, v9
+    v14, v15 = uadd_overflow_cin v8, v7, v11
+    return v10, v12, v14
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %r8, %rax
+;   uninit  %r8
+;   xorl %r8d, %r8d
+;   adcxq %rdx, %rsi
+;   adcxq %r8, %rcx
+;   adoxq %r9, %rax
+;   movq %rsi, %rdx
+;   adcxq %r8, %rdx
+;   adoxq %r8, %rcx
+;   movq %rcx, (%rdi)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %r8, %rax
+;   xorl %r8d, %r8d
+;   adcxq %rdx, %rsi
+;   adcxq %r8, %rcx
+;   adoxq %r9, %rax
+;   movq %rsi, %rdx
+;   adcxq %r8, %rdx
+;   adoxq %r8, %rcx
+;   movq %rcx, (%rdi)
+;   popq %rbp
+;   retq
 
 function %negative_link_before_pair(i64, i64, i64, i64, i64) -> i64, i64, i64 {
 block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
@@ -159,3 +203,267 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
 ;   movq %rcx, (%rdi)
 ;   popq %rbp
 ;   retq
+
+;; After the pair's OF chain ends, a link adding a constant is a plain `adc`
+;; and the next a register `adcx`; a third chain does not pair with the
+;; first, which has had its pair.
+function %plain_link_after_pair(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8, v9 = uadd_overflow v2, v3
+    v10, v11 = uadd_overflow_cin v4, v1, v7
+    v12, v13 = uadd_overflow_cin v4, v3, v9
+    v14 = iconst.i64 1
+    v15, v16 = uadd_overflow_cin v10, v14, v11
+    v17, v18 = uadd_overflow_cin v15, v2, v16
+    v19, v20 = uadd_overflow v5, v0
+    v21, v22 = uadd_overflow_cin v19, v1, v20
+    v23 = uextend.i64 v18
+    v24 = iadd v21, v23
+    return v8, v12, v17, v24
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %r9, %r11
+;   movq <offset:0>+-0x10(%rbp), %r10
+;   uninit  %rax
+;   xorl %eax, %eax
+;   movq %rsi, %rax
+;   adcxq %rdx, %rax
+;   movq %rcx, %rax
+;   adoxq %r8, %rax
+;   adcxq %rdx, %r9
+;   adoxq %r8, %r11
+;   adcq $0x1, %r9
+;   adcxq %rcx, %r9
+;   setb %cl
+;   addq %rsi, %r10
+;   adcq %rdx, %r10
+;   movzbq %cl, %rcx
+;   leaq (%r10, %rcx), %rcx
+;   movq %r9, (%rdi)
+;   movq %rcx, 8(%rdi)
+;   movq %r11, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %r9, %r11
+;   movq 0x10(%rbp), %r10
+;   xorl %eax, %eax
+;   movq %rsi, %rax
+;   adcxq %rdx, %rax
+;   movq %rcx, %rax
+;   adoxq %r8, %rax
+;   adcxq %rdx, %r9
+;   adoxq %r8, %r11
+;   adcq $1, %r9
+;   adcxq %rcx, %r9
+;   setb %cl
+;   addq %rsi, %r10
+;   adcq %rdx, %r10
+;   movzbq %cl, %rcx
+;   addq %r10, %rcx
+;   movq %r9, (%rdi)
+;   movq %rcx, 8(%rdi)
+;   movq %r11, %rdx
+;   popq %rbp
+;   retq
+
+;; A third chain starting while the pair is in flight ends both; their next
+;; links take their carries from registers.
+function %third_chain_in_pair(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8, v9 = uadd_overflow v2, v3
+    v10, v11 = uadd_overflow v4, v5
+    v12, v13 = uadd_overflow_cin v6, v1, v7
+    v14, v15 = uadd_overflow_cin v8, v3, v9
+    v16, v17 = uadd_overflow_cin v10, v5, v11
+    v18 = bxor v12, v14
+    return v18, v16, v6, v8
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %rbx, -0x10(%rbp)
+; block0:
+;   movq <offset:0>+-0x10(%rbp), %r10
+;   uninit  %rax
+;   xorl %eax, %eax
+;   adcxq %rdx, %rsi
+;   setb %al
+;   adoxq %r8, %rcx
+;   seto %r11b
+;   addq %r10, %r9
+;   setb %bl
+;   negb %al
+;   movq %rsi, %rax
+;   adcq %rdx, %rax
+;   negb %r11b
+;   movq %rcx, %rdx
+;   adcq %r8, %rdx
+;   negb %bl
+;   movq %r9, %r8
+;   adcq %r10, %r8
+;   xorq %rdx, %rax
+;   movq %rsi, (%rdi)
+;   movq %rcx, 8(%rdi)
+;   movq %r8, %rdx
+;   movq -0x10(%rbp), %rbx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %rbx, -0x10(%rbp)
+; block1: ; offset 0xc
+;   movq 0x10(%rbp), %r10
+;   xorl %eax, %eax
+;   adcxq %rdx, %rsi
+;   setb %al
+;   adoxq %r8, %rcx
+;   seto %r11b
+;   addq %r10, %r9
+;   setb %bl
+;   negb %al
+;   movq %rsi, %rax
+;   adcq %rdx, %rax
+;   negb %r11b
+;   movq %rcx, %rdx
+;   adcq %r8, %rdx
+;   negb %bl
+;   movq %r9, %r8
+;   adcq %r10, %r8
+;   xorq %rdx, %rax
+;   movq %rsi, (%rdi)
+;   movq %rcx, 8(%rdi)
+;   movq %r8, %rdx
+;   movq -0x10(%rbp), %rbx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+
+;; A borrow chain starting while an addition chain is in flight does not
+;; pair with it, nor with the addition chain after it.
+function %borrow_between_adds(i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5, v6 = uadd_overflow v0, v1
+    v7, v8 = usub_overflow v2, v3
+    v9, v10 = uadd_overflow v4, v0
+    v11, v12 = uadd_overflow_cin v5, v1, v6
+    v13, v14 = usub_overflow_bin v7, v3, v8
+    v15, v16 = uadd_overflow_cin v9, v1, v10
+    return v11, v13, v15, v5
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %rbx, -0x10(%rbp)
+; block0:
+;   movq %rsi, %rbx
+;   addq %rdx, %rbx
+;   setb %al
+;   subq %r8, %rcx
+;   setb %r10b
+;   addq %rsi, %r9
+;   setb %r11b
+;   negb %al
+;   movq %rbx, %rax
+;   adcq %rdx, %rax
+;   movq %rdx, %rsi
+;   negb %r10b
+;   movq %rcx, %rdx
+;   sbbq %r8, %rdx
+;   negb %r11b
+;   movq %rsi, %rcx
+;   adcq %rcx, %r9
+;   movq %r9, (%rdi)
+;   movq %rbx, 8(%rdi)
+;   movq -0x10(%rbp), %rbx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+;   movq %rbx, -0x10(%rbp)
+; block1: ; offset 0xc
+;   movq %rsi, %rbx
+;   addq %rdx, %rbx
+;   setb %al
+;   subq %r8, %rcx
+;   setb %r10b
+;   addq %rsi, %r9
+;   setb %r11b
+;   negb %al
+;   movq %rbx, %rax
+;   adcq %rdx, %rax
+;   movq %rdx, %rsi
+;   negb %r10b
+;   movq %rcx, %rdx
+;   sbbq %r8, %rdx
+;   negb %r11b
+;   movq %rsi, %rcx
+;   adcq %rcx, %r9
+;   movq %r9, (%rdi)
+;   movq %rbx, 8(%rdi)
+;   movq -0x10(%rbp), %rbx
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+
+;; A chain that never pairs adds a constant with a plain `adc`.
+function %unpaired_constant_link(i64, i64, i64) -> i64, i64, i8 {
+block0(v0: i64, v1: i64, v2: i64):
+    v3, v4 = uadd_overflow v0, v1
+    v5 = iconst.i64 -2
+    v6, v7 = uadd_overflow_cin v2, v5, v4
+    return v3, v6, v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %rsi, %rax
+;   addq %rdx, %rax
+;   movq %rcx, %rdx
+;   adcq $0xfffffffffffffffe, %rdx
+;   setb %r8b
+;   movb %r8b, (%rdi)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %rsi, %rax
+;   addq %rdx, %rax
+;   movq %rcx, %rdx
+;   adcq $-2, %rdx
+;   setb %r8b
+;   movb %r8b, (%rdi)
+;   popq %rbp
+;   retq
+

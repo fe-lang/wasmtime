@@ -39,8 +39,23 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ; run: %constant_link_before_pair_register(0, 0, 0x7fffffffffffffff, 0, 0, 5) == [0, 5, -9223372036854775803]
 ; run: %constant_link_before_pair_register(1, 2, 3, 4, 5, 6) == [9, 9, 10]
 
-;; A link adding a negative 32-bit constant before the pair is an `adcx` of a
-;; sign-extended `movq`.
+;; A link adding zero, the pair's zero register, or a negative constant, a
+;; sign-extended `movq`, before the pair is an `adcx` too.
+function %zero_link_before_pair(i64, i64, i64, i64, i64) -> i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5, v6 = uadd_overflow v0, v1
+    v7 = iconst.i64 0
+    v8, v9 = uadd_overflow_cin v2, v7, v6
+    v10, v11 = uadd_overflow v3, v4
+    v12, v13 = uadd_overflow_cin v5, v7, v9
+    v14, v15 = uadd_overflow_cin v8, v7, v11
+    return v10, v12, v14
+}
+
+; run: %zero_link_before_pair(-1, 1, 0x7fffffffffffffff, 0, 0) == [0, 0, -9223372036854775808]
+; run: %zero_link_before_pair(-1, 1, 0x7fffffffffffffff, -1, 1) == [0, 0, -9223372036854775807]
+; run: %zero_link_before_pair(1, 2, 3, 4, 5) == [9, 3, 3]
+; run: %zero_link_before_pair(0, 0, -1, -1, 1) == [0, 0, 0]
 
 function %negative_link_before_pair(i64, i64, i64, i64, i64) -> i64, i64, i64 {
 block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
@@ -58,3 +73,79 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
 ; run: %negative_link_before_pair(-1, 1, -9223372036854775808, -1, 1) == [0, 1, -9223372036854775807]
 ; run: %negative_link_before_pair(1, 2, 3, 4, 5) == [9, 4, 2]
 ; run: %negative_link_before_pair(0, 0, 0, -1, 1) == [0, 0, 0]
+
+;; After the pair's OF chain ends, a link adding a constant is a plain `adc`
+;; and the next a register `adcx`; a third chain does not pair with the
+;; first, which has had its pair.
+
+function %plain_link_after_pair(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8, v9 = uadd_overflow v2, v3
+    v10, v11 = uadd_overflow_cin v4, v1, v7
+    v12, v13 = uadd_overflow_cin v4, v3, v9
+    v14 = iconst.i64 1
+    v15, v16 = uadd_overflow_cin v10, v14, v11
+    v17, v18 = uadd_overflow_cin v15, v2, v16
+    v19, v20 = uadd_overflow v5, v0
+    v21, v22 = uadd_overflow_cin v19, v1, v20
+    v23 = uextend.i64 v18
+    v24 = iadd v21, v23
+    return v8, v12, v17, v24
+}
+
+; run: %plain_link_after_pair(-1, 1, -1, 1, 5, 6) == [0, 7, 7, 8]
+; run: %plain_link_after_pair(1, 2, 3, 4, 5, 6) == [7, 9, 11, 9]
+; run: %plain_link_after_pair(-1, -1, 0x7fffffffffffffff, 1, -1, 2) == [-9223372036854775808, 0, -9223372036854775807, 1]
+; run: %plain_link_after_pair(0, 0, -1, 0, 0, -1) == [-1, 0, 0, 0]
+
+;; A third chain starting while the pair is in flight ends both; their next
+;; links take their carries from registers.
+
+function %third_chain_in_pair(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8, v9 = uadd_overflow v2, v3
+    v10, v11 = uadd_overflow v4, v5
+    v12, v13 = uadd_overflow_cin v6, v1, v7
+    v14, v15 = uadd_overflow_cin v8, v3, v9
+    v16, v17 = uadd_overflow_cin v10, v5, v11
+    v18 = bxor v12, v14
+    return v18, v16, v6, v8
+}
+
+; run: %third_chain_in_pair(-1, 1, -1, 1, -1, 1) == [0, 2, 0, 0]
+; run: %third_chain_in_pair(1, 2, 3, 4, 5, 6) == [14, 17, 3, 7]
+; run: %third_chain_in_pair(-1, 2, 0, 0, -1, -1) == [4, -2, 1, 0]
+
+;; A borrow chain starting while an addition chain is in flight does not
+;; pair with it, nor with the addition chain after it.
+
+function %borrow_between_adds(i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5, v6 = uadd_overflow v0, v1
+    v7, v8 = usub_overflow v2, v3
+    v9, v10 = uadd_overflow v4, v0
+    v11, v12 = uadd_overflow_cin v5, v1, v6
+    v13, v14 = usub_overflow_bin v7, v3, v8
+    v15, v16 = uadd_overflow_cin v9, v1, v10
+    return v11, v13, v15, v5
+}
+
+; run: %borrow_between_adds(-1, 1, 0, 1, 5) == [2, -3, 6, 0]
+; run: %borrow_between_adds(1, 2, 3, 4, 5) == [5, -6, 8, 3]
+; run: %borrow_between_adds(-1, -1, 0, 0, -1) == [-2, 0, -2, -2]
+
+;; A chain that never pairs adds a constant with a plain `adc`.
+
+function %unpaired_constant_link(i64, i64, i64) -> i64, i64, i8 {
+block0(v0: i64, v1: i64, v2: i64):
+    v3, v4 = uadd_overflow v0, v1
+    v5 = iconst.i64 -2
+    v6, v7 = uadd_overflow_cin v2, v5, v4
+    return v3, v6, v7
+}
+
+; run: %unpaired_constant_link(-1, 1, 1) == [0, 0, 1]
+; run: %unpaired_constant_link(1, 2, 3) == [3, 1, 1]
+; run: %unpaired_constant_link(0, 0, -9223372036854775807) == [0, 9223372036854775807, 1]
