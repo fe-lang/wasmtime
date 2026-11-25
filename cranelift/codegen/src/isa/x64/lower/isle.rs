@@ -2564,22 +2564,30 @@ fn is_carry_op(f: &Function, inst: Inst) -> bool {
 
 /// The integer selects of `block` whose condition is that of the select
 /// lowered before them, with only instructions that leave the flags alone
-/// between, so that they take its flags instead of comparing again. A
-/// condition comparing 128-bit or float values sets more than one flag test,
-/// and keeps its compare.
+/// between, so that they take its flags instead of comparing again. A float
+/// `eq` or `ne`, possibly extended as `is_nonzero_cmp` sees it, tests two
+/// flags and keeps its compare.
 fn select_reuse(ctx: &Lower<MInst>, free: &FlagFree, block: Block) -> FxHashSet<Inst> {
     let f = ctx.f;
     let dfg = &f.dfg;
     let one_test = |cond: Value| {
-        dfg.value_def(cond)
-            .inst()
-            .is_none_or(|def| match dfg.insts[def] {
-                InstructionData::IntCompare { args: [lhs, _], .. } => {
-                    dfg.value_type(lhs).bits() <= 64
+        let def = |value: Value| dfg.value_def(value).inst();
+        let compare = match def(cond).map(|inst| dfg.insts[inst]) {
+            Some(InstructionData::Unary {
+                opcode: Opcode::Uextend,
+                arg,
+            }) => def(arg),
+            _ => def(cond),
+        };
+        !compare.is_some_and(|inst| {
+            matches!(
+                dfg.insts[inst],
+                InstructionData::FloatCompare {
+                    cond: FloatCC::Equal | FloatCC::NotEqual,
+                    ..
                 }
-                InstructionData::FloatCompare { .. } => false,
-                _ => true,
-            })
+            )
+        })
     };
     let mut reuse = FxHashSet::default();
     let mut last = None;

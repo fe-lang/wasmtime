@@ -177,3 +177,50 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64):
 
 ; run: %wide_zero_between(1, 10, 20, 30) == [10, 30]
 ; run: %wide_zero_between(0, 10, 20, 30) == [20, 10]
+
+;; A float `eq` tests two flags, so the select after the zero compares again,
+;; and the zero, which it takes in a register, stays an `xor`.
+
+function %float_equal_past_zero(f64, f64, i64, i64) -> i64, i64 {
+block0(v0: f64, v1: f64, v2: i64, v3: i64):
+    v4 = fcmp eq v0, v1
+    v5 = uextend.i64 v4
+    v6 = select v5, v2, v3
+    v7 = iconst.i64 0
+    v8 = select v5, v7, v3
+    return v6, v8
+}
+
+; run: %float_equal_past_zero(0x1.0, 0x1.0, 10, 20) == [10, 0]
+; run: %float_equal_past_zero(0x1.0, 0x2.0, 10, 20) == [20, 20]
+; run: %float_equal_past_zero(+NaN, +NaN, 10, 20) == [20, 20]
+
+;; A float compare testing one flag, and a 128-bit compare, are shared.
+
+function %float_less_past_zero(f64, f64, i64, i64) -> i64, i64 {
+block0(v0: f64, v1: f64, v2: i64, v3: i64):
+    v4 = fcmp lt v0, v1
+    v5 = select v4, v2, v3
+    v6 = iconst.i64 0
+    v7 = select v4, v3, v6
+    return v5, v7
+}
+
+; run: %float_less_past_zero(0x1.0, 0x2.0, 10, 20) == [10, 20]
+; run: %float_less_past_zero(0x2.0, 0x1.0, 10, 20) == [20, 0]
+; run: %float_less_past_zero(+NaN, 0x1.0, 10, 20) == [20, 0]
+; run: %float_less_past_zero(0x1.0, +NaN, 10, 20) == [20, 0]
+
+function %wide_less_past_zero(i128, i128, i64, i64) -> i64, i64 {
+block0(v0: i128, v1: i128, v2: i64, v3: i64):
+    v4 = icmp ult v0, v1
+    v5 = select v4, v2, v3
+    v6 = iconst.i64 0
+    v7 = select v4, v3, v6
+    return v5, v7
+}
+
+; run: %wide_less_past_zero(1, 2, 10, 20) == [10, 20]
+; run: %wide_less_past_zero(2, 1, 10, 20) == [20, 0]
+; run: %wide_less_past_zero(0x10000000000000000, 0x1ffffffffffffffff, 10, 20) == [10, 20]
+; run: %wide_less_past_zero(-1, 1, 10, 20) == [20, 0]
