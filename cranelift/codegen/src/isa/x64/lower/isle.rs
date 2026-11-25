@@ -2660,8 +2660,10 @@ fn carry_plans(
     let mut cf: Option<(Value, usize)> = None;
     let mut of: Option<(Value, usize)> = None;
     let mut consumed = Vec::new();
-    // Ops of a CF lane that add a constant while no OF chain is in flight:
-    // as plain `adc`s they take an immediate, where `adcx` needs a register.
+    // Ops of a CF lane that add a constant after the OF chain of their pair
+    // has ended: as plain `adc`s they take an immediate, where `adcx` needs a
+    // register. An `adc` writes OF too, so one of a chain not yet paired could
+    // come between the `xor` that clears OF for the pair and its first `adox`.
     let mut plain = FxHashSet::default();
     for inst in f.layout.block_insts(block) {
         if !is_carry_op(f, inst) || is_unlowered(free, inst) {
@@ -2685,7 +2687,7 @@ fn carry_plans(
             })
             .filter(|&(chain, _)| chains[chain].lane.is_none() || lane_op);
         if let Some((chain, lane)) = continued {
-            if lane == Lane::Cf && of.is_none() && imm32_addend(f, inst) {
+            if chains[chain].lane == Some(Lane::Cf) && of.is_none() && imm32_addend(f, inst) {
                 plain.insert(inst);
             }
             chains[chain].ops.push(inst);

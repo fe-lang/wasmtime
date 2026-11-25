@@ -1,0 +1,108 @@
+test compile precise-output
+set enable_multi_ret_implicit_sret
+target x86_64 has_bmi2 has_adx
+
+;; A link of a carry chain that adds a constant, before a second chain
+;; starts and the two interleave, stays an `adcx`: an `adc` would write OF
+;; between the `xor` that clears it and the second chain's first `adox`.
+function %constant_link_before_pair(i64, i64, i64, i64, i64) -> i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5, v6 = uadd_overflow v0, v1
+    v7 = iconst.i64 1
+    v8, v9 = uadd_overflow_cin v2, v7, v6
+    v10 = iconst.i64 0
+    v11, v12 = uadd_overflow v3, v4
+    v13, v14 = uadd_overflow_cin v5, v10, v9
+    v15, v16 = uadd_overflow_cin v8, v10, v12
+    return v11, v13, v15
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %r8, %r10
+;   uninit  %r8
+;   xorl %r8d, %r8d
+;   adcxq %rdx, %rsi
+;   movl $0x1, %eax
+;   adcxq %rax, %rcx
+;   movq %r10, %rax
+;   adoxq %r9, %rax
+;   movq %rsi, %rdx
+;   adcxq %r8, %rdx
+;   adoxq %r8, %rcx
+;   movq %rcx, (%rdi)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %r8, %r10
+;   xorl %r8d, %r8d
+;   adcxq %rdx, %rsi
+;   movl $1, %eax
+;   adcxq %rax, %rcx
+;   movq %r10, %rax
+;   adoxq %r9, %rax
+;   movq %rsi, %rdx
+;   adcxq %r8, %rdx
+;   adoxq %r8, %rcx
+;   movq %rcx, (%rdi)
+;   popq %rbp
+;   retq
+
+function %constant_link_before_pair_register(i64, i64, i64, i64, i64, i64) -> i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8 = iconst.i64 1
+    v9, v10 = uadd_overflow_cin v2, v8, v7
+    v11, v12 = uadd_overflow v3, v4
+    v13, v14 = uadd_overflow_cin v6, v5, v10
+    v15, v16 = uadd_overflow_cin v9, v5, v12
+    return v11, v13, v15
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   movq %r8, %r10
+;   movq <offset:0>+-0x10(%rbp), %r8
+;   uninit  %rax
+;   xorl %eax, %eax
+;   adcxq %rdx, %rsi
+;   movl $0x1, %eax
+;   adcxq %rax, %rcx
+;   movq %r10, %rax
+;   adoxq %r9, %rax
+;   movq %rsi, %rdx
+;   adcxq %r8, %rdx
+;   adoxq %r8, %rcx
+;   movq %rcx, (%rdi)
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   movq %r8, %r10
+;   movq 0x10(%rbp), %r8
+;   xorl %eax, %eax
+;   adcxq %rdx, %rsi
+;   movl $1, %eax
+;   adcxq %rax, %rcx
+;   movq %r10, %rax
+;   adoxq %r9, %rax
+;   movq %rsi, %rdx
+;   adcxq %r8, %rdx
+;   adoxq %r8, %rcx
+;   movq %rcx, (%rdi)
+;   popq %rbp
+;   retq
+
