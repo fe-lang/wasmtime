@@ -345,3 +345,104 @@ block2:
 ;   popq %rbp
 ;   retq
 
+
+;; A zero between the borrow and the branch moves in with `movl`.
+function %borrow_past_zero(i64, i64) -> i64 {
+block0(v0: i64, v1: i64):
+    v2, v3 = usub_overflow v0, v1
+    v4 = iconst.i64 0
+    brif v3, block1(v4), block1(v2)
+block1(v5: i64):
+    return v5
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   subq %rsi, %rdi
+;   movl $0x0, %eax
+;   jb      label1; j label2
+; block1:
+;   jmp     label3
+; block2:
+;   movq %rdi, %rax
+;   jmp     label3
+; block3:
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   subq %rsi, %rdi
+;   movl $0, %eax
+;   jb 0x15
+; block2: ; offset 0x12
+;   movq %rdi, %rax
+; block3: ; offset 0x15
+;   popq %rbp
+;   retq
+
+
+;; Stack slot addresses passed to the branch target are `lea`s before it.
+function %borrow_past_stack_addr(i64, i64) -> i64 {
+    ss0 = explicit_slot 8
+    ss1 = explicit_slot 8
+block0(v0: i64, v1: i64):
+    v2 = stack_addr.i64 ss0
+    store notrap v0, v2
+    v3, v4 = usub_overflow v0, v1
+    v5 = stack_addr.i64 ss1
+    store notrap v3, v5
+    v6 = stack_addr.i64 ss0
+    brif v4, block1(v6), block1(v5)
+block1(v7: i64):
+    v8 = load.i64 notrap v7
+    return v8
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block0:
+;   movq %rdi, <offset:1>+(%rsp)
+;   subq %rsi, %rdi
+;   leaq <offset:1>+8(%rsp), %r8
+;   movq %rdi, <offset:1>+8(%rsp)
+;   leaq <offset:1>+(%rsp), %rdi
+;   jb      label1; j label2
+; block1:
+;   jmp     label3
+; block2:
+;   movq %r8, %rdi
+;   jmp     label3
+; block3:
+;   movq (%rdi), %rax
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block1: ; offset 0x8
+;   movq %rdi, (%rsp)
+;   subq %rsi, %rdi
+;   leaq -8(%rbp), %r8
+;   movq %rdi, -8(%rbp)
+;   leaq (%rsp), %rdi
+;   jb 0x24
+; block2: ; offset 0x21
+;   movq %r8, %rdi
+; block3: ; offset 0x24
+;   movq (%rdi), %rax
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+

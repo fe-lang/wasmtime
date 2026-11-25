@@ -59,3 +59,102 @@ block0(v1: i64, v2: i64, v3: i64):
 ; run: %chains_past_an_address_sum(1, 1, 1) == [2, 1]
 ; run: %chains_past_an_address_sum(0, 0, 0) == [-3, 0]
 ; run: %chains_past_an_address_sum(2, 3, 0) == [6, 0]
+
+;; A zero between the first ops of an interleaved pair.
+function %zero_at_pair_start(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8 = iconst.i64 0
+    v9, v10 = uadd_overflow v2, v3
+    v11, v12 = uadd_overflow_cin v4, v5, v10
+    jump block1
+
+block1:
+    v13, v14 = uadd_overflow_cin v6, v5, v7
+    return v9, v8, v11, v13
+}
+
+; run: %zero_at_pair_start(-1, 1, -1, 1, 5, 6) == [0, 0, 12, 7]
+; run: %zero_at_pair_start(1, 2, 3, 4, 5, 6) == [7, 0, 11, 9]
+; run: %zero_at_pair_start(-1, 2, 1, 2, 5, 6) == [3, 0, 11, 8]
+; run: %zero_at_pair_start(1, 1, -1, -1, 5, 6) == [-2, 0, 12, 8]
+
+;; A zero inside the pair, between the links of both chains.
+function %zero_inside_pair(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8, v9 = uadd_overflow v2, v3
+    v10 = iconst.i64 0
+    v11, v12 = uadd_overflow_cin v4, v5, v7
+    v13, v14 = uadd_overflow_cin v4, v1, v9
+    v15 = bxor v6, v8
+    return v15, v10, v11, v13
+}
+
+; run: %zero_inside_pair(-1, 1, -1, 1, 5, 6) == [0, 0, 12, 7]
+; run: %zero_inside_pair(1, 2, 3, 4, 5, 6) == [4, 0, 11, 7]
+; run: %zero_inside_pair(-1, 2, 3, 4, 5, 6) == [6, 0, 12, 7]
+; run: %zero_inside_pair(1, 2, -1, 4, 5, 6) == [0, 0, 11, 8]
+
+;; A stack slot address or a zero between a link adding a constant and a
+;; second chain's start.
+function %constant_link_past_stack_addr(i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+    ss0 = explicit_slot 8
+    ss1 = explicit_slot 8
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5, v6 = uadd_overflow v0, v1
+    v7 = iconst.i64 1
+    v8, v9 = uadd_overflow_cin v2, v7, v6
+    v10 = stack_addr.i64 ss0
+    v11 = stack_addr.i64 ss1
+    store notrap v10, v11
+    store notrap v0, v10
+    v12, v13 = uadd_overflow v3, v4
+    v14 = iconst.i64 0
+    v15, v16 = uadd_overflow_cin v5, v14, v9
+    v17, v18 = uadd_overflow_cin v8, v14, v13
+    v19 = load.i64 notrap v11
+    v20 = load.i64 notrap v19
+    return v12, v15, v17, v20
+}
+
+; run: %constant_link_past_stack_addr(0, 0, 0x7fffffffffffffff, 0, 0) == [0, 0, -9223372036854775808, 0]
+; run: %constant_link_past_stack_addr(7, 0, 0x7fffffffffffffff, -1, 1) == [0, 7, -9223372036854775807, 7]
+
+function %constant_link_past_zero(i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5, v6 = uadd_overflow v0, v1
+    v7 = iconst.i64 1
+    v8, v9 = uadd_overflow_cin v2, v7, v6
+    v10 = iconst.i64 0
+    v11, v12 = uadd_overflow v3, v4
+    v13, v14 = uadd_overflow_cin v5, v4, v9
+    v15, v16 = uadd_overflow_cin v8, v4, v12
+    return v11, v13, v15, v10
+}
+
+; run: %constant_link_past_zero(0, 0, 0x7fffffffffffffff, 0, 0) == [0, 0, -9223372036854775808, 0]
+; run: %constant_link_past_zero(0, 0, 0x7fffffffffffffff, 1, 2) == [3, 2, -9223372036854775806, 0]
+
+;; A stack slot address inside the pair.
+function %stack_addr_inside_pair(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+    ss0 = explicit_slot 8
+    ss1 = explicit_slot 8
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8, v9 = uadd_overflow v2, v3
+    v10 = stack_addr.i64 ss0
+    v11 = stack_addr.i64 ss1
+    store notrap v10, v11
+    v12, v13 = uadd_overflow_cin v4, v5, v7
+    v14, v15 = uadd_overflow_cin v4, v1, v9
+    store notrap v12, v10
+    v16 = load.i64 notrap v11
+    v17 = load.i64 notrap v16
+    v18 = bxor v6, v8
+    return v18, v17, v12, v14
+}
+
+; run: %stack_addr_inside_pair(-1, 1, -1, 1, 5, 6) == [0, 12, 12, 7]
+; run: %stack_addr_inside_pair(1, 2, 3, 4, 5, 6) == [4, 11, 11, 7]
+; run: %stack_addr_inside_pair(-1, 2, 3, 4, 5, 6) == [6, 12, 12, 7]

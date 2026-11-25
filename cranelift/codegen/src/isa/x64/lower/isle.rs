@@ -609,9 +609,27 @@ impl Context for IsleContext<'_, '_, MInst, X64Backend> {
         (!self.carry_plan(inst).keep_out).then_some(())
     }
 
+    fn emitted_len(&mut self) -> usize {
+        self.lower_ctx.emitted_len()
+    }
+
+    /// Drops what building a reused select's condition emitted. The
+    /// condition has a use in each select, so nothing it is computed from is
+    /// used once, and no load sinks into it to be lost with it.
+    fn truncate_emitted(&mut self, len: usize) {
+        self.lower_ctx.truncate_emitted(len);
+    }
+
     fn select_flags_live(&mut self, inst: Inst) -> Option<()> {
         let block = self.lower_ctx.f.layout.inst_block(inst)?;
         self.with_carry_state(block, |state| state.selects.contains(&inst).then_some(()))
+    }
+
+    fn zero_keeps_flags(&mut self, inst: Inst) -> Option<()> {
+        let block = self.lower_ctx.f.layout.inst_block(inst)?;
+        self.with_carry_state(block, |state| {
+            state.flag_zeros.contains(&inst).then_some(())
+        })
     }
 
     fn select_carry(&mut self, inst: Inst) -> Option<Value> {
@@ -2248,10 +2266,13 @@ const I8X16_USHR_MASKS: [u8; 128] = [
 /// Whether the lowering of `inst` never writes the flags: nothing for an
 /// instruction without side effects whose results are unused or whose uses
 /// absorb it (`FlagFree`), and otherwise loads, stores that are not a
-/// load-op-store, nonzero constants (`mov`), extensions to 64 bits or
-/// fewer, the register shuffles of `ireduce`, `iconcat` and `isplit`, and
-/// with BMI2 a widening 64-bit multiply, `mulx`. A zero constant is an
-/// `xor`, and a 128-bit extension zeroes or shifts its high half.
+/// load-op-store, constants of 64 bits or fewer (`mov`, and for a zero where
+/// the flags are live `movl` rather than `xor`, see `flag_zeros`), stack slot
+/// addresses (`lea` from RSP or RBP, which no register allocated to it can
+/// turn into an `add`), extensions to 64 bits or fewer, the register
+/// shuffles of `ireduce`, `iconcat` and `isplit`, and with BMI2 a widening
+/// 64-bit multiply, `mulx`. A 128-bit constant or extension zeroes or shifts
+/// its high half.
 fn leaves_flags_alone(ctx: &Lower<MInst>, free: &FlagFree, inst: Inst) -> bool {
     let f = ctx.f;
     let dfg = &f.dfg;
@@ -2267,8 +2288,8 @@ fn leaves_flags_alone(ctx: &Lower<MInst>, free: &FlagFree, inst: Inst) -> bool {
     match dfg.insts[inst] {
         InstructionData::UnaryImm {
             opcode: Opcode::Iconst,
-            imm,
-        } => imm.bits() != 0 && dfg.ctrl_typevar(inst).bits() <= 64,
+            ..
+        } => dfg.ctrl_typevar(inst).bits() <= 64,
         InstructionData::Store {
             args: [value, _], ..
         } => !dfg.value_def(value).inst().is_some_and(|def| {
@@ -2290,6 +2311,7 @@ fn leaves_flags_alone(ctx: &Lower<MInst>, free: &FlagFree, inst: Inst) -> bool {
                 | Opcode::Sload16
                 | Opcode::Uload32
                 | Opcode::Sload32
+                | Opcode::StackAddr
                 | Opcode::Ireduce
                 | Opcode::Iconcat
                 | Opcode::Isplit
@@ -2342,6 +2364,7 @@ impl IsleContext<'_, '_, MInst, X64Backend> {
             (state.plans, state.branch, state.carry_selects) =
                 carry_plans(self.lower_ctx, &state.free, &state.uses, has_adx, block);
             state.selects = select_reuse(self.lower_ctx, &state.free, block);
+            state.flag_zeros = flag_zeros(f, &state, block);
             state.zeros.clear();
             state.block = Some(block);
         }
@@ -2365,6 +2388,8 @@ struct CarryState {
     /// The selects that test the flag holding a carry, with the carry and
     /// the flag test.
     carry_selects: FxHashMap<Inst, (Value, CC)>,
+    /// The zero constants of the block where the flags are live.
+    flag_zeros: FxHashSet<Inst>,
     /// The number of instructions using each value.
     uses: SecondaryMap<Value, u32>,
     /// The zero registers of the block's interleaved pairs, by pair.
@@ -2388,6 +2413,7 @@ impl CarryState {
             branch: None,
             selects: FxHashSet::default(),
             carry_selects: FxHashMap::default(),
+            flag_zeros: FxHashSet::default(),
             uses,
             zeros: FxHashMap::default(),
         }
@@ -2395,10 +2421,9 @@ impl CarryState {
 }
 
 /// Values whose definitions lower to nothing that writes the flags only
-/// because of how every use lowers: zero constants that are only carry op
-/// addends, an immediate or a `mov` there; with BMI2, 128-bit extensions
-/// that only widening multiplies (`mulx`) absorb; and address sums that only
-/// loads and stores take, which fold them into their addressing modes.
+/// because of how every use lowers: with BMI2, 128-bit extensions that only
+/// widening multiplies (`mulx`) absorb; and address sums that only loads and
+/// stores take, which fold them into their addressing modes.
 struct FlagFree {
     has_bmi2: bool,
     values: FxHashSet<Value>,
@@ -2427,10 +2452,6 @@ impl FlagFree {
             dfg.value_def(value)
                 .inst()
                 .is_some_and(|def| match dfg.insts[def] {
-                    InstructionData::UnaryImm {
-                        opcode: Opcode::Iconst,
-                        imm,
-                    } => imm.bits() == 0,
                     InstructionData::Unary {
                         opcode: Opcode::Uextend,
                         arg,
@@ -2449,25 +2470,15 @@ impl FlagFree {
             .filter(|&value| candidate(value))
             .collect();
         for inst in insts() {
-            let args = dfg.inst_values(inst).collect::<Vec<_>>();
-            for (index, &arg) in args.iter().enumerate() {
+            for (index, arg) in dfg.inst_values(inst).enumerate() {
                 if !values.contains(&arg) {
                     continue;
                 }
-                let constant = dfg
-                    .value_def(arg)
-                    .inst()
-                    .is_some_and(|def| dfg.insts[def].opcode() == Opcode::Iconst);
                 let address = matches!(
                     dfg.value_def(arg).inst().map(|def| dfg.insts[def].opcode()),
                     Some(Opcode::Iadd)
                 );
-                let absorbed = if constant {
-                    is_carry_op(f, inst)
-                        && dfg.ctrl_typevar(inst).bits() <= 64
-                        && index == 1
-                        && args.iter().filter(|&&other| other == arg).count() == 1
-                } else if address {
+                let absorbed = if address {
                     match dfg.insts[inst] {
                         InstructionData::Load { .. } => index == 0,
                         InstructionData::Store { .. } => index == 1,
@@ -2553,22 +2564,30 @@ fn is_carry_op(f: &Function, inst: Inst) -> bool {
 
 /// The integer selects of `block` whose condition is that of the select
 /// lowered before them, with only instructions that leave the flags alone
-/// between, so that they take its flags instead of comparing again. A
-/// condition comparing 128-bit or float values sets more than one flag test,
-/// and keeps its compare.
+/// between, so that they take its flags instead of comparing again. A float
+/// `eq` or `ne`, possibly extended as `is_nonzero_cmp` sees it, tests two
+/// flags and keeps its compare.
 fn select_reuse(ctx: &Lower<MInst>, free: &FlagFree, block: Block) -> FxHashSet<Inst> {
     let f = ctx.f;
     let dfg = &f.dfg;
     let one_test = |cond: Value| {
-        dfg.value_def(cond)
-            .inst()
-            .is_none_or(|def| match dfg.insts[def] {
-                InstructionData::IntCompare { args: [lhs, _], .. } => {
-                    dfg.value_type(lhs).bits() <= 64
+        let def = |value: Value| dfg.value_def(value).inst();
+        let compare = match def(cond).map(|inst| dfg.insts[inst]) {
+            Some(InstructionData::Unary {
+                opcode: Opcode::Uextend,
+                arg,
+            }) => def(arg),
+            _ => def(cond),
+        };
+        !compare.is_some_and(|inst| {
+            matches!(
+                dfg.insts[inst],
+                InstructionData::FloatCompare {
+                    cond: FloatCC::Equal | FloatCC::NotEqual,
+                    ..
                 }
-                InstructionData::FloatCompare { .. } => false,
-                _ => true,
-            })
+            )
+        })
     };
     let mut reuse = FxHashSet::default();
     let mut last = None;
@@ -2590,6 +2609,72 @@ fn select_reuse(ctx: &Lower<MInst>, free: &FlagFree, block: Block) -> FxHashSet<
         }
     }
     reuse
+}
+
+/// The zero constants of `block` where the flags are live: between an
+/// instruction setting them and one that the plans let take them, a carry op
+/// whose carry in is still in the flags, the first `adox` of an interleaved
+/// pair, which takes OF clear, the branch or a select testing a carry, or a
+/// select taking the flags of the select before it. `imm` zeroes with `xor`,
+/// so these move zero in with `movl` instead. Each taker leads back to what
+/// set its flags: the op making its carry, the first op of the pair, which
+/// clears CF and OF, the select before it on the same carry, or the select
+/// lowered before it.
+fn flag_zeros(f: &Function, state: &CarryState, block: Block) -> FxHashSet<Inst> {
+    let dfg = &f.dfg;
+    let op = |carry: Value| match dfg.value_def(carry) {
+        ValueDef::Result(op, 1) => Some(op),
+        _ => None,
+    };
+    let mut zeros = FxHashSet::default();
+    let mut mark = |taker: Inst, setter: &dyn Fn(Inst) -> bool| {
+        zeros.extend(
+            core::iter::successors(f.layout.prev_inst(taker), |&inst| f.layout.prev_inst(inst))
+                .take_while(|&inst| !setter(inst))
+                .filter(|&inst| {
+                    matches!(
+                        dfg.insts[inst],
+                        InstructionData::UnaryImm {
+                            opcode: Opcode::Iconst,
+                            imm,
+                        } if imm.bits() == 0
+                    )
+                }),
+        );
+    };
+    for (&inst, plan) in &state.plans {
+        if plan.fused_in {
+            let setter = op(dfg.inst_args(inst)[2]);
+            mark(inst, &|other| Some(other) == setter);
+        } else if plan.lane == Some(Lane::Of) {
+            mark(inst, &|other| {
+                state
+                    .plans
+                    .get(&other)
+                    .is_some_and(|setter| setter.clear && setter.pair == plan.pair)
+            });
+        }
+    }
+    if let Some((carry, _, _)) = state.branch
+        && let Some(term) = f.layout.last_inst(block)
+    {
+        mark(term, &|other| Some(other) == op(carry));
+    }
+    for (&select, &(carry, _)) in &state.carry_selects {
+        mark(select, &|other| {
+            Some(other) == op(carry)
+                || state
+                    .carry_selects
+                    .get(&other)
+                    .is_some_and(|&(other_carry, _)| other_carry == carry)
+        });
+    }
+    for &select in &state.selects {
+        mark(select, &|other| {
+            dfg.insts[other].opcode() == Opcode::Select && !is_unlowered(&state.free, other)
+        });
+    }
+    zeros
 }
 
 /// Whether carry op `inst` adds a constant that a 64-bit `adc` takes as a
@@ -2649,8 +2734,10 @@ fn carry_plans(
     let mut cf: Option<(Value, usize)> = None;
     let mut of: Option<(Value, usize)> = None;
     let mut consumed = Vec::new();
-    // Ops of a CF lane that add a constant while no OF chain is in flight:
-    // as plain `adc`s they take an immediate, where `adcx` needs a register.
+    // Ops of a CF lane that add a constant after the OF chain of their pair
+    // has ended: as plain `adc`s they take an immediate, where `adcx` needs a
+    // register. An `adc` writes OF too, so one of a chain not yet paired could
+    // come between the `xor` that clears OF for the pair and its first `adox`.
     let mut plain = FxHashSet::default();
     for inst in f.layout.block_insts(block) {
         if !is_carry_op(f, inst) || is_unlowered(free, inst) {
@@ -2674,7 +2761,7 @@ fn carry_plans(
             })
             .filter(|&(chain, _)| chains[chain].lane.is_none() || lane_op);
         if let Some((chain, lane)) = continued {
-            if lane == Lane::Cf && of.is_none() && imm32_addend(f, inst) {
+            if chains[chain].lane == Some(Lane::Cf) && of.is_none() && imm32_addend(f, inst) {
                 plain.insert(inst);
             }
             chains[chain].ops.push(inst);
