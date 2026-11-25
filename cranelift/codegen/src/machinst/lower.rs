@@ -1736,6 +1736,7 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
     /// Drop the machine instructions emitted for the instruction being
     /// lowered after the first `len`.
     pub fn truncate_emitted(&mut self, len: usize) {
+        debug_assert!(len <= self.ir_insts.len());
         self.ir_insts.truncate(len);
     }
 
