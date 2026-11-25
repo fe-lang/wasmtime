@@ -38,3 +38,23 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ; run: %constant_link_before_pair_register(0, 0, 0x7fffffffffffffff, 0, 0, 0) == [0, 0, -9223372036854775808]
 ; run: %constant_link_before_pair_register(0, 0, 0x7fffffffffffffff, 0, 0, 5) == [0, 5, -9223372036854775803]
 ; run: %constant_link_before_pair_register(1, 2, 3, 4, 5, 6) == [9, 9, 10]
+
+;; A link adding a negative 32-bit constant before the pair is an `adcx` of a
+;; sign-extended `movq`.
+
+function %negative_link_before_pair(i64, i64, i64, i64, i64) -> i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5, v6 = uadd_overflow v0, v1
+    v7 = iconst.i64 -1
+    v8, v9 = uadd_overflow_cin v2, v7, v6
+    v10 = iconst.i64 0
+    v11, v12 = uadd_overflow v3, v4
+    v13, v14 = uadd_overflow_cin v5, v10, v9
+    v15, v16 = uadd_overflow_cin v8, v10, v12
+    return v11, v13, v15
+}
+
+; run: %negative_link_before_pair(0, 0, -9223372036854775808, 0, 0) == [0, 1, 9223372036854775807]
+; run: %negative_link_before_pair(-1, 1, -9223372036854775808, -1, 1) == [0, 1, -9223372036854775807]
+; run: %negative_link_before_pair(1, 2, 3, 4, 5) == [9, 4, 2]
+; run: %negative_link_before_pair(0, 0, 0, -1, 1) == [0, 0, 0]

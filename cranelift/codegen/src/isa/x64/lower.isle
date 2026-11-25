@@ -322,14 +322,18 @@
 
 ;; The addend of lane op `inst`. Zero is the pair's zero register. Another
 ;; constant moves into a register with `mov`, which leaves the flags alone,
-;; where `imm` zeroes with `xor`; below 2^32 a `movl`, which zero-extends, is
-;; half the size.
+;; where `imm` zeroes with `xor`: below 2^32 a `movl`, which zero-extends, is
+;; half the size, and one that sign-extends from 32 bits a `movq` of a 32-bit
+;; immediate.
 (decl lane_operand (Inst Value) GprMem64)
-(rule 3 (lane_operand i (u64_from_iconst 0))
+(rule 4 (lane_operand i (u64_from_iconst 0))
       (if-let zero (lane_zero i))
       zero)
-(rule 2 (lane_operand _ (u64_from_iconst (u32_from_u64 c)))
+(rule 3 (lane_operand _ (u64_from_iconst (u32_from_u64 c)))
       (x64_movl_oi c))
+(rule 2 (lane_operand _ (u64_from_iconst c))
+      (if-let c32 (i64_try_into_i32 (u64_cast_signed c)))
+      (x64_movq_mi_sxl c32))
 (rule 1 (lane_operand _ (u64_from_iconst c))
       (x64_movabsq_oi c))
 (rule 0 (lane_operand _ y) y)
