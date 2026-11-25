@@ -861,3 +861,436 @@ block0(v0: i64, v1: i64, v2: i64):
 ;   popq %rbp
 ;   retq
 
+
+;; A float `ne` tests two flags too, extended or not.
+
+function %float_not_equal_past_zero(f64, f64, i64, i64) -> i64, i64 {
+block0(v0: f64, v1: f64, v2: i64, v3: i64):
+    v4 = fcmp ne v0, v1
+    v5 = select v4, v2, v3
+    v6 = iconst.i64 0
+    v7 = select v4, v3, v6
+    return v5, v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   ucomisd %xmm1, %xmm0
+;   movq %rsi, %rax
+;   cmovpq %rdi, %rax
+;   cmovneq %rdi, %rax
+;   uninit  %rdx
+;   xorq %rdx, %rdx
+;   ucomisd %xmm1, %xmm0
+;   cmovpq %rsi, %rdx
+;   cmovneq %rsi, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   ucomisd %xmm1, %xmm0
+;   movq %rsi, %rax
+;   cmovpq %rdi, %rax
+;   cmovneq %rdi, %rax
+;   xorq %rdx, %rdx
+;   ucomisd %xmm1, %xmm0
+;   cmovpq %rsi, %rdx
+;   cmovneq %rsi, %rdx
+;   popq %rbp
+;   retq
+
+function %float_not_equal_extended_past_zero(f64, f64, i64, i64) -> i64, i64 {
+block0(v0: f64, v1: f64, v2: i64, v3: i64):
+    v4 = fcmp ne v0, v1
+    v5 = uextend.i64 v4
+    v6 = select v5, v2, v3
+    v7 = iconst.i64 0
+    v8 = select v5, v3, v7
+    return v6, v8
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   ucomisd %xmm1, %xmm0
+;   movq %rsi, %rax
+;   cmovpq %rdi, %rax
+;   cmovneq %rdi, %rax
+;   uninit  %rdx
+;   xorq %rdx, %rdx
+;   ucomisd %xmm1, %xmm0
+;   cmovpq %rsi, %rdx
+;   cmovneq %rsi, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   ucomisd %xmm1, %xmm0
+;   movq %rsi, %rax
+;   cmovpq %rdi, %rax
+;   cmovneq %rdi, %rax
+;   xorq %rdx, %rdx
+;   ucomisd %xmm1, %xmm0
+;   cmovpq %rsi, %rdx
+;   cmovneq %rsi, %rdx
+;   popq %rbp
+;   retq
+
+;; `f32` compares testing the parity flag or one other flag are shared.
+
+function %float_unordered_past_zero(f32, f32, i64, i64) -> i64, i64 {
+block0(v0: f32, v1: f32, v2: i64, v3: i64):
+    v4 = fcmp uno v0, v1
+    v5 = select v4, v2, v3
+    v6 = iconst.i64 0
+    v7 = select v4, v3, v6
+    return v5, v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   ucomiss %xmm1, %xmm0
+;   movq %rsi, %rax
+;   cmovpq %rdi, %rax
+;   movl $0x0, %edx
+;   cmovpq %rsi, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   ucomiss %xmm1, %xmm0
+;   movq %rsi, %rax
+;   cmovpq %rdi, %rax
+;   movl $0, %edx
+;   cmovpq %rsi, %rdx
+;   popq %rbp
+;   retq
+
+function %float_ordered_past_zero(f32, f32, i64, i64) -> i64, i64 {
+block0(v0: f32, v1: f32, v2: i64, v3: i64):
+    v4 = fcmp ord v0, v1
+    v5 = select v4, v2, v3
+    v6 = iconst.i64 0
+    v7 = select v4, v3, v6
+    return v5, v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   ucomiss %xmm1, %xmm0
+;   movq %rsi, %rax
+;   cmovnpq %rdi, %rax
+;   movl $0x0, %edx
+;   cmovnpq %rsi, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   ucomiss %xmm1, %xmm0
+;   movq %rsi, %rax
+;   cmovnpq %rdi, %rax
+;   movl $0, %edx
+;   cmovnpq %rsi, %rdx
+;   popq %rbp
+;   retq
+
+function %float_unordered_or_equal_past_zero(f32, f32, i64, i64) -> i64, i64 {
+block0(v0: f32, v1: f32, v2: i64, v3: i64):
+    v4 = fcmp ueq v0, v1
+    v5 = select v4, v2, v3
+    v6 = iconst.i64 0
+    v7 = select v4, v3, v6
+    return v5, v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   ucomiss %xmm1, %xmm0
+;   movq %rsi, %rax
+;   cmoveq %rdi, %rax
+;   movl $0x0, %edx
+;   cmoveq %rsi, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   ucomiss %xmm1, %xmm0
+;   movq %rsi, %rax
+;   cmoveq %rdi, %rax
+;   movl $0, %edx
+;   cmoveq %rsi, %rdx
+;   popq %rbp
+;   retq
+
+function %float_ordered_not_equal_past_zero(f32, f32, i64, i64) -> i64, i64 {
+block0(v0: f32, v1: f32, v2: i64, v3: i64):
+    v4 = fcmp one v0, v1
+    v5 = select v4, v2, v3
+    v6 = iconst.i64 0
+    v7 = select v4, v3, v6
+    return v5, v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   ucomiss %xmm1, %xmm0
+;   movq %rsi, %rax
+;   cmovneq %rdi, %rax
+;   movl $0x0, %edx
+;   cmovneq %rsi, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   ucomiss %xmm1, %xmm0
+;   movq %rsi, %rax
+;   cmovneq %rdi, %rax
+;   movl $0, %edx
+;   cmovneq %rsi, %rdx
+;   popq %rbp
+;   retq
+
+;; 128-bit equalities, with a zero on either side, and swapped orderings.
+
+function %wide_equal_past_zero(i128, i128, i64, i64) -> i64, i64 {
+block0(v0: i128, v1: i128, v2: i64, v3: i64):
+    v4 = icmp eq v0, v1
+    v5 = select v4, v2, v3
+    v6 = iconst.i64 0
+    v7 = select v4, v3, v6
+    return v5, v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   xorq %rdx, %rdi
+;   xorq %rcx, %rsi
+;   orq %rsi, %rdi
+;   movq %r9, %rax
+;   cmoveq %r8, %rax
+;   movl $0x0, %edx
+;   cmoveq %r9, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   xorq %rdx, %rdi
+;   xorq %rcx, %rsi
+;   orq %rsi, %rdi
+;   movq %r9, %rax
+;   cmoveq %r8, %rax
+;   movl $0, %edx
+;   cmoveq %r9, %rdx
+;   popq %rbp
+;   retq
+
+function %wide_not_zero_past_zero(i128, i64, i64) -> i64, i64 {
+block0(v0: i128, v1: i64, v2: i64):
+    v3 = iconst.i64 0
+    v4 = uextend.i128 v3
+    v5 = icmp ne v4, v0
+    v6 = select v5, v1, v2
+    v7 = iconst.i64 0
+    v8 = select v5, v2, v7
+    return v6, v8
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   uninit  %r9
+;   xorq %r9, %r9
+;   uninit  %r10
+;   xorq %r10, %r10
+;   xorq %rdi, %r9
+;   xorq %rsi, %r10
+;   orq %r10, %r9
+;   movq %rcx, %rax
+;   cmovneq %rdx, %rax
+;   movl $0x0, %edx
+;   cmovneq %rcx, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   xorq %r9, %r9
+;   xorq %r10, %r10
+;   xorq %rdi, %r9
+;   xorq %rsi, %r10
+;   orq %r10, %r9
+;   movq %rcx, %rax
+;   cmovneq %rdx, %rax
+;   movl $0, %edx
+;   cmovneq %rcx, %rdx
+;   popq %rbp
+;   retq
+
+function %wide_greater_past_zero(i128, i128, i64, i64) -> i64, i64 {
+block0(v0: i128, v1: i128, v2: i64, v3: i64):
+    v4 = icmp ugt v0, v1
+    v5 = select v4, v2, v3
+    v6 = iconst.i64 0
+    v7 = select v4, v3, v6
+    return v5, v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   cmpq %rdi, %rdx
+;   sbbq %rsi, %rcx
+;   movq %r9, %rax
+;   cmovbq %r8, %rax
+;   movl $0x0, %edx
+;   cmovbq %r9, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   cmpq %rdi, %rdx
+;   sbbq %rsi, %rcx
+;   movq %r9, %rax
+;   cmovbq %r8, %rax
+;   movl $0, %edx
+;   cmovbq %r9, %rdx
+;   popq %rbp
+;   retq
+
+function %wide_signed_at_most_past_zero(i128, i128, i64, i64) -> i64, i64 {
+block0(v0: i128, v1: i128, v2: i64, v3: i64):
+    v4 = icmp sle v0, v1
+    v5 = select v4, v2, v3
+    v6 = iconst.i64 0
+    v7 = select v4, v3, v6
+    return v5, v7
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   cmpq %rdi, %rdx
+;   sbbq %rsi, %rcx
+;   movq %r9, %rax
+;   cmovgeq %r8, %rax
+;   movl $0x0, %edx
+;   cmovgeq %r9, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   cmpq %rdi, %rdx
+;   sbbq %rsi, %rcx
+;   movq %r9, %rax
+;   cmovgeq %r8, %rax
+;   movl $0, %edx
+;   cmovgeq %r9, %rdx
+;   popq %rbp
+;   retq
+
+;; `is_nonzero_cmp` sees through one extension; a float `eq` extended twice
+;; is a test of the extended value, one flag.
+
+function %float_equal_extended_twice(f64, f64, i64, i64) -> i64, i64 {
+block0(v0: f64, v1: f64, v2: i64, v3: i64):
+    v4 = fcmp eq v0, v1
+    v5 = uextend.i32 v4
+    v6 = uextend.i64 v5
+    v7 = select v6, v2, v3
+    v8 = iconst.i64 0
+    v9 = select v6, v3, v8
+    return v7, v9
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   ucomisd %xmm1, %xmm0
+;   setnp %al
+;   sete %cl
+;   andl %ecx, %eax
+;   movzbl %al, %eax
+;   movl %eax, %eax
+;   testq %rax, %rax
+;   movq %rsi, %rax
+;   cmovneq %rdi, %rax
+;   movl $0x0, %edx
+;   cmovneq %rsi, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   ucomisd %xmm1, %xmm0
+;   setnp %al
+;   sete %cl
+;   andl %ecx, %eax
+;   movzbl %al, %eax
+;   movl %eax, %eax
+;   testq %rax, %rax
+;   movq %rsi, %rax
+;   cmovneq %rdi, %rax
+;   movl $0, %edx
+;   cmovneq %rsi, %rdx
+;   popq %rbp
+;   retq
+
