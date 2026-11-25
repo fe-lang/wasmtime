@@ -417,3 +417,203 @@ block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
 ;   popq %rbp
 ;   retq
 
+
+;; A stack slot address or a zero between the links of a chain and a second
+;; chain's start leave the flags alone, so the two interleave; the link that
+;; adds a constant before the pair stays an `adcx`.
+function %constant_link_past_stack_addr(i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+    ss0 = explicit_slot 8
+    ss1 = explicit_slot 8
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5, v6 = uadd_overflow v0, v1
+    v7 = iconst.i64 1
+    v8, v9 = uadd_overflow_cin v2, v7, v6
+    v10 = stack_addr.i64 ss0
+    v11 = stack_addr.i64 ss1
+    store notrap v10, v11
+    v12, v13 = uadd_overflow v3, v4
+    v14 = iconst.i64 0
+    v15, v16 = uadd_overflow_cin v5, v14, v9
+    v17, v18 = uadd_overflow_cin v8, v14, v13
+    v19 = load.i64 notrap v11
+    v20 = load.i64 notrap v19
+    return v12, v15, v17, v20
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block0:
+;   movq %r9, %r10
+;   uninit  %r9
+;   xorl %r9d, %r9d
+;   adcxq %rdx, %rsi
+;   movl $0x1, %eax
+;   adcxq %rax, %rcx
+;   leaq <offset:1>+(%rsp), %rax
+;   movq %rax, <offset:1>+8(%rsp)
+;   movq %r10, %rdx
+;   movq %r8, %rax
+;   adoxq %rdx, %rax
+;   movq %rsi, %rdx
+;   adcxq %r9, %rdx
+;   adoxq %r9, %rcx
+;   movq <offset:1>+8(%rsp), %rsi
+;   movq (%rsi), %rsi
+;   movq %rcx, (%rdi)
+;   movq %rsi, 8(%rdi)
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block1: ; offset 0x8
+;   movq %r9, %r10
+;   xorl %r9d, %r9d
+;   adcxq %rdx, %rsi
+;   movl $1, %eax
+;   adcxq %rax, %rcx
+;   leaq (%rsp), %rax
+;   movq %rax, -8(%rbp)
+;   movq %r10, %rdx
+;   movq %r8, %rax
+;   adoxq %rdx, %rax
+;   movq %rsi, %rdx
+;   adcxq %r9, %rdx
+;   adoxq %r9, %rcx
+;   movq -8(%rbp), %rsi
+;   movq (%rsi), %rsi
+;   movq %rcx, (%rdi)
+;   movq %rsi, 8(%rdi)
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+
+function %constant_link_past_zero(i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64):
+    v5, v6 = uadd_overflow v0, v1
+    v7 = iconst.i64 1
+    v8, v9 = uadd_overflow_cin v2, v7, v6
+    v10 = iconst.i64 0
+    v11, v12 = uadd_overflow v3, v4
+    v13, v14 = uadd_overflow_cin v5, v4, v9
+    v15, v16 = uadd_overflow_cin v8, v4, v12
+    return v11, v13, v15, v10
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   uninit  %rax
+;   xorl %eax, %eax
+;   adcxq %rdx, %rsi
+;   movl $0x1, %eax
+;   adcxq %rax, %rcx
+;   movl $0x0, %eax
+;   adoxq %r9, %r8
+;   movq %rsi, %rdx
+;   adcxq %r9, %rdx
+;   adoxq %r9, %rcx
+;   movq %rcx, (%rdi)
+;   movq %rax, 8(%rdi)
+;   movq %r8, %rax
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   xorl %eax, %eax
+;   adcxq %rdx, %rsi
+;   movl $1, %eax
+;   adcxq %rax, %rcx
+;   movl $0, %eax
+;   adoxq %r9, %r8
+;   movq %rsi, %rdx
+;   adcxq %r9, %rdx
+;   adoxq %r9, %rcx
+;   movq %rcx, (%rdi)
+;   movq %rax, 8(%rdi)
+;   movq %r8, %rax
+;   popq %rbp
+;   retq
+
+;; A stack slot address inside the pair, between the links of both chains.
+function %stack_addr_inside_pair(i64, i64, i64, i64, i64, i64) -> i64, i64, i64, i64 {
+    ss0 = explicit_slot 8
+    ss1 = explicit_slot 8
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64):
+    v6, v7 = uadd_overflow v0, v1
+    v8, v9 = uadd_overflow v2, v3
+    v10 = stack_addr.i64 ss0
+    v11 = stack_addr.i64 ss1
+    store notrap v10, v11
+    v12, v13 = uadd_overflow_cin v4, v5, v7
+    v14, v15 = uadd_overflow_cin v4, v1, v9
+    store notrap v12, v10
+    v16 = load.i64 notrap v11
+    v17 = load.i64 notrap v16
+    v18 = bxor v6, v8
+    return v18, v17, v12, v14
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block0:
+;   movq <offset:0>+-0x10(%rbp), %r10
+;   uninit  %rax
+;   xorl %eax, %eax
+;   adcxq %rdx, %rsi
+;   adoxq %r8, %rcx
+;   leaq <offset:1>+(%rsp), %rax
+;   movq %rax, <offset:1>+8(%rsp)
+;   movq %r9, %r8
+;   adcxq %r10, %r8
+;   adoxq %rdx, %r9
+;   movq %r8, <offset:1>+(%rsp)
+;   movq <offset:1>+8(%rsp), %rax
+;   movq (%rax), %rdx
+;   movq %rsi, %rax
+;   xorq %rcx, %rax
+;   movq %r8, (%rdi)
+;   movq %r9, 8(%rdi)
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+;   subq $0x10, %rsp
+; block1: ; offset 0x8
+;   movq 0x10(%rbp), %r10
+;   xorl %eax, %eax
+;   adcxq %rdx, %rsi
+;   adoxq %r8, %rcx
+;   leaq (%rsp), %rax
+;   movq %rax, -8(%rbp)
+;   movq %r9, %r8
+;   adcxq %r10, %r8
+;   adoxq %rdx, %r9
+;   movq %r8, (%rsp)
+;   movq -8(%rbp), %rax
+;   movq (%rax), %rdx
+;   movq %rsi, %rax
+;   xorq %rcx, %rax
+;   movq %r8, (%rdi)
+;   movq %r9, 8(%rdi)
+;   addq $0x10, %rsp
+;   popq %rbp
+;   retq
+
