@@ -1,0 +1,119 @@
+test compile precise-output
+set enable_llvm_abi_extensions=true
+target x86_64 has_sse41
+
+;; With SSE4.1, vector tests are `ptest`s, after `pxor` for `ne`.
+
+function %any_true(i8x16, i64, i64, i64) -> i64, i64 {
+block0(v0: i8x16, v1: i64, v2: i64, v3: i64):
+    v4 = vany_true v0
+    v5 = select v4, v1, v2
+    v6 = select v4, v3, v1
+    return v5, v6
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   ptest %xmm0, %xmm0
+;   movq %rsi, %rax
+;   cmovneq %rdi, %rax
+;   movq %rdx, %r9
+;   movq %rdi, %rdx
+;   cmovneq %r9, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   ptest %xmm0, %xmm0
+;   movq %rsi, %rax
+;   cmovneq %rdi, %rax
+;   movq %rdx, %r9
+;   movq %rdi, %rdx
+;   cmovneq %r9, %rdx
+;   popq %rbp
+;   retq
+
+function %all_true(i32x4, i64, i64, i64) -> i64, i64 {
+block0(v0: i32x4, v1: i64, v2: i64, v3: i64):
+    v4 = vall_true v0
+    v5 = select v4, v1, v2
+    v6 = select v4, v3, v1
+    return v5, v6
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   uninit  %xmm7
+;   pxor %xmm7, %xmm7
+;   pcmpeqd %xmm7, %xmm0
+;   ptest %xmm0, %xmm0
+;   movq %rsi, %rax
+;   cmoveq %rdi, %rax
+;   movq %rdx, %rcx
+;   movq %rdi, %rdx
+;   cmoveq %rcx, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   pxor %xmm7, %xmm7
+;   pcmpeqd %xmm7, %xmm0
+;   ptest %xmm0, %xmm0
+;   movq %rsi, %rax
+;   cmoveq %rdi, %rax
+;   movq %rdx, %rcx
+;   movq %rdi, %rdx
+;   cmoveq %rcx, %rdx
+;   popq %rbp
+;   retq
+
+function %any_not_equal(i32x4, i32x4, i64, i64, i64) -> i64, i64 {
+block0(v0: i32x4, v1: i32x4, v2: i64, v3: i64, v4: i64):
+    v5 = icmp ne v0, v1
+    v6 = vany_true v5
+    v7 = select v6, v2, v3
+    v8 = select v6, v4, v2
+    return v7, v8
+}
+
+; VCode:
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block0:
+;   pxor %xmm1, %xmm0
+;   ptest %xmm0, %xmm0
+;   movq %rsi, %rax
+;   cmovneq %rdi, %rax
+;   movq %rdx, %rcx
+;   movq %rdi, %rdx
+;   cmovneq %rcx, %rdx
+;   popq %rbp
+;   retq
+;
+; Disassembled:
+; block0: ; offset 0x0
+;   pushq %rbp
+;   movq %rsp, %rbp
+; block1: ; offset 0x4
+;   pxor %xmm1, %xmm0
+;   ptest %xmm0, %xmm0
+;   movq %rsi, %rax
+;   cmovneq %rdi, %rax
+;   movq %rdx, %rcx
+;   movq %rdi, %rdx
+;   cmovneq %rcx, %rdx
+;   popq %rbp
+;   retq
+

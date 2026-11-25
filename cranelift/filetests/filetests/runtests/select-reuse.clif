@@ -2,6 +2,7 @@ test interpret
 test run
 set enable_llvm_abi_extensions=true
 target x86_64
+target x86_64 has_sse41
 
 ;; Selects on the condition of the select before them choose by it.
 
@@ -53,3 +54,132 @@ block0(v0: i128, v1: i128, v2: i64, v3: i64, v4: i64):
 ; run: %wide_equality(1, 2, 10, 20, 30) == [20, 10]
 ; run: %wide_equality(0x10000000000000001, 0x10000000000000001, 10, 20, 30) == [10, 30]
 ; run: %wide_equality(0x10000000000000001, 0x20000000000000001, 10, 20, 30) == [20, 10]
+
+function %narrow_bit_clear(i8, i8, i64, i64, i64) -> i64, i64 {
+block0(v0: i8, v1: i8, v2: i64, v3: i64, v4: i64):
+    v5 = iconst.i8 1
+    v6 = ishl v5, v1
+    v7 = band v0, v6
+    v8 = iconst.i8 0
+    v9 = icmp eq v7, v8
+    v10 = select v9, v2, v3
+    v11 = select v9, v4, v2
+    v12 = select v9, v3, v4
+    v13 = iadd v11, v12
+    return v10, v13
+}
+
+; run: %narrow_bit_clear(1, 0, 10, 20, 30) == [20, 40]
+; run: %narrow_bit_clear(2, 0, 10, 20, 30) == [10, 50]
+; run: %narrow_bit_clear(4, 10, 10, 20, 30) == [20, 40]
+
+function %wide_not_equal(i128, i128, i64, i64, i64) -> i64, i64 {
+block0(v0: i128, v1: i128, v2: i64, v3: i64, v4: i64):
+    v5 = icmp ne v0, v1
+    v6 = uextend.i64 v5
+    v7 = select v6, v2, v3
+    v8 = select v6, v4, v2
+    return v7, v8
+}
+
+; run: %wide_not_equal(1, 1, 10, 20, 30) == [20, 10]
+; run: %wide_not_equal(1, 2, 10, 20, 30) == [10, 30]
+; run: %wide_not_equal(0x10000000000000001, 0x20000000000000001, 10, 20, 30) == [10, 30]
+
+function %wide_less(i128, i128, i64, i64, i64) -> i64, i64 {
+block0(v0: i128, v1: i128, v2: i64, v3: i64, v4: i64):
+    v5 = icmp ult v0, v1
+    v6 = uextend.i64 v5
+    v7 = select v6, v2, v3
+    v8 = select v6, v4, v2
+    v9 = icmp slt v0, v1
+    v10 = uextend.i64 v9
+    v11 = select v10, v3, v4
+    v12 = select v10, v2, v4
+    v13 = iadd v7, v11
+    v14 = iadd v8, v12
+    return v13, v14
+}
+
+; run: %wide_less(1, 2, 1, 10, 100) == [11, 101]
+; run: %wide_less(2, 1, 1, 10, 100) == [110, 101]
+; run: %wide_less(-1, 1, 1, 10, 100) == [20, 2]
+; run: %wide_less(1, -1, 1, 10, 100) == [101, 200]
+; run: %wide_less(0x10000000000000000, 0x1ffffffffffffffff, 1, 10, 100) == [11, 101]
+
+function %float_equal(f64, f64, i64, i64, i64) -> i64, i64 {
+block0(v0: f64, v1: f64, v2: i64, v3: i64, v4: i64):
+    v5 = fcmp eq v0, v1
+    v6 = uextend.i64 v5
+    v7 = select v6, v2, v3
+    v8 = select v6, v4, v2
+    return v7, v8
+}
+
+; run: %float_equal(0x1.0, 0x1.0, 10, 20, 30) == [10, 30]
+; run: %float_equal(0x1.0, 0x2.0, 10, 20, 30) == [20, 10]
+; run: %float_equal(+NaN, +NaN, 10, 20, 30) == [20, 10]
+; run: %float_equal(+NaN, 0x1.0, 10, 20, 30) == [20, 10]
+
+function %float_less(f64, f64, i64, i64, i64) -> i64, i64 {
+block0(v0: f64, v1: f64, v2: i64, v3: i64, v4: i64):
+    v5 = fcmp lt v0, v1
+    v6 = uextend.i64 v5
+    v7 = select v6, v2, v3
+    v8 = select v6, v4, v2
+    return v7, v8
+}
+
+; run: %float_less(0x1.0, 0x2.0, 10, 20, 30) == [10, 30]
+; run: %float_less(0x2.0, 0x1.0, 10, 20, 30) == [20, 10]
+; run: %float_less(+NaN, 0x1.0, 10, 20, 30) == [20, 10]
+; run: %float_less(0x1.0, +NaN, 10, 20, 30) == [20, 10]
+
+function %any_true(i8x16, i64, i64, i64) -> i64, i64 {
+block0(v0: i8x16, v1: i64, v2: i64, v3: i64):
+    v4 = vany_true v0
+    v5 = select v4, v1, v2
+    v6 = select v4, v3, v1
+    return v5, v6
+}
+
+; run: %any_true([0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0], 10, 20, 30) == [20, 10]
+; run: %any_true([0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1], 10, 20, 30) == [10, 30]
+
+function %all_true(i32x4, i64, i64, i64) -> i64, i64 {
+block0(v0: i32x4, v1: i64, v2: i64, v3: i64):
+    v4 = vall_true v0
+    v5 = select v4, v1, v2
+    v6 = select v4, v3, v1
+    return v5, v6
+}
+
+; run: %all_true([1 1 1 1], 10, 20, 30) == [10, 30]
+; run: %all_true([1 0 1 1], 10, 20, 30) == [20, 10]
+
+function %any_not_equal(i32x4, i32x4, i64, i64, i64) -> i64, i64 {
+block0(v0: i32x4, v1: i32x4, v2: i64, v3: i64, v4: i64):
+    v5 = icmp ne v0, v1
+    v6 = vany_true v5
+    v7 = select v6, v2, v3
+    v8 = select v6, v4, v2
+    return v7, v8
+}
+
+; run: %any_not_equal([1 2 3 4], [1 2 3 4], 10, 20, 30) == [20, 10]
+; run: %any_not_equal([1 2 3 4], [1 2 3 5], 10, 20, 30) == [10, 30]
+
+function %loaded_condition(i64, i64, i64, i64) -> i64, i64 {
+    ss0 = explicit_slot 8
+block0(v0: i64, v1: i64, v2: i64, v3: i64):
+    v8 = stack_addr.i64 ss0
+    store notrap v0, v8
+    v4 = load.i64 notrap v8
+    v5 = icmp eq v4, v1
+    v6 = select v5, v2, v3
+    v7 = select v5, v3, v2
+    return v6, v7
+}
+
+; run: %loaded_condition(1, 1, 10, 20) == [10, 20]
+; run: %loaded_condition(1, 2, 10, 20) == [20, 10]
